@@ -1,0 +1,97 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Auth",
+        "repositoryURL": "https://github.com/google/auth-library-swift",
+        "state": {
+          "branch": null,
+          "revision": "c5f11b696cec34dbd5691c2a4b4aaea087fb5125",
+          "version": "0.3.6"
+        }
+      },
+      {
+        "package": "BigInt",
+        "repositoryURL": "https://github.com/attaswift/BigInt",
+        "state": {
+          "branch": null,
+          "revision": "557d7e0e15f8693436212594a726af1795488550",
+          "version": "3.0.2"
+        }
+      },
+      {
+        "package": "CryptoSwift",
+        "repositoryURL": "https://github.com/krzyzanowskim/CryptoSwift.git",
+        "state": {
+          "branch": null,
+          "revision": "526d5e91569b30857d8def9ea22ad7265b70d238",
+          "version": "0.9.0"
+        }
+      },
+      {
+        "package": "SwiftServerHttp",
+        "repositoryURL": "https://github.com/swift-server/http",
+        "state": {
+          "branch": null,
+          "revision": "f8516cc7252cc1e4a9f31ac5fa35175acdd2f47d",
+          "version": "0.1.0"
+        }
+      },
+      {
+        "package": "Nimble",
+        "repositoryURL": "https://github.com/Quick/Nimble",
+        "state": {
+          "branch": null,
+          "revision": "22800b0954c89344bb8c87f8ab93378076716fb7",
+          "version": "7.0.3"
+        }
+      },
+      {
+        "package": "Quick",
+        "repositoryURL": "https://github.com/Quick/Quick",
+        "state": {
+          "branch": null,
+          "revision": "0ff81f2c665b4381f526bd656f8708dd52a9ea2f",
+          "version": "1.2.0"
+        }
+      },
+      {
+        "package": "ReactiveSwift",
+        "repositoryURL": "https://github.com/ReactiveCocoa/ReactiveSwift",
+        "state": {
+          "branch": null,
+          "revision": "46fb4d4a8285286e54929add1d12f384675895c6",
+          "version": "3.1.0"
+        }
+      },
+      {
+        "package": "Result",
+        "repositoryURL": "https://github.com/antitypical/Result.git",
+        "state": {
+          "branch": null,
+          "revision": "7477584259bfce2560a19e06ad9f71db441fff11",
+          "version": "3.2.4"
+        }
+      },
+      {
+        "package": "SipHash",
+        "repositoryURL": "https://github.com/attaswift/SipHash",
+        "state": {
+          "branch": null,
+          "revision": "7b47e3f23a66770b1eb18e15e20546aad398c9dd",
+          "version": "1.2.0"
+        }
+      },
+      {
+        "package": "SwiftyBase64",
+        "repositoryURL": "https://github.com/timburks/SwiftyBase64",
+        "state": {
+          "branch": null,
+          "revision": "01f2f5c4886d0b8d7cb8c0e96b2aefccd1c7ccd8",
+          "version": "1.2.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}

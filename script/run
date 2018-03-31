@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e
+
+swift build
+./.build/x86_64-apple-macosx10.10/debug/Feebi
