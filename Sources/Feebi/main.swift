@@ -46,7 +46,8 @@ guard let googleToken = token.asGoogleToken else {
 }
 
 let semaphore = DispatchSemaphore(value: 0)
-let service = GoogleAPI.spreadSheets
+
+GoogleAPI.spreadSheets
     .values(spreadSheetId: spreadsheetId)
     .get(range: range, majorDimension: .rows)
     .execute(using: googleToken)
