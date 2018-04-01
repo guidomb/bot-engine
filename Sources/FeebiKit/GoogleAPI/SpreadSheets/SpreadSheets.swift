@@ -29,7 +29,8 @@ public extension GoogleAPI {
             
             // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/get
             public func get(range: SpreadSheetRange, options: GetValuesOptions) -> Resource<ValueRange> {
-                return Resource(path: "\(basePath)/\(range.description)", queryParameters: options, method: .get)
+                let escapedRange = range.description.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? range.description
+                return Resource(path: "\(basePath)/\(escapedRange)", queryParameters: options, method: .get)
             }
             
             public func get(range: SpreadSheetRange, majorDimension: SpreadSheetDimension) -> Resource<ValueRange> {
