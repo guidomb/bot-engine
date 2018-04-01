@@ -2,6 +2,17 @@ import Foundation
 import OAuth2
 import FeebiKit
 
+extension Token {
+    
+    var asGoogleToken: GoogleAPI.Token? {
+        guard let tokenType = self.TokenType, let tokenValue = self.AccessToken else {
+            return nil
+        }
+        return GoogleAPI.Token(type: tokenType, value: tokenValue)
+    }
+    
+}
+
 let tokenFilename = ".feebi-token"
 let credentialsFilename = "feebi.json"
 let scopes = [
@@ -26,15 +37,20 @@ guard let token = tokenProvider.token else {
 
 let spreadsheetId = "1AFGIF5oSiCfJ6UspooxuxBfCQ7Zyfqbbd3ltjZidqzk"
 guard let range = SpreadSheetRange(from: "'Performance-1-18'!B25:K26") else {
-    print("Invalid spread sheet range")
+    print("Error: Invalid spread sheet range")
     exit(1)
 }
-let service = GoogleSpreadSheetsService(token: GoogleAPIResource.Token(type: token.TokenType!, value: token.AccessToken!))
+guard let googleToken = token.asGoogleToken else {
+    print("Error: Cannot create GoogleAPI.Token")
+    exit(1)
+}
+
 let semaphore = DispatchSemaphore(value: 0)
-service.getValues(
-    spreadSheetId: spreadsheetId,
-    range: range,
-    options: GetValuesOptions(majorDimension: .rows)).startWithResult { result in
+let service = GoogleAPI.spreadSheets
+    .values(spreadSheetId: spreadsheetId)
+    .get(range: range, majorDimension: .rows)
+    .execute(using: googleToken)
+    .startWithResult { result in
         switch result {
         case .success(let response):
             print(response.values)
@@ -43,5 +59,6 @@ service.getValues(
             print(error)
         }
         semaphore.signal()
-}
+    }
+
 _ = semaphore.wait(timeout: DispatchTime.distantFuture)

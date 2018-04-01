@@ -9,49 +9,43 @@ import Foundation
 import ReactiveSwift
 import Result
 
-enum SpreadSheetsResource: GoogleAPIResourceEndpoint {
+public extension GoogleAPI {
     
-    case values(spreadSheetId: String, method: Values)
-    
-    var name: String {
-        return "spreadsheets"
-    }
-    
-    var urlPath: String {
-        switch self {
-        case .values(let spreadSheetId, let method):
-            return "\(spreadSheetId)/values/\(method.urlPath)"
-        }
-    }
-    
-    var httpMethod: String {
-        switch self {
-        case .values(_, let method):
-            return method.httpMethod
-        }
-    }
-    
-    enum Values {
+    public struct SpreadSheets {
         
-        case get(range: SpreadSheetRange, options: GetValuesOptions)
+        static let rootPath = "spreadsheets"
         
-        var urlPath: String {
-            switch self {
-            case .get(let range, let options):
-                let escapedRange = range.description
-                    .addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? range.description
-                return "\(escapedRange)?\(options.asQueryString)"
+        static let shared = SpreadSheets()
+        
+        private init() {}
+        
+        public struct Values {
+            
+            private let basePath: String
+            
+            fileprivate init(spreadSheetId: String) {
+                self.basePath = "\(SpreadSheets.rootPath)/\(spreadSheetId)/values"
             }
+            
+            // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/get
+            public func get(range: SpreadSheetRange, options: GetValuesOptions) -> Resource<ValueRange> {
+                return Resource(path: "\(basePath)/\(range.description)", queryParameters: options, method: .get)
+            }
+            
+            public func get(range: SpreadSheetRange, majorDimension: SpreadSheetDimension) -> Resource<ValueRange> {
+                return get(range: range, options: GetValuesOptions(majorDimension: majorDimension))
+            }
+            
+            
         }
         
-        var httpMethod: String {
-            switch self {
-            case .get:
-                return "GET"
-            }
+        public func values(spreadSheetId: String) -> Values {
+            return Values(spreadSheetId: spreadSheetId)
         }
         
     }
+    
+    public static var spreadSheets: SpreadSheets { return .shared }
     
 }
 
@@ -102,9 +96,9 @@ public struct GetValuesOptions {
     
 }
 
-extension GetValuesOptions {
+extension GetValuesOptions: QueryStringConvertible {
     
-    var asQueryString: String {
+    public var asQueryString: String {
         return  "majorDimension=\(majorDimension)"              +
                 "&valueRenderOption=\(valueRenderOption.rawValue)" +
                 "&dateTimeRenderOption=\(dateTimeRenderOption.rawValue)"
