@@ -29,14 +29,25 @@ public extension GoogleAPI {
             
             // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/get
             public func get(range: SpreadSheetRange, options: GetValuesOptions) -> Resource<ValueRange> {
-                let escapedRange = range.description.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? range.description
-                return Resource(path: "\(basePath)/\(escapedRange)", queryParameters: options, method: .get)
+                return Resource(path: "\(basePath)/\(range.urlEncoded)", queryParameters: options, method: .get)
             }
             
             public func get(range: SpreadSheetRange, majorDimension: SpreadSheetDimension) -> Resource<ValueRange> {
                 return get(range: range, options: GetValuesOptions(majorDimension: majorDimension))
             }
             
+            // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/batchGet
+            public func batchGet(ranges: [SpreadSheetRange], options: GetValuesOptions) -> Resource<BatchValueRange> {
+                return Resource(
+                    path: "\(basePath):batchGet",
+                    queryParameters: "\(ranges.makeQueryString(withKey: "ranges"))&\(options.asQueryString)",
+                    method: .get
+                )
+            }
+            
+            public func batchGet(ranges: [SpreadSheetRange], majorDimension: SpreadSheetDimension) -> Resource<BatchValueRange>{
+                return batchGet(ranges: ranges, options: GetValuesOptions(majorDimension: majorDimension))
+            }
             
         }
         
@@ -80,6 +91,13 @@ public struct ValueRange: Decodable {
     public let values: [[String]]
 }
 
+public struct BatchValueRange: Decodable {
+    
+    public let spreadsheetId: String
+    public let valueRanges: [ValueRange]
+    
+}
+
 public struct GetValuesOptions {
     
     public let majorDimension: SpreadSheetDimension
@@ -107,3 +125,10 @@ extension GetValuesOptions: QueryStringConvertible {
     
 }
 
+extension SpreadSheetRange {
+    
+    var urlEncoded: String {
+        return self.description.urlEncoded
+    }
+    
+}

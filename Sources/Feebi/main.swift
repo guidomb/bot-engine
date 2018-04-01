@@ -47,19 +47,43 @@ guard let googleToken = token.asGoogleToken else {
 
 let semaphore = DispatchSemaphore(value: 0)
 
+GoogleAPI.shared.printDebugCurlCommand = true
+GoogleAPI.shared.printRequest = true
+
 GoogleAPI.spreadSheets
     .values(spreadSheetId: spreadsheetId)
-    .get(range: range, majorDimension: .rows)
+    .batchGet(
+        ranges: [
+            SpreadSheetRange(from: "'Universales-1-18'!B2:B2")!,
+            SpreadSheetRange(from: "'Universales-1-18'!B3:B3")!,
+            SpreadSheetRange(from: "'Universales-1-18'!B6:I9")!
+        ],
+        majorDimension: .rows)
     .execute(using: googleToken)
     .startWithResult { result in
         switch result {
         case .success(let response):
-            print(response.values)
+            print(response.valueRanges)
         case .failure(let error):
-            print("Get values for spread sheet with ID '\(spreadsheetId)' failed.")
+            print("Batch get values for spread sheet with ID '\(spreadsheetId)' failed.")
             print(error)
         }
         semaphore.signal()
     }
+
+//GoogleAPI.spreadSheets
+//    .values(spreadSheetId: spreadsheetId)
+//    .get(range: range, majorDimension: .rows)
+//    .execute(using: googleToken)
+//    .startWithResult { result in
+//        switch result {
+//        case .success(let response):
+//            print(response.values)
+//        case .failure(let error):
+//            print("Get values for spread sheet with ID '\(spreadsheetId)' failed.")
+//            print(error)
+//        }
+//        semaphore.signal()
+//    }
 
 _ = semaphore.wait(timeout: DispatchTime.distantFuture)

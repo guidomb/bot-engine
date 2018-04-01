@@ -9,15 +9,30 @@ import Foundation
 import ReactiveSwift
 import Result
 
-public protocol QueryStringConvertible {
+public protocol GoogleAPIResourceExecutor {
+
+    func execute<T: Decodable>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
+                               session: URLSession) -> GoogleAPI.ResourceProducer<T>
     
-    var asQueryString: String { get }
+    func execute<T>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
+        session: URLSession, deserializer: @escaping GoogleAPI.ResourceDeserializer<T>) -> GoogleAPI.ResourceProducer<T>
     
 }
 
-public struct GoogleAPI {
+extension GoogleAPIResourceExecutor {
     
-    static let shared = GoogleAPI(baseURL: "https://sheets.googleapis.com", version: "v4")
+    public func execute<T: Decodable>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
+                               session: URLSession = .shared) -> GoogleAPI.ResourceProducer<T> {
+        return execute(resource: resource, token: token, session: session) { data, _ in
+            Result { try JSONDecoder().decode(T.self, from: data) }
+        }
+    }
+    
+}
+
+public final class GoogleAPI: GoogleAPIResourceExecutor {
+    
+    public static let shared = GoogleAPI(baseURL: "https://sheets.googleapis.com", version: "v4")
     
     public typealias ResourceProducer<T> = SignalProducer<T, RequestError>
     public typealias ResourceDeserializer<T> = (Data, HTTPURLResponse) -> Result<T, AnyError>
@@ -34,21 +49,31 @@ public struct GoogleAPI {
     public struct Resource<T> {
         
         let path: String
-        let queryParameters: QueryStringConvertible?
+        let queryParameters: () -> String?
         let method: HTTPMethod
         
         var urlPath: String {
-            if let queryString = queryParameters?.asQueryString {
+            if let queryString = queryParameters() {
                 return "\(path)?\(queryString)"
             } else {
                 return path
             }
         }
         
-        init(path: String = "", queryParameters: QueryStringConvertible? = .none, method: HTTPMethod = .get) {
+        init(path: String = "", queryParameters: @autoclosure @escaping () -> String? = .none, method: HTTPMethod = .get) {
             self.path = path
             self.queryParameters = queryParameters
             self.method = method
+        }
+        
+        init(path: String = "", queryParameters: @escaping () -> String?, method: HTTPMethod = .get) {
+            self.path = path
+            self.queryParameters = queryParameters
+            self.method = method
+        }
+        
+        init(path: String = "", queryParameters: QueryStringConvertible, method: HTTPMethod = .get) {
+            self.init(path: path, queryParameters: queryParameters.asQueryString, method: method)
         }
         
         func with(method: HTTPMethod) -> Resource {
@@ -101,34 +126,18 @@ public struct GoogleAPI {
         
     }
     
+    public var printDebugCurlCommand = false
+    public var printRequest = false
     private let baseURL: String
     private let version: String
+    
     
     init(baseURL: String, version: String) {
         self.baseURL = baseURL
         self.version = version
     }
     
-    func absoluteUrl<T>(for resource: GoogleAPI.Resource<T>) -> URL {
-        return URL(string: "\(baseURL)/\(version)/\(resource.urlPath)")!
-    }
-    
-    func urlRequest<T>(for resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token) -> URLRequest {
-        var request = URLRequest(url: absoluteUrl(for: resource))
-        request.httpMethod = resource.method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(token.authorizationHeaderValue, forHTTPHeaderField: "Authorization")
-        return request
-    }
-    
-    func execute<T: Decodable>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
-                    session: URLSession = .shared) -> ResourceProducer<T> {
-        return execute(resource: resource, token: token, session: session) { data, _ in
-            Result { try JSONDecoder().decode(T.self, from: data) }
-        }
-    }
-    
-    func execute<T>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
+    public func execute<T>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
                     session: URLSession = .shared, deserializer: @escaping ResourceDeserializer<T>) -> ResourceProducer<T> {
         let request = urlRequest(for: resource, token: token)
         return session.reactive.data(with: request)
@@ -148,14 +157,40 @@ public struct GoogleAPI {
                 default:
                     return ResourceProducer(error: .unexpectedResponseStatusCode(httpResponse.statusCode))
                 }
-        }
+            }
+            .on(starting: {
+                if self.printRequest {
+                    print("GoogleAPI executing request:")
+                    print("\(resource.method.rawValue) '\(resource.urlPath)'")
+                }
+                if self.printDebugCurlCommand {
+                    let headers = request.allHTTPHeaderFields?.map { "-H '\($0): \($1)'" }.joined(separator: " ") ??
+                        ""
+                    print("\n------------------------------------------")
+                    print("curl -v \(headers) -X \(resource.method.rawValue) '\(request.url!.absoluteString)'")
+                    print("------------------------------------------\n")
+                }
+            })
+    }
+    
+    func absoluteUrl<T>(for resource: GoogleAPI.Resource<T>) -> URL {
+        return URL(string: "\(baseURL)/\(version)/\(resource.urlPath)")!
+    }
+    
+    func urlRequest<T>(for resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token) -> URLRequest {
+        var request = URLRequest(url: absoluteUrl(for: resource))
+        request.httpMethod = resource.method.rawValue
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(token.authorizationHeaderValue, forHTTPHeaderField: "Authorization")
+        return request
     }
 }
 
 public extension GoogleAPI.Resource where T: Decodable {
     
-    func execute(using token: GoogleAPI.Token, session: URLSession = .shared)  -> GoogleAPI.ResourceProducer<T> {
-        return GoogleAPI.shared.execute(resource: self, token: token, session: session)
+    func execute(using token: GoogleAPI.Token,
+                 with executor: GoogleAPIResourceExecutor = GoogleAPI.shared)  -> GoogleAPI.ResourceProducer<T> {
+        return executor.execute(resource: self, token: token)
     }
     
 }
