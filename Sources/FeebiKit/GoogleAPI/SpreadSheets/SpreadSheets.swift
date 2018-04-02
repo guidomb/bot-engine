@@ -96,6 +96,14 @@ public struct BatchValueRange: Decodable {
     public let spreadsheetId: String
     public let valueRanges: [ValueRange]
     
+    var count: Int {
+        return valueRanges.count
+    }
+    
+    subscript(index: Int) -> [[String]] {
+        return self.valueRanges[index].values
+    }
+    
 }
 
 public struct GetValuesOptions {

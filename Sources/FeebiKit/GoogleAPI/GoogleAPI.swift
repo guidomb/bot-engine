@@ -113,6 +113,10 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
     }
     
     public struct ResourceError: Error, Decodable {
+
+        public static func create(code: UInt, message: String, status: String) -> ResourceError {
+            return ResourceError(error: ErrorInfo(code: code, message: message, status: status))
+        }
         
         public struct ErrorInfo: Decodable {
             
