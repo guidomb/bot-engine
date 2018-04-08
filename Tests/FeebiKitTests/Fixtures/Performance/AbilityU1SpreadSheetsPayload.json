@@ -1,67 +1,67 @@
 {
-    "spreadsheetId": "1AFGIF5oSiCfJ6UspooxuxBfCQ7Zyfqbbd3ltjZidqzk",
-    "valueRanges": [
-                    {
-                    "range": "'Universales-1-18'!B2",
-                    "majorDimension": "ROWS",
-                    "values": [
-                               [
-                                "U1: Compromiso con Wolox"
-                                ]
-                               ]
-                    },
-                    {
-                    "range": "'Universales-1-18'!B3",
-                    "majorDimension": "ROWS",
-                    "values": [
-                               [
-                                "Capacidad para sentir como propios los objetivos de la empresa, armonizando con responsabilidad y entusiasmo los anhelos personales y perspectiva profesional de carrera a la visión de Wolox. Implica la adhesión y promoción de nuestros valores. "
-                                ]
-                               ]
-                    },
-                    {
-                    "range": "'Universales-1-18'!B6:I9",
-                    "majorDimension": "ROWS",
-                    "values": [
-                               [
-                                "A) Acciones en relación a los valores de Wolox",
-                                "Demuestra respeto por los valores de Wolox y actúa de acuerdo a los mismos en su día a día de trabajo.",
-                                "Incentiva a los miembros de su equipo de trabajo a obrar según los valores de Wolox.",
-                                "Participa activamente de la generación de cultura dentro de Wolox y transmite entusiasmo a los miembros de la empresa por ser parte de Wolox.",
-                                "Conduce la visión, misión y los valores de la cultura de Wolox y genera en todos sus integrantes la capacidad para sentirla como propia; transmite pasión por ser parte de la empresa tanto dentro como fuera de Wolox.",
-                                "2",
-                                "Casi siempre",
-                                "Ponerle foco a generar nuevas instancias de cultura"
-                                ],
-                               [
-                                "B) Acciones en relación a objetivos de trabajo",
-                                "Cumple con los objetivos planteados para su puesto de trabajo y los siente como propios.",
-                                "Supera los resultados esperados y trabaja en pos de mejorarlos.",
-                                "Coordina criteriosamente los esfuerzos dentro de su área de trabajo y logra el cumplimiento de los objetivos grupales.",
-                                "Coordina criteriosamente los esfuerzos de distintas áreas dentro de la empresa tomando bajo su responsabilidad el rendimiento sistémico de las mismas.",
-                                "2",
-                                "Casi siempre",
-                                "Ver de coordinar esfuerzos en las areas, o de innov o de ios (coordinar dirección estrategica, ver en ; librerias apostear yen cuales no, tomar decisiones de dirección en wolmo, reuinones de iOS)"
-                                ],
-                               [
-                                "C) Toma de responsabilidad",
-                                "Asume responsabilidad por la calidad de su producción cotidiana.",
-                                "Incentiva a los miembros de su equipo de trabajo a asumir responsabilidad por la calidad de su producción cotidiana.",
-                                "Asume responsabilidad por la calidad de la producción cotidiana de su área de trabajo.",
-                                "Asume responsabilidad por la calidad de la producción de Wolox en tanto sistema.",
-                                "2",
-                                "Casi siempre"
-                                ],
-                               [
-                                "D) Acciones en relación a los procesos de trabajo",
-                                "Respeta los procesos estipulados y/o ciclos definidos dentro de su área de trabajo.",
-                                "Concibe a los procesos dentro de su área como imprescindibles e incentiva a los miembros de su equipo a trabajar según los mismos.",
-                                "Crea, optimiza y conduce los procesos estipulados dentro de su área de trabajo.",
-                                "Coordina criteriosamente los procesos de trabajo de distintas áreas orientando sus esfuerzos hacia los objetivos y la visión de Wolox.",
-                                "2",
-                                "Casi siempre"
-                                ]
-                               ]
-                    }
-                    ]
+  "spreadsheetId": "1AFGIF5oSiCfJ6UspooxuxBfCQ7Zyfqbbd3ltjZidqzk",
+  "valueRanges": [
+    {
+      "range": "'Universales-1-18'!B2",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U1: Compromiso con Wolox"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B3",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad para sentir como propios los objetivos de la empresa, armonizando con responsabilidad y entusiasmo los anhelos personales y perspectiva profesional de carrera a la visión de Wolox. Implica la adhesión y promoción de nuestros valores. "
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B6:I9",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Acciones en relación a los valores de Wolox",
+          "Demuestra respeto por los valores de Wolox y actúa de acuerdo a los mismos en su día a día de trabajo.",
+          "Incentiva a los miembros de su equipo de trabajo a obrar según los valores de Wolox.",
+          "Participa activamente de la generación de cultura dentro de Wolox y transmite entusiasmo a los miembros de la empresa por ser parte de Wolox.",
+          "Conduce la visión, misión y los valores de la cultura de Wolox y genera en todos sus integrantes la capacidad para sentirla como propia; transmite pasión por ser parte de la empresa tanto dentro como fuera de Wolox.",
+          "2",
+          "Casi siempre",
+          "Ponerle foco a generar nuevas instancias de cultura"
+        ],
+        [
+          "B) Acciones en relación a objetivos de trabajo",
+          "Cumple con los objetivos planteados para su puesto de trabajo y los siente como propios.",
+          "Supera los resultados esperados y trabaja en pos de mejorarlos.",
+          "Coordina criteriosamente los esfuerzos dentro de su área de trabajo y logra el cumplimiento de los objetivos grupales.",
+          "Coordina criteriosamente los esfuerzos de distintas áreas dentro de la empresa tomando bajo su responsabilidad el rendimiento sistémico de las mismas.",
+          "2",
+          "Casi siempre",
+          "Ver de coordinar esfuerzos en las areas, o de innov o de ios (coordinar dirección estrategica, ver en ; librerias apostear yen cuales no, tomar decisiones de dirección en wolmo, reuinones de iOS)"
+        ],
+        [
+          "C) Toma de responsabilidad",
+          "Asume responsabilidad por la calidad de su producción cotidiana.",
+          "Incentiva a los miembros de su equipo de trabajo a asumir responsabilidad por la calidad de su producción cotidiana.",
+          "Asume responsabilidad por la calidad de la producción cotidiana de su área de trabajo.",
+          "Asume responsabilidad por la calidad de la producción de Wolox en tanto sistema.",
+          "2",
+          "Casi siempre"
+        ],
+        [
+          "D) Acciones en relación a los procesos de trabajo",
+          "Respeta los procesos estipulados y/o ciclos definidos dentro de su área de trabajo.",
+          "Concibe a los procesos dentro de su área como imprescindibles e incentiva a los miembros de su equipo a trabajar según los mismos.",
+          "Crea, optimiza y conduce los procesos estipulados dentro de su área de trabajo.",
+          "Coordina criteriosamente los procesos de trabajo de distintas áreas orientando sus esfuerzos hacia los objetivos y la visión de Wolox.",
+          "2",
+          "Casi siempre"
+        ]
+      ]
+    }
+  ]
 }

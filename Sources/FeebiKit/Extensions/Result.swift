@@ -29,3 +29,20 @@ func <*><Value, Error: Swift.Error, B>(lhs: Result<(Value) ->B, Error>, rhs: Res
         return .failure(error)
     }
 }
+
+extension Result {
+    
+    static func lift<Value, Error: Swift.Error>(_ array: [Result<Value, Error>]) -> Result<[Value], Error> {
+        var values: [Value] = []
+        for result in array {
+            switch result {
+            case .success(let value):
+                values.append(value)
+            case .failure(let error):
+                return .failure(error)
+            }
+        }
+        return .success(values)
+    }
+    
+}

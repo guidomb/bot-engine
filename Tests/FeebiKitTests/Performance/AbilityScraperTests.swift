@@ -28,7 +28,18 @@ class AbilityScraperTests: XCTestCase {
         let scraper = AbilityScraper(mapper: mapper, executor: resourceExecutor)
         
         let result = scraper.scrap(spreadSheetId: spreadSheetId, token: token).first()!
-        XCTAssertEqual(result.value, expectedAbility)
+        XCTAssertEqual(result.value, [expectedAbility])
+    }
+    
+    func testScrapWithValidAbilities() {
+        let expectedAbility = try! fixtureManager.loadFixture(in: "Performance/AbilityU1.json", as: Ability.self)
+        let mapper = AbilityScraper.RangeMapper.abilityU1
+        resourceExecutor.setFixtureAsResourceResponse(fixturePath: "Performance/AbilitiesU1SpreadSheetsPayload.json")
+        
+        let scraper = AbilityScraper(mappers: [mapper, mapper, mapper], executor: resourceExecutor)
+        
+        let result = scraper.scrap(spreadSheetId: spreadSheetId, token: token).first()!
+        XCTAssertEqual(result.value, [expectedAbility, expectedAbility, expectedAbility])
     }
     
 }

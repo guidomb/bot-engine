@@ -11,18 +11,23 @@ import Result
 
 public struct AbilityScraper {
     
-    public typealias AbilityProducer = SignalProducer<Ability, ScraperError>
-    public typealias AbilityResult = Result<Ability, AbilityScraper.ScraperError>
+    public typealias AbilityProducer = SignalProducer<[Ability], ScraperError>
+    public typealias AbilityBatchResult = Result<[Ability], ScraperError>
+    public typealias AbilityResult = Result<Ability, ScraperError>
     
-    public enum ScraperError: Error {
+    public indirect enum ScraperError: Error {
         
         case parsingError(message: String, cells: [[String]])
         case missingCellRanges(ranges: [ValueRange], expectedCount: UInt)
         case requestError(GoogleAPI.RequestError)
-
+        
     }
     
     public struct RangeMapper {
+        
+        static var ranges: [KeyPath<RangeMapper, SpreadSheetRange>] {
+            return [\RangeMapper.title, \RangeMapper.description, \RangeMapper.attributes]
+        }
         
         let title: SpreadSheetRange
         let description: SpreadSheetRange
@@ -35,23 +40,27 @@ public struct AbilityScraper {
         }
         
         var ranges: [SpreadSheetRange] {
-            return [title, description, attributes]
+            return RangeMapper.ranges.map { self[keyPath: $0] }
         }
     
     }
     
-    let mapper: RangeMapper
+    let mappers: [RangeMapper]
     let executor: GoogleAPIResourceExecutor
     
     public init(mapper: RangeMapper, executor: GoogleAPIResourceExecutor = GoogleAPI.shared) {
-        self.mapper = mapper
+        self.init(mappers: [mapper], executor: executor)
+    }
+    
+    public init(mappers: [RangeMapper], executor: GoogleAPIResourceExecutor = GoogleAPI.shared) {
+        self.mappers = mappers
         self.executor = executor
     }
     
     public func scrap(spreadSheetId: String, token: GoogleAPI.Token) -> AbilityProducer {
         return GoogleAPI.spreadSheets
             .values(spreadSheetId: spreadSheetId)
-            .batchGet(ranges: mapper.ranges, majorDimension: .rows)
+            .batchGet(ranges: cellRanges, majorDimension: .rows)
             .execute(using: token, with: executor)
             .mapError(ScraperError.requestError)
             .flatMap(.concat, abilityParser)
@@ -61,14 +70,18 @@ public struct AbilityScraper {
 
 fileprivate extension AbilityScraper {
     
+    var cellRanges: [SpreadSheetRange] {
+        return mappers.flatMap { $0.ranges }
+    }
+    
     func abilityParser(batchResponse: BatchValueRange) -> AbilityScraper.AbilityProducer {
-        let expectedRangesCount = UInt(mapper.ranges.count)
+        let expectedRangesCount = UInt(cellRanges.count)
         guard batchResponse.count == expectedRangesCount else {
             return missingCellRanges(batchResponse, expectedRangesCount)
         }
         
-        return AbilityScraper.AbilityProducer {
-            Ability.from(batchResponse)
+        return AbilityProducer {
+            AbilityResult.lift(batchResponse.mapableCellRanges().map(Ability.from))
         }
     }
 
@@ -84,13 +97,24 @@ fileprivate extension Ability {
         }
     }
     
-    static func from(_ batchResponse: BatchValueRange) -> AbilityScraper.AbilityResult {
+    static func from(_ batchResponse: [ValueRange]) -> AbilityScraper.AbilityResult {
         return Ability.create
-            <^> parseAbilityTitle(batchResponse[0])
-            <*> parseAbilityDescription(batchResponse[1])
-            <*> parseAbilityAttributes(batchResponse[2])
+            <^> parseAbilityTitle(batchResponse[0].values)
+            <*> parseAbilityDescription(batchResponse[1].values)
+            <*> parseAbilityAttributes(batchResponse[2].values)
     }
     
+    
+}
+
+fileprivate extension BatchValueRange {
+    
+    func mapableCellRanges() -> [[ValueRange]] {
+        let chunkSize = AbilityScraper.RangeMapper.ranges.count
+        return stride(from: 0, to: valueRanges.count, by: chunkSize).map {
+            Array(valueRanges[$0..<Swift.min($0 + chunkSize, valueRanges.count)])
+        }
+    }
     
 }
 
