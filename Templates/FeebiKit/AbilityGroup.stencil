@@ -1,0 +1,13 @@
+{% for type in types.implementing.AbilityGroupMapper %}
+
+extension {{ type.name }} {
+
+  public var rangeMappers: [AbilityScraper.RangeMapper] {
+    return [
+      {% for variable in type.instanceVariables %}{% if variable.type.name == "AbilityScraper.RangeMapper" %} {{ variable.name }}{% if not forloop.last %},{% endif %}{% endif %}
+      {% endfor %}
+    ]
+  }
+
+}
+{% endfor %}

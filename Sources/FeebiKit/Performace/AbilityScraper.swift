@@ -48,6 +48,10 @@ public struct AbilityScraper {
     let mappers: [RangeMapper]
     let executor: GoogleAPIResourceExecutor
     
+    public init(abilityGroupMapper: AbilityGroupMapper, executor: GoogleAPIResourceExecutor = GoogleAPI.shared) {
+        self.init(mappers: abilityGroupMapper.rangeMappers, executor: executor)
+    }
+    
     public init(mapper: RangeMapper, executor: GoogleAPIResourceExecutor = GoogleAPI.shared) {
         self.init(mappers: [mapper], executor: executor)
     }

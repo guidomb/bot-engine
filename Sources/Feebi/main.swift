@@ -50,7 +50,8 @@ let semaphore = DispatchSemaphore(value: 0)
 GoogleAPI.shared.printDebugCurlCommand = true
 GoogleAPI.shared.printRequest = true
 
-AbilityScraper(mapper: AbilityScraper.RangeMapper.abilityU1)
+let mapper = UniversalAbilityGroupMapper(spreadSheetName: "Universales-1-18")
+AbilityScraper(abilityGroupMapper: mapper)
     .scrap(spreadSheetId: spreadsheetId, token: googleToken)
     .startWithResult { result in
         switch result {
