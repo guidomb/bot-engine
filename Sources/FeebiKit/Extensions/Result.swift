@@ -32,7 +32,7 @@ func <*><Value, Error: Swift.Error, B>(lhs: Result<(Value) ->B, Error>, rhs: Res
 
 extension Result {
     
-    static func lift<Value, Error: Swift.Error>(_ array: [Result<Value, Error>]) -> Result<[Value], Error> {
+    static func sequence<Value, Error: Swift.Error>(_ array: [Result<Value, Error>]) -> Result<[Value], Error> {
         var values: [Value] = []
         for result in array {
             switch result {

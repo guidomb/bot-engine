@@ -85,7 +85,7 @@ fileprivate extension AbilityScraper {
         }
         
         return AbilityProducer {
-            AbilityResult.lift(batchResponse.mapableCellRanges().map(Ability.from))
+            AbilityResult.sequence(batchResponse.mapableCellRanges().map(Ability.from))
         }
     }
 
