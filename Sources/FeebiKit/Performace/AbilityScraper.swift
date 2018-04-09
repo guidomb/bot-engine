@@ -26,7 +26,11 @@ public struct AbilityScraper {
     public struct RangeMapper {
         
         static var ranges: [KeyPath<RangeMapper, SpreadSheetRange>] {
-            return [\RangeMapper.title, \RangeMapper.description, \RangeMapper.attributes]
+            return [
+                \RangeMapper.title,
+                \RangeMapper.description,
+                \RangeMapper.attributes
+            ]
         }
         
         let title: SpreadSheetRange
