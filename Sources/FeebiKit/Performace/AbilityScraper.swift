@@ -111,6 +111,24 @@ fileprivate extension Ability {
     
 }
 
+fileprivate extension Ability.Attribute {
+    
+    static func create(attributeCells: [String]) -> (Level?) -> (Frequency?) -> Ability.Attribute {
+        return { level in
+            return { frequency in
+                Ability.Attribute(
+                    name: String(attributeCells[0].dropFirst(3)),
+                    level: level,
+                    levelDescriptions: Array(attributeCells[1 ... 4]),
+                    frequency: frequency,
+                    comment: attributeCells.count == 8 ? attributeCells[7] : nil
+                )
+            }
+        }
+    }
+    
+}
+
 fileprivate extension BatchValueRange {
     
     func mapableCellRanges() -> [[ValueRange]] {
@@ -124,29 +142,48 @@ fileprivate extension BatchValueRange {
 
 fileprivate func parseAbilityAttributes(_ cells: [[String]])
     -> Result<[Ability.Attribute], AbilityScraper.ScraperError> {
-        var attributes: [Ability.Attribute] = []
-        for attributeCells in cells {
-            guard attributeCells.count >= 7 else {
-                return .failure(.parsingError(message: "Invalid attribute cells", cells: cells))
-            }
-            guard let level = UInt(attributeCells[5]).flatMap(Ability.Attribute.Level.init) else {
-                return .failure(.parsingError(message: "Invalid attribute level '\(attributeCells[2])'", cells: cells))
-            }
-            guard let frequency = Ability.Attribute.Frequency(rawValue: attributeCells[6].lowercased()) else {
-                return .failure(.parsingError(message: "Invalid attribute frecuency '\(attributeCells[6])'", cells: cells))
-            }
-            let attribute = Ability.Attribute(
-                name: String(attributeCells[0].dropFirst(3)),
-                level: level,
-                levelDescriptions: Array(attributeCells[1 ... 4]),
-                frequency: frequency,
-                comment: attributeCells.count == 8 ? attributeCells[7] : nil
-            )
-            
-            attributes.append(attribute)
+    return .sequence(cells.map(parseAbilityAttribute(cells)))
+}
+
+fileprivate func parseAbilityAttribute(_ cells: [[String]]) -> ([String])
+    -> Result<Ability.Attribute, AbilityScraper.ScraperError> {
+    return { attributeCells in
+        // When cells are blank SpreadSheet API does not return the cells.
+        // Level, frequency and comments can be blank.
+        guard attributeCells.count >= 5 else {
+            return .failure(.parsingError(message: "Invalid attribute cells", cells: cells))
         }
         
-        return .success(attributes)
+        return Ability.Attribute.create(attributeCells: attributeCells)
+            <^> parseLevel(attributeCells, cells)
+            <*> parseFrequency(attributeCells, cells)
+    }
+}
+
+fileprivate func parseLevel(_ attributeCells: [String], _ cells: [[String]])
+    -> Result<Ability.Attribute.Level?, AbilityScraper.ScraperError> {
+    guard attributeCells.count >= 6 else {
+        return .success(.none)
+    }
+    
+    if let level = UInt(attributeCells[5]).flatMap(Ability.Attribute.Level.init) {
+        return .success(level)
+    } else {
+        return .failure(.parsingError(message: "Invalid attribute level '\(attributeCells[5])'", cells: cells))
+    }
+}
+
+fileprivate func parseFrequency(_ attributeCells: [String], _ cells: [[String]])
+    -> Result<Ability.Attribute.Frequency?, AbilityScraper.ScraperError> {
+    guard attributeCells.count >= 7 else {
+        return .success(.none)
+    }
+    
+    if let frequency = Ability.Attribute.Frequency(rawValue: attributeCells[6].lowercased()) {
+        return .success(frequency)
+    } else {
+        return .failure(.parsingError(message: "Invalid attribute frecuency '\(attributeCells[6])'", cells: cells))
+    }
 }
 
 fileprivate func parseAbilityDescription(_ cells: [[String]])

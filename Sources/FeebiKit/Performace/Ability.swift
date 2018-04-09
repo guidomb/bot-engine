@@ -30,9 +30,9 @@ public struct Ability: Equatable, Codable {
         }
         
         public let name: String
-        public let level: Level
+        public let level: Level?
         public let levelDescriptions: [String]
-        public let frequency: Frequency
+        public let frequency: Frequency?
         public let comment: String?
         
         public func description(for level: Level) -> String {

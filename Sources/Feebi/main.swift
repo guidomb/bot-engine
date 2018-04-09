@@ -1,6 +1,8 @@
 import Foundation
 import OAuth2
 import FeebiKit
+import ReactiveSwift
+import Result
 
 extension Token {
     
@@ -11,6 +13,14 @@ extension Token {
         return GoogleAPI.Token(type: tokenType, value: tokenValue)
     }
     
+}
+
+func encodeAbilities(_ abilities: [Ability]) -> SignalProducer<Data, AnyError> {
+    return SignalProducer {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        return try encoder.encode(abilities)
+    }
 }
 
 let tokenFilename = ".feebi-token"
@@ -53,10 +63,16 @@ GoogleAPI.shared.printRequest = true
 let mapper = UniversalAbilityGroupMapper(spreadSheetName: "Universales-1-18")
 AbilityScraper(abilityGroupMapper: mapper)
     .scrap(spreadSheetId: spreadsheetId, token: googleToken)
+    .mapError(AnyError.init)
+    .flatMap(.concat, encodeAbilities)
     .startWithResult { result in
         switch result {
-        case .success(let ability):
-            print(ability)
+        case .success(let abilities):
+            if let json = String(data: abilities, encoding: .utf8) {
+                print(json)
+            } else {
+                print("Cannot transform JSON data to String!")
+            }
         case .failure(let error):
             print("Error scraping ability for spread sheet '\(spreadsheetId)':")
             print(error)

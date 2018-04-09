@@ -22,7 +22,7 @@ class AbilityScraperTests: XCTestCase {
     
     func testScrapWithValidAbility() {
         let expectedAbility = try! fixtureManager.loadFixture(in: "Performance/AbilityU1.json", as: Ability.self)
-        let mapper = AbilityScraper.RangeMapper.abilityU1
+        let mapper = UniversalAbilityGroupMapper(spreadSheetName: "SomeSpreadSheetName").abilityU1
         resourceExecutor.setFixtureAsResourceResponse(fixturePath: "Performance/AbilityU1SpreadSheetsPayload.json")
 
         let scraper = AbilityScraper(mapper: mapper, executor: resourceExecutor)
@@ -32,14 +32,14 @@ class AbilityScraperTests: XCTestCase {
     }
     
     func testScrapWithValidAbilities() {
-        let expectedAbility = try! fixtureManager.loadFixture(in: "Performance/AbilityU1.json", as: Ability.self)
-        let mapper = AbilityScraper.RangeMapper.abilityU1
-        resourceExecutor.setFixtureAsResourceResponse(fixturePath: "Performance/AbilitiesU1SpreadSheetsPayload.json")
+        let expectedAbilities = try! fixtureManager.loadFixture(in: "Performance/UniversalAbilityGroup.json", as: [Ability].self)
+        let mapper = UniversalAbilityGroupMapper(spreadSheetName: "SomeSpreadSheetName")
+        resourceExecutor.setFixtureAsResourceResponse(fixturePath: "Performance/UniversalAbilityGroupSpreadSheetsPayload.json")
         
-        let scraper = AbilityScraper(mappers: [mapper, mapper, mapper], executor: resourceExecutor)
+        let scraper = AbilityScraper(abilityGroupMapper: mapper, executor: resourceExecutor)
         
         let result = scraper.scrap(spreadSheetId: spreadSheetId, token: token).first()!
-        XCTAssertEqual(result.value, [expectedAbility, expectedAbility, expectedAbility])
+        XCTAssertEqual(result.value, expectedAbilities)
     }
     
 }

@@ -1,0 +1,676 @@
+{
+  "spreadsheetId": "1AFGIF5oSiCfJ6UspooxuxBfCQ7Zyfqbbd3ltjZidqzk",
+  "valueRanges": [
+    {
+      "range": "'Universales-1-18'!B2",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U1: Compromiso con Wolox"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B3",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad para sentir como propios los objetivos de la empresa, armonizando con responsabilidad y entusiasmo los anhelos personales y perspectiva profesional de carrera a la visión de Wolox. Implica la adhesión y promoción de nuestros valores. "
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B6:I9",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Acciones en relación a los valores de Wolox",
+          "Demuestra respeto por los valores de Wolox y actúa de acuerdo a los mismos en su día a día de trabajo.",
+          "Incentiva a los miembros de su equipo de trabajo a obrar según los valores de Wolox.",
+          "Participa activamente de la generación de cultura dentro de Wolox y transmite entusiasmo a los miembros de la empresa por ser parte de Wolox.",
+          "Conduce la visión, misión y los valores de la cultura de Wolox y genera en todos sus integrantes la capacidad para sentirla como propia; transmite pasión por ser parte de la empresa tanto dentro como fuera de Wolox.",
+          "2",
+          "Casi siempre",
+          "Ponerle foco a generar nuevas instancias de cultura"
+        ],
+        [
+          "B) Acciones en relación a objetivos de trabajo",
+          "Cumple con los objetivos planteados para su puesto de trabajo y los siente como propios.",
+          "Supera los resultados esperados y trabaja en pos de mejorarlos.",
+          "Coordina criteriosamente los esfuerzos dentro de su área de trabajo y logra el cumplimiento de los objetivos grupales.",
+          "Coordina criteriosamente los esfuerzos de distintas áreas dentro de la empresa tomando bajo su responsabilidad el rendimiento sistémico de las mismas.",
+          "2",
+          "Casi siempre",
+          "Ver de coordinar esfuerzos en las areas, o de innov o de ios (coordinar dirección estrategica, ver en ; librerias apostear yen cuales no, tomar decisiones de dirección en wolmo, reuinones de iOS)"
+        ],
+        [
+          "C) Toma de responsabilidad",
+          "Asume responsabilidad por la calidad de su producción cotidiana.",
+          "Incentiva a los miembros de su equipo de trabajo a asumir responsabilidad por la calidad de su producción cotidiana.",
+          "Asume responsabilidad por la calidad de la producción cotidiana de su área de trabajo.",
+          "Asume responsabilidad por la calidad de la producción de Wolox en tanto sistema.",
+          "2",
+          "Casi siempre"
+        ],
+        [
+          "D) Acciones en relación a los procesos de trabajo",
+          "Respeta los procesos estipulados y/o ciclos definidos dentro de su área de trabajo.",
+          "Concibe a los procesos dentro de su área como imprescindibles e incentiva a los miembros de su equipo a trabajar según los mismos.",
+          "Crea, optimiza y conduce los procesos estipulados dentro de su área de trabajo.",
+          "Coordina criteriosamente los procesos de trabajo de distintas áreas orientando sus esfuerzos hacia los objetivos y la visión de Wolox.",
+          "2",
+          "Casi siempre"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B12",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U2: Trabajo en Equipo"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B13",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad para trabajar en cooperación con los demás, siendo parte de un mismo equipo de trabajo, en pos de las estrategias de Wolox priorizando objetivos grupales por sobre intereses propios. Implica tener expectativas positivas respecto de los demás, comprender a los otros - tener empatía -, crear sinergias y generar un buen clima de trabajo."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B16:I20",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Acciones de cooperación",
+          "Coopera activamente con su equipo de trabajo contribuyendo con el cumplimiento de objetivos de trabajo grupales.",
+          "Coopera activamente con personas fuera de su equipo inmediato de trabajo, contribuyendo con el cumplimiento de objetivos comunes.",
+          "Fomenta un espíritu cooperativo dentro de su área de trabajo y colabora con otras áreas contribuyendo con las estrategias de Wolox en su conjunto.",
+          "Promueve un espíritu de cooperación en todo Wolox, generando sinergia entre las distintas áreas y orienta su trabajo, el de pares y colaboradores hacia la realización de las estrategias de Wolox.",
+          "3",
+          "Algunas veces",
+          "Mejorar la cooperación con otras áreas más explícitamente"
+        ],
+        [
+          "B) Acciones de reconocimiento de éxitos y aportes de otros",
+          "Reconoce los éxitos y aportes de su equipo trabajo.",
+          "Reconoce los éxitos y aportes tanto de su equipo inmediato de trabajo como otros equipos.",
+          "Expresa satisfacción por los logros de los miembros de su área y brinda feedback constructivo acerca del trabajo realizado.",
+          "Contribuye con el crecimiento y progreso de los demás a través de acciones definidas.",
+          "3",
+          "Algunas veces",
+          "Dar más feedback a sus pares"
+        ],
+        [
+          "C) Énfasis en objetivos grupales por sobre intereses personales",
+          "Supedita sus intereses personales a los objetivos grupales a fin de contribuir a la realización de los mismos.",
+          "Prioriza la realización de objetivos comunes, incluso si estos involucran a varios equipos de trabajo.",
+          "Prioriza los objetivos estratégicos de Wolox por sobre los propios, contribuyendo con la realización de los mismos.",
+          "Coordina el trabajo conjunto y establece sinergias entre las distintas áreas de la empresa capaces de contribuir a la realización de los objetivos estratégicos de Wolox.",
+          "2",
+          "Casi siempre"
+        ],
+        [
+          "D) Acciones de apoyo hacia el trabajo de otros",
+          "Apoya el trabajo de su equipo.",
+          "Apoya el trabajo de otros equipos diferentes del suyo.",
+          "Crea sinergias positivas con otras áreas contribuyendo a realizar sus objetivos estratégicos",
+          "Promueve la sinergia entre las distintas áreas, favoreciendo así el logro de los objetivos estratégicos de Wolox.",
+          "2",
+          "Casi siempre",
+          "Tratar de darse lugar para poder interactuar con otras areas y crear sinergias "
+        ],
+        [
+          "E) Acciones de soporte y contención",
+          "Brinda a los miembros de su equipo espacios de contención cuando lo requieren.",
+          "Actúa de soporte hacia personas por fuera de su equipo inmediato.",
+          "Es un referente para quienes necesitan soporte en su área.",
+          "Es un referente dentro de Wolox como persona que da espacio a la contención y ayuda en problemáticas de diferentes índoles."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B23",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U3: Partnership"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B24",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad para actuar con sensibilidad ante las necesidades de un cliente y/o conjunto de clientes, actuales o potenciales, externos o internos, que puedan presentarse en el transcurso del trabajo conjunto. Implica empatizar con su perspectiva, comprender adecuadamente su modo de ver las cosas y sus demandas y adoptar - en la medida de lo adecuado a su rol - sus objetivos como propios. Implica una clara vocación de servicio al cliente interno y externo y la capacidad para generar soluciones efectivas a sus necesidades."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B27:I32",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Indicadores de compromiso con el cliente",
+          "Interpreta las necesidades del cliente, sea interno o externo y atiende sus inquietudes en la medida de sus posibilidades.",
+          "Enfoca su trabajo del día a día a comprender los objetivos del cliente y toma acciones para lograr el cumplimiento de los mismos.",
+          "Comprende con claridad los objetivos del cliente y los siente como propios en la medida de lo adecuado a su rol.",
+          "Crea dentro de Wolox un ambiente adecuado para que todos puedan trabajar en pos de cumplir los objetivos del cliente, tanto externo como interno, sintiéndolos como propios.",
+          "2",
+          "En la mayoría de los casos"
+        ],
+        [
+          "B) Acciones en relación al cliente",
+          "Soluciona los problemas del cliente y cuando la respuesta adecuada no se encuentra a su alcance busca la ayuda y/o asesoramiento de las personas pertinentes.",
+          "Se mantiene atento y comprende las necesidades del cliente, escucha sus pedidos y problemas proponiendo dentro de su equipo de trabajo soluciones posibles a los mismos.",
+          "Se anticipa a los pedidos del cliente y busca permanentemente la forma de resolver sus necesidades.",
+          "Diseña políticas y procesos que brindan soluciones de excelencia para todos los clientes de la empresa. Logra el reconocimiento a través del valor agregado que Wolox ofrece como organización.",
+          "3",
+          "Algunas veces"
+        ],
+        [
+          "C) Respuestas brindadas al cliente",
+          "Brinda respuestas adecuadas al cliente, sea interno o externo, en tiempo y forma.",
+          "Aplica respuestas eficientes, efectivas y satisfactorias.",
+          "Logra dar soluciones de excelencia a las necesidades del cliente, superando sus expectativas.",
+          "Implementa soluciones de excelencia centradas en la satisfacción del cliente interno y externo con una visión estratégica, de largo plazo.",
+          "2",
+          "En la mayoría de los casos"
+        ],
+        [
+          "D) Acciones de promoción de la satisfacción del cliente",
+          "Orienta sus tareas del día a día de trabajo a satisfacer las necesidades del cliente.",
+          "Promueve dentro de su equipo acciones en pos de la satisfacción del cliente, sea interno o externo.",
+          "Propone en su área acciones de mejora tendientes a incrementar el nivel de satisfacción del cliente y el nivel de compromiso de los integrantes de su área en relación a los objetivos de los clientes.",
+          "Promueve dentro de Wolox la definición de cliente, sea interno o externo, como socio.",
+          "2",
+          "En la mayoría de los casos",
+          "Esta cumplido, falatria ver como reacciona con otros clientes"
+        ],
+        [
+          "E) Cualidad de la relación establecida con el cliente",
+          "Establece con el cliente, sea interno o externo, una relación profesional y la mantiene en buenos términos a lo largo del tiempo.",
+          "Construye con el cliente, una relación profesional, satisfactoria y cálida a lo largo del tiempo.",
+          "Logra establecer con el cliente relaciones duraderas basadas en la confianza.",
+          "Establece y mantiene con el cliente una relación propia de un socio.",
+          "2",
+          "Habitualmente"
+        ],
+        [
+          "F) Actitud profesional",
+          "Alcanza las expectativas en términos de profesionalismo y comprende cómo debe actuar con el cliente en distintas situaciones",
+          "Supera las expectativas en términos de profesionalismo y actúa de manera adecuada en las distintas situaciones con el cliente.",
+          "Transmite confianza y credibilidad hacia el cliente en las tareas asignadas e interactúa de manera eficiente y profesional con los otros.",
+          "Transmite confianza al cliente y es considerado un experto en las áreas específicas de su rol."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B35",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U4: Autoconfianza"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B36",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Es la capacidad para manejar las propias emociones de manera equilibrada y realista; afrontar dificultades de manera enérgica y serena y abordar desafíos demostrando seguridad sobre sus decisiones y opiniones. Implica cierto autoconocimiento: poder tolerar la frustración y trabajar con el convencimiento de que se es capaz de realizar con éxito una tarea o elegir el enfoque adecuado para resolver un problema."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B39:I42",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Indicadores de auto- conocimiento",
+          "Reconoce las principales cualidades de su personalidad.",
+          "Registra sus propios límites de actuación ante situaciones de dificultad.",
+          "Domina las fortalezas y debilidades de su personalidad incluso ante situaciones de dificultad.",
+          "Sostiene la seguridad y el dominio de sus emociones en todo momento.",
+          "2",
+          "En la mayoría de los casos"
+        ],
+        [
+          "B) Indicadores de autodominio",
+          "Mantiene un comportamiento sereno, incluso ante dificultades.",
+          "Sigue adelante a pesar de dificultades que pudieran presentarse, transmitiendo tranquilidad al equipo",
+          "Inspira a quienes lo rodean a sobreponerse en las situaciones de dificultad.",
+          "Sigue adelante incluso en situaciones de extrema dificultad y llega a buenos resultados.",
+          "2",
+          "Algunas veces"
+        ],
+        [
+          "C) Acciones en relación al intercambio de opiniones",
+          "Presenta sus opiniones respetuosamente a su equipo y superiores.",
+          "Exterioza sus opiniones dentro del área con seguridad y confianza en sí mismo.",
+          "Plantea sus opiniones, diferencias y decisiones con respeto, fortaleza y franqueza a todos los integrantes de Wolox, incluso en situaciones delicadas.",
+          "Incentiva explícitamente a los integrantes de Wolox a plantear sus opiniones, diferencias y decisiones con respeto, fortaleza y franqueza.",
+          "2",
+          "Habitualmente"
+        ],
+        [
+          "D) Reacciones ante el afrontamiento de desafíos",
+          "Asume desafíos con entusiasmo por lograr los objetivos planteados.",
+          "Asume desafíos con seguridad y criterio realista respecto de sus posibilidades de éxito.",
+          "Toma riesgos con convicción en sus capacidades, decisiones y perspectiva de éxito.",
+          "Inculca dentro de la empresa una cultura que consiste en afrontar situaciones dificultosas, asumir desafíos y tomar riesgos que impliquen la realización y éxito de las estrategias de Wolox",
+          "2",
+          "Habitualmente"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B45",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U5: Liderazgo"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B46",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad y deseo de comunicar los valores y visión de Wolox a través de un modelo de conducción personal y acorde con la ética, logrando que estos sean, no sólo posibles, sino también deseables para todos. Es la capacidad para generar en los demás motivación y compromiso genuinos con la misión organizacional. Implica promover innovación y proactividad en un ambiente de trabajo confortable y desafiante."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B49:I53",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Transmisión de valores y visión estratégica de Wolox",
+          "Comunica con entusiasmo los valores y la visión estratégica de Wolox a su equipo.",
+          "Transmite con entusiasmo los valores y visión estratégica de Wolox a todos los miembros de su sub-área.",
+          "Transmite los valores y visión estratégica de Wolox; logra que sean posibles y deseables para todos los miembros de su área.",
+          "Conduce Wolox según los valores y visión estratégica definidos; logra que sean posibles y deseables para todos dentro de la empresa.",
+          "3",
+          "Algunas veces"
+        ],
+        [
+          "B) Buen ambiente de trabajo y sentido de pertenencia",
+          "Trabaja con entusiasmo contribuyendo a un buen ambiente de trabajo.",
+          "Genera dentro de su equipo de trabajo un genuino sentido de pertenencia a Wolox y un ambiente confortable y responsable.",
+          "Genera dentro de su área de trabajo un genuino sentido de pertenencia a Wolox y un ambiente de trabajo confortable y responsable.",
+          "Genera dentro de la empresa un genuino sentido de pertenencia y un ambiente de trabajo confortable y responsable.",
+          "2",
+          "Casi siempre"
+        ],
+        [
+          "C) Generación de motivación y promoción de la innovación",
+          "Genera entusiasmo, motivación y compromiso en su equipo de trabajo.",
+          "Genera entusiasmo, motivación y compromiso dentro de su sub-área.",
+          "Promueve la innovación dentro de su área de trabajo, generando allí entusiasmo y compromiso.",
+          "Promueve la generación de nuevos emprendimientos dentro de Wolox.",
+          "3",
+          "Algunas veces"
+        ],
+        [
+          "D) Acciones en relación a objetivos de trabajo",
+          "Cumple con sus objetivos de trabajo dentro del marco de las políticas de Wolox.",
+          "Cumple y promueve el cumplimiento de las políticas de Wolox y los objetivos de trabajo, tanto propios como de su equipo.",
+          "Logra el cumplimiento de las políticas de Wolox y objetivos de trabajo dentro de su área.",
+          "Promueve que quienes se encuentran en posición de liderazgo se desarrollen como ejemplos en su materia para sus respectivos equipos y/o áreas a cargo.",
+          "2",
+          "Casi siempre",
+          "Estar atenta a proponer y dar seguimiento de procesos nuevos en iOS o desarrollo (o SM, etc)"
+        ],
+        [
+          "E) Acciones de escucha activa",
+          "Valora lo que le dicen y presta atención cuando le hablan.",
+          "Mantiene una actitud de apertura y escucha activa dentro de su equipo.",
+          "Se muestra abierto a escuchar y comprender al otro desde la empatía; es decir, sentimientos, ideas o pensamientos que subyacen a lo que se está diciendo explícitamente.",
+          "Logra una escucha activa con todas las personas de la empresa, generando empatía y afianzando una relación basada en la confianza.",
+          "3",
+          "Algunas veces"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B56",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U6: Visión Estratégica"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B57",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad para anticiparse y comprender los cambios del entorno y establecer su impacto a corto, mediano y largo plazo dentro de Wolox con el propósito de optimizar las fortalezas, actuar sobre las debilidades y aprovechar las oportunidades del contexto. Implica la capacidad para visualizar y conducir la empresa, el área o proyecto de su responsabilidad integralmente, logrando así objetivos y metas desafiantes asociadas a las estrategias de Wolox."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B60:I64",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Reacción ante los cambios del entorno",
+          "Comprende y se adecúa a los cambios que suceden dentro de su área de trabajo.",
+          "Comprende y se adecúa a los cambios que suceden dentro de Wolox y mide el impacto que los mismos pueden tener dentro de su área de trabajo en un corto plazo.",
+          "Se anticipa a los cambios que suceden dentro de Wolox y mide el impacto que los mismos pueden tener dentro de su área de trabajo en un mediano plazo.",
+          "Se anticipa a los cambios que suceden en el mercado y mide el impacto que los mismos pueden tener para la empresa en un largo plazo.",
+          "1",
+          "Habitualmente"
+        ],
+        [
+          "B) Detección de debilidades y fortalezas en relación a los cambios del entorno",
+          "Identifica las debilidades y fortalezas de su equipo de trabajo en relación a los cambios que suceden dentro de su área.",
+          "Identifica debilidades y fortalezas de su área de trabajo en base a los cambios que suceden dentro de Wolox.",
+          "Transforma las debilidades de su área de trabajo y potencia sus fortalezas en base a los cambios que suceden dentro de Wolox.",
+          "Identifica debilidades y fortalezas de las diferentes áreas de la empresa en estrecha relación con los cambios que suceden en el mercado.",
+          "1",
+          "Habitualmente"
+        ],
+        [
+          "C) Comprensión del impacto en Wolox de los cambios en el entorno",
+          "Propone posibles mejoras a fin de afrontar con mayor eficiencia los cambios que suceden dentro de su área de trabajo.",
+          "Diseña acciones a seguir en un corto plazo a fin de afrontar con fortaleza los cambios que suceden dentro de Wolox.",
+          "Planifica cursos de acción a mediano plazo en base los cambios que suceden dentro de Wolox a fin de afrontarlos con fortaleza y de modo ordenado.",
+          "Planifica políticas y procesos a nivel empresarial a fin de aprovechar oportunidades ofrecidas por el mercado; contribuye a la transformación de debilidades y potenciamiento de fortalezas de las diferentes áreas dentro de Wolox.",
+          "1",
+          "En la mayoría de los casos"
+        ],
+        [
+          "D) Identificación de oportunidades que ofrece el contexto",
+          "Propone mejoras para los proyectos en los que trabaja.",
+          "Identifica oportunidades de expansión y mejora para su área de trabajo en base a los cambios que suceden dentro de Wolox.",
+          "Optimiza los procesos dentro de su área, tomando en consideración las oportunidades de mejora que ofrecen los cambios dentro de Wolox.",
+          "Identifica oportunidades de expansión y mejora para Wolox en base a los cambios que suceden en el mercado.",
+          "1",
+          "Habitualmente"
+        ],
+        [
+          "E) Visión y comprensión sistémica de fenómenos",
+          "Visualiza y comprende los proyectos de su responsabilidad como sistemas integrados.",
+          "Visualiza y comprende los proyectos de su responsabilidad en su integración con el mercado y transmite dicha comprensión a los miembros de su área de trabajo.",
+          "Visualiza y comprende a su área de trabajo y a Wolox como sistemas integrados y transmite dicha visión dentro de su área de trabajo.",
+          "Establece la visión de la empresa, conduce a Wolox como un sistema integral y logra que su conjunto alcance los objetivos estratégicos establecidos.",
+          "1",
+          "Habitualmente"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B67",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U7: Desarrollo Profesional"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B68",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad para fomentar e incentivar el crecimiento del talento propio y de los demás en pos del desarrollo profesional a largo plazo. Implica la búsqueda de aprendizaje continuo para afrontar coyunturas de mayor desafío y un esfuerzo personal por contribuir al desarrollo del talento de todos los integrantes de Wolox."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B71:I75",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Reconocimiento de áreas y oportunidades de desarrollo",
+          "Reconoce áreas y oportunidades de mejora para sí mismo en relación a sus talentos.",
+          "Reconoce áreas y oportunidades de mejora para su equipo en relación a sus talentos.",
+          "Identifica oportunidades de desarrollo de talento para los integrantes de su área.",
+          "Diseña las políticas de desarrollo del talento dentro de Wolox teniendo en cuenta necesidades presentes y futuras, así como anhelos profesionales individuales.",
+          "2",
+          "Casi siempre",
+          "Darle foco y pensar en las interacciones entre áreas"
+        ],
+        [
+          "B) Orientación hacia el aprendizaje y desarrollo",
+          "Muestra interés y motivación por cursar nuevos aprendizajes relativos a su área de especialidad.",
+          "Se esfuerza por realizar nuevos aprendizajes relativos a su área de especialidad y trabaja en pos del desarrollo de sus talentos.",
+          "Promueve entre los integrantes de su área de trabajo el aprendizaje continuo y la búsqueda proactiva de nuevos caminos de aprendizaje para el desarrollo de sus talentos.",
+          "Identifica oportunidades de desarrollo de talento para todos los woloxers en posición de liderazgo. Promueve activamente la búsqueda de aprendizaje continuo dentro de la empresa.",
+          "2",
+          "Casi siempre"
+        ],
+        [
+          "C) Acciones positivas respecto de instancias de feedback",
+          "Acepta el feedback brindado por los demás y determina los mejores cursos de acción en función de ello.",
+          "Reacciona de modo positivo al feedback brindado ajustando y optimizando sus modalidades de trabajo en función del mismo.",
+          "Brinda feedback correctamente a los miembros de su equipo respecto de las áreas y oportunidades de desarrollo identificadas y delega nuevas responsabilidades en pos del desarrollo buscado.",
+          "Promueve activamente las instancias de feedback hacia los integrantes de Wolox y la delegación criteriosa de responsabilidades, comprendiendo a ambas actividades como importantes motores de desarrollo de talento.",
+          "2",
+          "Casi siempre",
+          "Darle importancia a esto para poder crecer en el rol"
+        ],
+        [
+          "D) Indicadores de orientación hacia los desafíos",
+          "Muestra interés por asumir desafíos laborales afines a su profesión.",
+          "Afronta, con entusiasmo por aprender, tareas de desafío creciente.",
+          "Busca de manera continua afrontar desafíos que puedan contribuir a su desarrollo profesional.",
+          "Promueve dentro de Wolox la búsqueda personal de desafío y desarrollo profesional.",
+          "3",
+          "Algunas veces",
+          "Ser proacitva en lo que quiere aprender y darse el lugar a que esto pase"
+        ],
+        [
+          "E) Percepción del concepto de autodesarrollo y desarrollo de otros",
+          "Aprovecha cada instancia de desarrollo ofrecida por Wolox para el desarrollo de nuevos aprendizajes y su aplicación al día a día de trabajo.",
+          "Implementa con astucia tecnologías, herramientas y medios disponibles para el desarrollo del talento de los miembros de su equipo de trabajo.",
+          "Reconoce y concibe el concepto de autodesarrollo como responsabilidad individual.",
+          "Difunde en la empresa el concepto de autodesarrollo como responsabilidad individual.",
+          "2",
+          "Casi siempre",
+          "Buscar hacer entender al resto que es necesario buscar por si mismos desafios nuevos"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B78",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U8: Construcción del Conocimiento"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B79",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad, voluntad y deseo de transmitir a otros el conocimiento adquirido a través de la experiencia. Tener también como motivación y objetivo fomentar el análisis crítico, el debate y la interrogación sobre los conocimientos aprehendidos con el fin de dar lugar a la transformación y creación conjunta de conocimiento. Implica ser pedagógico; comunicar con sencillez y modestia conocimientos y metodologías de trabajo utilizando para ello diversas tecnologías, herramientas y medios según corresponda. Implica además sostener un constante espíritu investigativo y constructivamente crítico en función de favorecer replanteos novedosos."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B82:I85",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Indicadores de habilidades comunicacionales",
+          "Comunica con sencillez y modestia a sus compañeros de trabajo los conocimientos y metodologías implementados en Wolox.",
+          "Transmite los conocimientos y metodologías implementados en Wolox a través de acciones planificadas.",
+          "Comunica dentro de la empresa los conocimientos y metodologías creados en Wolox a través de acciones planificadas.",
+          "Transmite hacia afuera de la empresa los conocimientos y metodologías creados en Wolox a través de acciones planificadas.",
+          "3",
+          "Algunas veces"
+        ],
+        [
+          "B) Acciones de transmisión del conocimiento",
+          "Contribuye desde su experiencia a la solución de dudas de sus compañeros de trabajo.",
+          "Transmite sus conocimientos a otros integrantes de Wolox.",
+          "Transmite su experiencia singular a otros integrantes de Wolox.",
+          "Transmite su experiencia singular a otros profesionales del mundo académico y/o emprendedor.",
+          "2",
+          "Casi siempre"
+        ],
+        [
+          "C) Acciones de apertura a la diferencia",
+          "Sostiene una actitud de apertura respecto a la formación y soluciones propuestas por sus pares.",
+          "Sostiene una actitud de apertura respecto a la formación y soluciones propuestas por otros miembros de su área de trabajo.",
+          "Sostiene una actitud de apertura y empatía respecto a las formaciones y visiones de los demás integrantes de la empresa.",
+          "Sostiene una actitud de apertura e investigación respecto a las diferentes disciplinas que atraviesan al mundo emprendedor.",
+          "3",
+          "Algunas veces"
+        ],
+        [
+          "D) Acciones de interrogación y análisis del conocimiento",
+          "Sostiene una actitud de interrogación respecto al conocimiento.",
+          "Promueve el análisis y el debate crítico respecto a las diferentes temáticas de conocimiento abordadas en el día a día de trabajo dentro de Wolox.",
+          "Fomenta un cuestionamiento crítico y analítico de lo establecido en las diferentes disciplinas que interactúan en el día a día dentro de Wolox.",
+          "Incentiva el diálogo y debate crítico entre las diferentes disciplinas que atraviesan al mundo emprendedor. Busca indagar, profundizar su conocimiento acerca del orden establecido dentro del mismo, cuestionándolo.",
+          "2",
+          "Casi siempre"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B88",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U9: Innovación"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B89",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad para aplicar el conocimiento construido en el día a día a la creación de emprendimientos o soluciones con el objetivo de aportar valor a Wolox y a la sociedad en su conjunto. Implica la capacidad para producir con rapidez y eficiencia bajo condiciones de incertidumbre y escasez con una clara orientación hacia la superación, llevando a la práctica un proyecto propio y/o colectivo con la finalidad de generar valor para Wolox y para la sociedad en su conjunto. Implica también crear espacios de innovación capaces de recrear dichas condiciones y de fomentar la creación dentro de Wolox."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B92:I96",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Aplicación del conocimiento construido",
+          "Aplica el conocimiento construido a través de su formación en el día a día de su trabajo en Wolox.",
+          "Aplica y sinergiza el conocimiento construido a través de su formación académica con el de su experiencia en el día a día de su trabajo.",
+          "Aplica y sinergiza su conocimiento académico con el de su investigación propia en el día a día de su trabajo en Wolox.",
+          "Aplica y sinergiza su conocimiento integrado en relación a diversas áreas de interés y nuevas oportunidades de negocio.",
+          "3",
+          "Algunas veces"
+        ],
+        [
+          "B) Creación de soluciones con impacto",
+          "Crea soluciones capaces de impactar positivamente en los resultados de proyectos de su responsabilidad.",
+          "Crea soluciones replicables capaces de impactar positivamente en los resultados de proyectos de los que es responsable y de contribuir positivamente a su área de trabajo.",
+          "Crea un proyecto y/o emprendimiento interno capaz de contribuir positivamente a su área de trabajo e impactar positivamente en la valuación de Wolox como empresa en su conjunto.",
+          "Crea emprendimientos capaces de impactar positivamente en los resultados de Wolox como empresa en su conjunto y en la sociedad.",
+          "3",
+          "Algunas veces"
+        ],
+        [
+          "C) Producción dentro de tiempos y presupuestos límite",
+          "Contribuye en la puesta en producción de proyectos de su responsabilidad y propone mejoras respecto a lo requerido en base a lo que comprende como objetivos del cliente.",
+          "Lleva a producción proyectos de su responsabilidad con éxito. También propone mejoras para su proyectos en base a la comprensión del mercado.",
+          "Crea un proyecto y/o emprendimiento interno con visión de largo plazo y con la perspectiva de que sea replicable en otras empresas similares a Wolox.",
+          "Pone en marcha un emprendimiento propio y/o colectivo con una visión de largo plazo y clara perspectiva respecto de su mercado y escalabilidad.",
+          "2",
+          "Casi siempre"
+        ],
+        [
+          "D) Promoción de la aplicación del conocimiento",
+          "Produce soluciones novedosas dentro de márgenes temporales delimitados.",
+          "Produce soluciones originales dentro de márgenes temporales y presupuestarios delimitados.",
+          "Produce un proyecto y/o emprendimiento interno dentro de márgenes temporales y presupuestarios delimitados.",
+          "Crea su emprendimiento dentro de márgenes temporales y presupuestarios delimitados.",
+          "2",
+          "Casi siempre"
+        ],
+        [
+          "E) Puesta en marcha de proyectos",
+          "Inspira en pares la inclinación por crear soluciones novedosas.",
+          "Promueve dentro de su área de trabajo la creación de soluciones novedosas.",
+          "Promueve dentro de Wolox la investigación y aplicación de los conocimientos construidos a través del día a día de trabajo y la creación de nuevos proyectos.",
+          "Enlaza dentro de Wolox su emprendimiento a su orientación vocacional y la creación de nuevos emprendimientos.",
+          "2",
+          "Casi siempre"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B99",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "U10: Impacto Social"
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B100",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "Capacidad para identificar y potenciar el papel social de Wolox desde el propio lugar. La capacidad de decidir y actuar teniendo como guía esencial los valores y principios de Wolox, desde la perspectiva del bien común, tanto al interior como al exterior de la empresa. Promueve formas de actuación económica sostenibles, aún si ello implica apartarse de la manera en que habitualmente se gestionan las empresas en el mercado."
+        ]
+      ]
+    },
+    {
+      "range": "'Universales-1-18'!B103:I106",
+      "majorDimension": "ROWS",
+      "values": [
+        [
+          "A) Acciones respecto a la promoción de cultura de impacto social de Wolox",
+          "Participa de actividades de impacto social que promueve Wolox",
+          "Incentiva a su equipo a realizar actividades de impacto social que promueve Wolox",
+          "Promueve dentro de su área y logra adhesión en acciones de impacto social que propone de Wolox",
+          "Crea impacto de acción y promoción de la cultura de impacto social de Wolox a toda la empresa",
+          "2",
+          "Habitualmente"
+        ],
+        [
+          "B) Acciones de promoción y creación de proyectos de impacto social",
+          "Investiga y comparte iniciativas de impacto social dentro de Wolox",
+          "Colabora en la realización de iniciativas dentro de Wolox para llevar a cabo acciones de impacto social",
+          "Propone dentro de su área acciones de impacto social que puedan ser replicables en otras áreas.",
+          "Logra consolidar acciones con impacto social dentro y fuera de Wolox",
+          "2",
+          "Algunas veces"
+        ],
+        [
+          "C) Respeto por las pautas de convivencia de Wolox",
+          "Comprende y respeta las pautas de convivencia de Wolox.",
+          "Promueve dentro de su equipo el respeto por las pautas de convivencia de Wolox",
+          "Fomenta dentro de su área de trabajo el respeto por las pautas de convivencia generando un clima de trabajo basado en el respeto mutuo.",
+          "Impulsa y apoya el respeto por las pautas de convivencia de la empresa y genera dentro de la misma un marco de respeto para con los miembros de Wolox.",
+          "3",
+          "Algunas veces",
+          "Tratar de llevarlo a toda la empresa"
+        ],
+        [
+          "D) Acciones conforme a la integridad y la transparencia",
+          "Prioriza valores comunes por sobre intereses propios y actúa coherentemente con los acuerdos establecidos.",
+          "Actúa de modo coherente con los valores morales, aquellos propios de Wolox y lo fomenta dentro de su equipo de trabajo.",
+          "Promueve dentro de su área de trabajo un accionar choerente con los valores morales y los compartidos por Wolox incentivando la transparencia.",
+          "Genera e incentiva acciones de promoción de la transparencia, de acuerdo a los valores morales de Wolox e impulsa a toda la empresa a actuar conforme a los mismos.",
+          "3",
+          "Algunas veces"
+        ]
+      ]
+    }
+  ]
+}
