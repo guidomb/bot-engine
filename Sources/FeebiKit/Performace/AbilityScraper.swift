@@ -85,7 +85,7 @@ fileprivate extension AbilityScraper {
         }
         
         return AbilityProducer {
-            AbilityResult.sequence(batchResponse.mapableCellRanges().map(Ability.from))
+            AbilityResult.sequence(batchResponse.splitByAbilityCells().map(Ability.from))
         }
     }
 
@@ -131,7 +131,9 @@ fileprivate extension Ability.Attribute {
 
 fileprivate extension BatchValueRange {
     
-    func mapableCellRanges() -> [[ValueRange]] {
+    // Splits batch cells response in groups of rows where each group of cells correspond to
+    // a particular ability in the same order as the request list of ranges.
+    func splitByAbilityCells() -> [[ValueRange]] {
         let chunkSize = AbilityScraper.RangeMapper.ranges.count
         return stride(from: 0, to: valueRanges.count, by: chunkSize).map {
             Array(valueRanges[$0..<Swift.min($0 + chunkSize, valueRanges.count)])
