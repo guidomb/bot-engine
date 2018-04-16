@@ -23,15 +23,9 @@ public struct AbilityScraper {
         
     }
     
-    public struct RangeMapper {
-        
-        static var ranges: [KeyPath<RangeMapper, SpreadSheetRange>] {
-            return [
-                \RangeMapper.title,
-                \RangeMapper.description,
-                \RangeMapper.attributes
-            ]
-        }
+    // sourcery: instanceVariablesCounterType = "SpreadSheetRange"
+    // sourcery: instanceVariablesCounterName = "rangesCount"
+    public struct RangeMapper: AutoInstanceVariableCounter {
         
         let title: SpreadSheetRange
         let description: SpreadSheetRange
@@ -44,7 +38,7 @@ public struct AbilityScraper {
         }
         
         var ranges: [SpreadSheetRange] {
-            return RangeMapper.ranges.map { self[keyPath: $0] }
+            return [title, description, attributes]
         }
     
     }
@@ -138,7 +132,7 @@ fileprivate extension BatchValueRange {
     // Splits batch cells response in groups of rows where each group of cells correspond to
     // a particular ability in the same order as the request list of ranges.
     func splitByAbilityCells() -> [[ValueRange]] {
-        let chunkSize = AbilityScraper.RangeMapper.ranges.count
+        let chunkSize = AbilityScraper.RangeMapper.rangesCount
         return stride(from: 0, to: valueRanges.count, by: chunkSize).map {
             Array(valueRanges[$0..<Swift.min($0 + chunkSize, valueRanges.count)])
         }

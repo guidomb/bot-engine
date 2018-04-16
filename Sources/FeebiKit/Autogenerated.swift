@@ -1,4 +1,4 @@
-// Generated using Sourcery 0.7.2 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.12.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 
@@ -22,3 +22,12 @@ extension UniversalAbilityGroupMapper {
   }
 
 }
+
+
+extension AbilityScraper.RangeMapper {
+
+  
+  static let rangesCount = 3
+  
+}
+

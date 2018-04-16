@@ -1,0 +1,35 @@
+<% for type in types.all where type.implements["AutoInstanceVariableCounter"] != nil { %>
+extension <%= type.name %> {
+
+  <% if let counterName = type.annotations["instanceVariablesCounterName"], let counterType = type.annotations["instanceVariablesCounterType"] as? String { %>
+  static let <%= counterName %> = <%= type.instanceVariables.filter({ $0.type?.name == counterType }).count %>
+  <% } else { %>
+  // Sourcery template error: type <%= type.name %> which conforms to 'AutoInstanceVariableCounter'
+  // does not define annotations:
+  //
+  <%
+  let typesWithOcurrencies: [String: Int] = type.instanceVariables.reduce([:]) { (result, variable) in
+    guard let type = variable.type else { return result }
+    let count = result[type.name] ?? 0
+    var newResult = result
+    newResult[type.name] = count + 1
+    return newResult
+  }
+  let suggestedType = typesWithOcurrencies.max(by: { $0.value < $1.value })?.0
+  if type.annotations["instanceVariablesCounterType"] == nil { %>
+  //    * instanceVariablesCounterType
+  <% if suggestedType != nil { %>
+  //      A possible value for 'instanceVariablesCounterType' could be "<%= suggestedType! %>".
+  <% } %>
+  <% } %>
+  <% if type.annotations["instanceVariablesCounterName"] == nil { %>
+  //    * instanceVariablesCounterName
+  <%
+  let maybeVariableType = type.annotations["instanceVariablesCounterType"] as? String
+  if let variableType = (maybeVariableType ?? suggestedType) { %>
+  //      A possible value for 'instanceVariablesCounterName' could be "<%= variableType.prefix(1).lowercased() + variableType.dropFirst() + "Count" %>"
+  <% } %>
+  <% } %>
+  <% } %>
+}
+<% } %>
