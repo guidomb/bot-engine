@@ -32,7 +32,7 @@ extension GoogleAPIResourceExecutor {
 
 public final class GoogleAPI: GoogleAPIResourceExecutor {
     
-    public static let shared = GoogleAPI(baseURL: "https://sheets.googleapis.com", version: "v4")
+    public static let shared = GoogleAPI()
     
     public typealias ResourceProducer<T> = SignalProducer<T, RequestError>
     public typealias ResourceDeserializer<T> = (Data, HTTPURLResponse) -> Result<T, AnyError>
@@ -132,14 +132,6 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
     
     public var printDebugCurlCommand = false
     public var printRequest = false
-    private let baseURL: String
-    private let version: String
-    
-    
-    init(baseURL: String, version: String) {
-        self.baseURL = baseURL
-        self.version = version
-    }
     
     public func execute<T>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
                     session: URLSession = .shared, deserializer: @escaping ResourceDeserializer<T>) -> ResourceProducer<T> {
@@ -177,12 +169,8 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
             })
     }
     
-    func absoluteUrl<T>(for resource: GoogleAPI.Resource<T>) -> URL {
-        return URL(string: "\(baseURL)/\(version)/\(resource.urlPath)")!
-    }
-    
     func urlRequest<T>(for resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token) -> URLRequest {
-        var request = URLRequest(url: absoluteUrl(for: resource))
+        var request = URLRequest(url: URL(string: resource.urlPath)!)
         request.httpMethod = resource.method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(token.authorizationHeaderValue, forHTTPHeaderField: "Authorization")

@@ -17,8 +17,11 @@ public extension GoogleAPI {
         
         static let shared = SpreadSheets()
         
-        static func basePath(for spreadSheetId: String) -> String {
-            return "\(SpreadSheets.rootPath)/\(spreadSheetId)"
+        private let baseURL = "https://sheets.googleapis.com"
+        private let version = "v4"
+        
+        private var basePath: String {
+            return "\(baseURL)/\(version)/spreadsheets"
         }
         
         private init() {}
@@ -27,8 +30,8 @@ public extension GoogleAPI {
             
             private let basePath: String
             
-            fileprivate init(spreadSheetId: String) {
-                self.basePath = "\(SpreadSheets.basePath(for: spreadSheetId))/values"
+            fileprivate init(basePath: String) {
+                self.basePath = basePath
             }
             
             // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/get
@@ -56,14 +59,14 @@ public extension GoogleAPI {
         }
         
         public func values(spreadSheetId: String) -> Values {
-            return Values(spreadSheetId: spreadSheetId)
+            return Values(basePath: resourceBasePath(resource: "values", spreadSheetId: spreadSheetId))
         }
         
         // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/get
         public func get(spreadSheetId: String, ranges: [SpreadSheetRange] = [],
                         includeGridData: Bool = false) -> Resource<SpreadSheet> {
             return Resource(
-                path: SpreadSheets.basePath(for: spreadSheetId),
+                path: resourceBasePath(resource: "get", spreadSheetId: spreadSheetId),
                 queryParameters: "\(ranges.makeQueryString(withKey: "ranges"))&includeGridData=\(includeGridData)"
             )
         }
@@ -71,6 +74,14 @@ public extension GoogleAPI {
     }
     
     public static var spreadSheets: SpreadSheets { return .shared }
+    
+}
+
+fileprivate extension GoogleAPI.SpreadSheets {
+    
+    func resourceBasePath(resource: String, spreadSheetId: String) -> String {
+        return "\(basePath)/\(spreadSheetId)/\(resource)"
+    }
     
 }
 
@@ -457,34 +468,34 @@ public struct SpreadSheet: Decodable {
             
         }
         
-        public struct DataValidationRule: Decodable {
-            
-            public struct BooleanCondition {
-                
-                public enum ConditionType: String, Decodable {
-                    
-                    case unspecified = "CONDITION_TYPE_UNSPECIFIED"
-                
-                }
-                
-                enum CondingKeys: String, CodingKey {
-                    
-                    case conditionType = "type"
-                    case values = "values"
-                    
-                }
-                
-                public let conditionType: ConditionType
-                public let values: [ConditionValue]
-                
-            }
-            
-            public let condition: BooleanCondition
-            public let inputMessage: String
-            public let strict: Bool
-            public let showCustomUi: Bool
-            
-        }
+//        public struct DataValidationRule: Decodable {
+//            
+//            public struct BooleanCondition {
+//                
+//                public enum ConditionType: String, Decodable {
+//                    
+//                    case unspecified = "CONDITION_TYPE_UNSPECIFIED"
+//                
+//                }
+//                
+//                enum CondingKeys: String, CodingKey {
+//                    
+//                    case conditionType = "type"
+//                    case values = "values"
+//                    
+//                }
+//                
+//                public let conditionType: ConditionType
+//                public let values: [ConditionValue]
+//                
+//            }
+//            
+//            public let condition: BooleanCondition
+//            public let inputMessage: String
+//            public let strict: Bool
+//            public let showCustomUi: Bool
+//            
+//        }
         
         public let userEnteredValue: ExtendedValue
         public let effectiveValue: ExtendedValue
