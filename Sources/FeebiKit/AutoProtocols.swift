@@ -6,3 +6,4 @@
 //
 
 protocol AutoInstanceVariableCounter { }
+protocol AutoInstanceVariableEnumerator { }

@@ -1,0 +1,21 @@
+<% for type in types.all where type.implements["AutoInstanceVariableEnumerator"] != nil { %>
+extension <%= type.name %> {
+
+  <% if let enumeratorName = type.annotations["instanceVariablesEnumeratorName"], let enumeratorType = type.annotations["instanceVariablesEnumeratorType"] as? String { %>
+  var <%= enumeratorName %>: [<%= enumeratorType %>] {
+    return [
+    <% for instanceVariable in type.instanceVariables where instanceVariable.type?.name == enumeratorType { -%>
+      <%= instanceVariable.name %>,
+    <% } %>
+    ]
+  }
+  <% } else { %>
+  // Sourcery template error: type <%= type.name %> which conforms to 'AutoInstanceVariableEnumerator'
+  // does not define annotations:
+  //
+  //    - instanceVariablesEnumeratorName
+  //    - instanceVariablesEnumeratorType
+  //
+  <% } %>
+}
+<% } %>

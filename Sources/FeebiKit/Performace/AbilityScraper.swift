@@ -25,7 +25,9 @@ public struct AbilityScraper {
     
     // sourcery: instanceVariablesCounterType = "SpreadSheetRange"
     // sourcery: instanceVariablesCounterName = "rangesCount"
-    public struct RangeMapper: AutoInstanceVariableCounter {
+    // sourcery: instanceVariablesEnumeratorName = "ranges"
+    // sourcery: instanceVariablesEnumeratorType = "SpreadSheetRange"
+    public struct RangeMapper: AutoInstanceVariableCounter, AutoInstanceVariableEnumerator {
         
         let title: SpreadSheetRange
         let description: SpreadSheetRange
@@ -35,10 +37,6 @@ public struct AbilityScraper {
             self.title = title
             self.description = description
             self.attributes = attributes
-        }
-        
-        var ranges: [SpreadSheetRange] {
-            return [title, description, attributes]
         }
     
     }

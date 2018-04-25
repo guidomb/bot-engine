@@ -31,3 +31,19 @@ extension AbilityScraper.RangeMapper {
   
 }
 
+
+
+extension AbilityScraper.RangeMapper {
+
+  
+  var ranges: [SpreadSheetRange] {
+    return [
+          title,
+          description,
+          attributes,
+    
+    ]
+  }
+  
+}
+
