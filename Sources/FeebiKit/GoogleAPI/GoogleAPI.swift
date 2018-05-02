@@ -50,6 +50,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         
         let path: String
         let queryParameters: () -> String?
+        let requestBody: Encodable?
         let method: HTTPMethod
         
         var urlPath: String {
@@ -60,20 +61,26 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
             }
         }
         
-        init(path: String = "", queryParameters: @autoclosure @escaping () -> String? = .none, method: HTTPMethod = .get) {
+        init(path: String = "", queryParameters: @autoclosure @escaping () -> String? = .none,
+             requestBody: Encodable? = .none, method: HTTPMethod = .get) {
             self.path = path
             self.queryParameters = queryParameters
+            self.requestBody = requestBody
             self.method = method
         }
         
-        init(path: String = "", queryParameters: @escaping () -> String?, method: HTTPMethod = .get) {
+        init(path: String = "", queryParameters: @escaping () -> String?,
+             requestBody: Encodable? = .none, method: HTTPMethod = .get) {
             self.path = path
             self.queryParameters = queryParameters
+            self.requestBody = requestBody
             self.method = method
         }
         
-        init(path: String = "", queryParameters: QueryStringConvertible, method: HTTPMethod = .get) {
-            self.init(path: path, queryParameters: queryParameters.asQueryString, method: method)
+        init(path: String = "", queryParameters: QueryStringConvertible,
+             requestBody: Encodable? = .none, method: HTTPMethod = .get) {
+            self.init(path: path, queryParameters: queryParameters.asQueryString,
+                      requestBody: requestBody, method: method)
         }
         
         func with(method: HTTPMethod) -> Resource {
@@ -162,8 +169,12 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
                 if self.printDebugCurlCommand {
                     let headers = request.allHTTPHeaderFields?.map { "-H '\($0): \($1)'" }.joined(separator: " ") ??
                         ""
+                    let dataOption = resource.requestBody
+                        .flatMap { try? JSONEncoder().encode($0) }
+                        .flatMap { String(data: $0, encoding: .utf8) }
+                        .map { " -d '\($0)'" } ?? ""
                     print("\n------------------------------------------")
-                    print("curl -v \(headers) -X \(resource.method.rawValue) '\(request.url!.absoluteString)'")
+                    print("curl -v \(headers) -X \(resource.method.rawValue) \(dataOption)'\(request.url!.absoluteString)'")
                     print("------------------------------------------\n")
                 }
             })

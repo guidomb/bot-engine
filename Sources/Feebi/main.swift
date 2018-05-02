@@ -26,7 +26,8 @@ func encodeAbilities(_ abilities: [Ability]) -> SignalProducer<Data, AnyError> {
 let tokenFilename = ".feebi-token"
 let credentialsFilename = "feebi.json"
 let scopes = [
-    "https://www.googleapis.com/auth/spreadsheets.readonly"
+    "https://www.googleapis.com/auth/spreadsheets.readonly",
+    "https://www.googleapis.com/auth/forms"
 ]
 
 guard let tokenProvider = BrowserTokenProvider(credentials: credentialsFilename, token: tokenFilename) else {
@@ -38,6 +39,7 @@ guard let token = tokenProvider.token else {
     do {
         try tokenProvider.signIn(scopes: scopes)
         try tokenProvider.saveToken(tokenFilename)
+        print(tokenProvider.token?.AccessToken ?? "")
     } catch let error {
         print(error)
         exit(1)
@@ -60,24 +62,53 @@ let semaphore = DispatchSemaphore(value: 0)
 GoogleAPI.shared.printDebugCurlCommand = true
 GoogleAPI.shared.printRequest = true
 
-let mapper = UniversalAbilityGroupMapper(spreadSheetName: "Universales-1-18")
-AbilityScraper(abilityGroupMapper: mapper)
-    .scrap(spreadSheetId: spreadsheetId, token: googleToken)
-    .mapError(AnyError.init)
-    .flatMap(.concat, encodeAbilities)
+struct Form: Decodable {
+    
+    let description: String
+    let title: String
+    
+}
+
+GoogleAPI.scripts
+    .run(
+        scriptId: "MVbVyOJOsJhw-DI-J2sAJjzv1HmwoNCeA",
+        parameters: ScriptParameters(
+            function: "fetchForm",
+            parameters: [.string("1mlteVfq46HlO4VPR4LQjUKAqGS8f8fE7AtqWapqoM3w")],
+            devMode: true
+        ),
+        response: Form.self
+    )
+    .execute(using: googleToken)
     .startWithResult { result in
         switch result {
-        case .success(let abilities):
-            if let json = String(data: abilities, encoding: .utf8) {
-                print(json)
-            } else {
-                print("Cannot transform JSON data to String!")
-            }
+        case .success(let scriptResponse):
+            print(scriptResponse)
         case .failure(let error):
-            print("Error scraping ability for spread sheet '\(spreadsheetId)':")
+            print("Error executing script: ")
             print(error)
         }
         semaphore.signal()
     }
+
+//let mapper = UniversalAbilityGroupMapper(spreadSheetName: "Universales-1-18")
+//AbilityScraper(abilityGroupMapper: mapper)
+//    .scrap(spreadSheetId: spreadsheetId, token: googleToken)
+//    .mapError(AnyError.init)
+//    .flatMap(.concat, encodeAbilities)
+//    .startWithResult { result in
+//        switch result {
+//        case .success(let abilities):
+//            if let json = String(data: abilities, encoding: .utf8) {
+//                print(json)
+//            } else {
+//                print("Cannot transform JSON data to String!")
+//            }
+//        case .failure(let error):
+//            print("Error scraping ability for spread sheet '\(spreadsheetId)':")
+//            print(error)
+//        }
+//        semaphore.signal()
+//    }
 
 _ = semaphore.wait(timeout: DispatchTime.distantFuture)
