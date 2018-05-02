@@ -13,7 +13,9 @@ let package = Package(
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
         .package(url: "https://github.com/google/auth-library-swift", from: "0.3.6"),
-        .package(url: "https://github.com/ReactiveCocoa/ReactiveSwift", from: "3.1.0")
+        .package(url: "https://github.com/ReactiveCocoa/ReactiveSwift", from: "3.1.0"),
+        .package(url: "https://github.com/Quick/Nimble.git", from: "7.1.1"),
+        .package(url: "https://github.com/Quick/Quick.git", from: "1.3.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
