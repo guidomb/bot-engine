@@ -11,8 +11,8 @@ public extension GoogleAPI {
     
     struct Scripts {
         
-        private let baseURL = "https://scripts.googleapis.com"
-        private let version = "v4"
+        private let baseURL = "https://script.googleapis.com"
+        private let version = "v1"
         
         private var basePath: String {
             return "\(baseURL)/\(version)/scripts"
@@ -132,6 +132,19 @@ public enum ScriptExecutionResponse<T: Decodable>: Decodable {
         let type: String
         let result: T
         
+        
+        enum CodingKeys: String, CodingKey {
+            
+            case type = "@type"
+            case result = "result"
+            
+        }
+        
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.type = try container.decode(String.self, forKey: .type)
+            self.result = try container.decode(T.self, forKey: .result)
+        }
     }
     
     case failure(ErrorStatus)

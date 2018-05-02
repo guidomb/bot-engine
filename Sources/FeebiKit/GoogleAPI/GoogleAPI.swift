@@ -50,7 +50,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         
         let path: String
         let queryParameters: () -> String?
-        let requestBody: Encodable?
+        let requestBody: () ->Data?
         let method: HTTPMethod
         
         var urlPath: String {
@@ -62,15 +62,25 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         }
         
         init(path: String = "", queryParameters: @autoclosure @escaping () -> String? = .none,
-             requestBody: Encodable? = .none, method: HTTPMethod = .get) {
+             requestBody: @autoclosure @escaping () -> Data? = .none, method: HTTPMethod = .get) {
             self.path = path
             self.queryParameters = queryParameters
             self.requestBody = requestBody
             self.method = method
         }
         
+        init<T: Encodable>(path: String = "", queryParameters: @autoclosure @escaping () -> String? = .none,
+             requestBody: T, method: HTTPMethod = .get) {
+            self.init(
+                path: path,
+                queryParameters: queryParameters,
+                requestBody: try? JSONEncoder().encode(requestBody),
+                method: method
+            )
+        }
+        
         init(path: String = "", queryParameters: @escaping () -> String?,
-             requestBody: Encodable? = .none, method: HTTPMethod = .get) {
+             requestBody: @autoclosure @escaping () -> Data? = .none, method: HTTPMethod = .get) {
             self.path = path
             self.queryParameters = queryParameters
             self.requestBody = requestBody
@@ -78,7 +88,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         }
         
         init(path: String = "", queryParameters: QueryStringConvertible,
-             requestBody: Encodable? = .none, method: HTTPMethod = .get) {
+             requestBody: @autoclosure @escaping () -> Data? = .none, method: HTTPMethod = .get) {
             self.init(path: path, queryParameters: queryParameters.asQueryString,
                       requestBody: requestBody, method: method)
         }
@@ -167,12 +177,10 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
                     print("\(resource.method.rawValue) '\(resource.urlPath)'")
                 }
                 if self.printDebugCurlCommand {
-                    let headers = request.allHTTPHeaderFields?.map { "-H '\($0): \($1)'" }.joined(separator: " ") ??
-                        ""
-                    let dataOption = resource.requestBody
-                        .flatMap { try? JSONEncoder().encode($0) }
+                    let headers = request.allHTTPHeaderFields?.map { "-H '\($0): \($1)'" }.joined(separator: " ") ?? ""
+                    let dataOption = resource.requestBody()
                         .flatMap { String(data: $0, encoding: .utf8) }
-                        .map { " -d '\($0)'" } ?? ""
+                        .map { " -d '\($0)' " } ?? ""
                     print("\n------------------------------------------")
                     print("curl -v \(headers) -X \(resource.method.rawValue) \(dataOption)'\(request.url!.absoluteString)'")
                     print("------------------------------------------\n")
@@ -185,6 +193,10 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         request.httpMethod = resource.method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(token.authorizationHeaderValue, forHTTPHeaderField: "Authorization")
+        if let requestBody = resource.requestBody() {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = requestBody
+        }
         return request
     }
 }
