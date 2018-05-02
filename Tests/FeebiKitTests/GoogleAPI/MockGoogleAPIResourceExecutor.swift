@@ -22,7 +22,7 @@ final class MockGoogleAPIResourceExecutor: GoogleAPIResourceExecutor {
         session: URLSession,
         deserializer: @escaping GoogleAPI.ResourceDeserializer<T>) -> GoogleAPI.ResourceProducer<T> {
         if let data = self.response {
-            let url = GoogleAPI.shared.absoluteUrl(for: resource)
+            let url = URL(string: resource.urlPath)!
             let response = HTTPURLResponse(
                 url: url,
                 mimeType: "application/json",
