@@ -129,9 +129,8 @@ public enum ScriptExecutionResponse<T: Decodable>: Decodable {
     
     public struct SuccessfulResult<T: Decodable>: Decodable {
         
-        let type: String
-        let result: T
-        
+        public let type: String
+        public let result: T
         
         enum CodingKeys: String, CodingKey {
             

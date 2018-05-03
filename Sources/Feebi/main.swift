@@ -62,30 +62,36 @@ let semaphore = DispatchSemaphore(value: 0)
 GoogleAPI.shared.printDebugCurlCommand = true
 GoogleAPI.shared.printRequest = true
 
-struct Form: Decodable {
-    
-    let description: String
-    let title: String
-    
+func render(choice: Form.ChoiceItem, index: Int) {
+    print("\t\t\(index + 1) - \(choice.value)")
 }
 
-GoogleAPI.scripts
-    .run(
-        scriptId: "MVbVyOJOsJhw-DI-J2sAJjzv1HmwoNCeA",
-        parameters: ScriptParameters(
-            function: "fetchForm",
-            parameters: [.string("1mlteVfq46HlO4VPR4LQjUKAqGS8f8fE7AtqWapqoM3w")],
-            devMode: true
-        ),
-        response: Form.self
-    )
+func render(formItem item: Form.Item, index: Int) {
+    print("\tQ\(index + 1 ): [\(item.isRequired ? "required" : "optional")] \(item.title) - \(item.itemType.key)")
+    switch item.itemType {
+    case .text, .paragraphText, .date, .dateTime:
+        break
+    case .list(_, let choices):
+        choices.enumerated().forEach { render(choice: $0.1, index: $0.0) }
+    case .multipleChoice(_, let choices):
+        choices.enumerated().forEach { render(choice: $0.1, index: $0.0) }
+    case .checkbox(_, let choices):
+        choices.enumerated().forEach { render(choice: $0.1, index: $0.0) }
+    }
+}
+
+GoogleAPI.forms(usingScript: "MVbVyOJOsJhw-DI-J2sAJjzv1HmwoNCeA", devMode: true)
+    .fetchForm(byId: "1mlteVfq46HlO4VPR4LQjUKAqGS8f8fE7AtqWapqoM3w")
     .execute(using: googleToken)
     .startWithResult { result in
         switch result {
-        case .success(let scriptResponse):
-            print(scriptResponse)
+        case .success(let form):
+            print("Title: \(form.title)")
+            for (index, item) in form.supportedItems.enumerated() {
+                render(formItem: item, index: index)
+            }
         case .failure(let error):
-            print("Error executing script: ")
+            print("Error fetching form : ")
             print(error)
         }
         semaphore.signal()
