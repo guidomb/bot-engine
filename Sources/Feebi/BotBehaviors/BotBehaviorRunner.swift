@@ -9,195 +9,19 @@ import Foundation
 import ReactiveSwift
 import Result
 
-protocol BehaviorProtocol {
-    
-    typealias Instance = (BehaviorProtocol, Behavior.StateTransition)
-    
-    static func parse(input: Behavior.Message) -> Instance?
-    
-    mutating func update(input: Behavior.Message) -> Behavior.StateTransition
-    
-    mutating func update(input: Behavior.TaggedResult) -> Behavior.StateTransition
-    
-}
-
-struct Behavior {
-
-    typealias EffectResult = Result<Effect.Response, Effect.Error>
-    typealias EffectSignal = Signal<TaggedResult, NoError>
-    typealias EffectObserver = EffectSignal.Observer
-    typealias InputProducer = SignalProducer<Input, NoError>
-    typealias MessageProducer = SignalProducer<Message, NoError>
-    typealias StateTransition = (isFinalState: Bool, transition: Behavior.Transition)
-    
-    static let behaviors: [BehaviorProtocol.Type] = [
-        CreateSurveyBehavior.self
-    ]
-    
-    enum Input {
-        
-        case message(Message)
-        case effectResult(TaggedResult)
-        
-    }
-    
-    enum Output {
-        
-        case textMessage(String)
-        
-    }
-
-
-    enum Effect {
-     
-        enum Error: Swift.Error {
-            
-        }
-        
-        enum Response {
-            
-        }
-        
-        case validateFormAccess(formId: String)
-        
-    }
-    
-    struct Message {
-        
-        let channel: ChannelId
-        let text: String
-        
-    }
-    
-    struct TaggedResult {
-        
-        let channel: ChannelId
-        let result: EffectResult
-        
-    }
-    
-    struct Transition {
-        
-        static func unsupportedMessage(_ message: Message) -> Transition {
-            return Transition(
-                input: .message(message),
-                output: .textMessage("Sorry, I don't undestand that."),
-                effect: .none
-            )
-        }
-        
-        static func ignoreInput(_ input: Input) -> Transition {
-            return Transition(input: input, output: .none, effect: .none)
-        }
-        
-        let input: Input
-        let output: Output?
-        let effect: Effect?
-        
-        var channel: ChannelId {
-            switch input {
-            case .message(let message):
-                return message.channel
-            case .effectResult(let taggedResult):
-                return taggedResult.channel
-            }
-        }
-        
-    }
-    
-}
-
-protocol EffectorProtocol {
-    
-    init(observer: Behavior.EffectObserver)
-    
-    func perform(effect: Behavior.Effect, forChannel channel: ChannelId)
-    
-}
-
-protocol OutputRendererProtocol {
-    
-    func render(output: Behavior.Output, forChannel channel: ChannelId)
-    
-}
-
-struct Effector: EffectorProtocol {
-    
-    let observer: Behavior.EffectObserver
-    
-    func perform(effect: Behavior.Effect, forChannel channel: ChannelId) {
-        
-    }
-    
-}
-
-struct SlackOutputRenderer: OutputRendererProtocol {
-    
-    let slackService: SlackServiceProtocol
-    
-    func render(output: Behavior.Output, forChannel channel: ChannelId) {
-        switch output {
-        case .textMessage(let message):
-            slackService.sendMessage(channel: channel, text: message).startWithFailed { error in
-                print("Error sending message:")
-                print("\tChannel: \(channel)")
-                print("\tMessage: \(message)")
-                print("\tError: \(error)")
-                print("")
-            }
-        }
-    }
-
-}
-
-struct ConsoleOutputRenderer: OutputRendererProtocol {
-    
-    func render(output: Behavior.Output, forChannel channel: ChannelId) {
-        switch output {
-        case .textMessage(let message):
-            print("Output: \(message)")
-        }
-    }
-    
-}
-
 typealias ChannelId = String
 
+struct UserEntityInfo {
+    
+    let id: String
+    let name: String?
+    let email: String?
+    let firstName: String?
+    let lastName: String?
+    
+}
+
 final class BotBehaviorRunner {
-    
-    static func slackRunner(token: String) -> BotBehaviorRunner {
-        let slackService = SlackService(token: token)
-        let outputRenderer = SlackOutputRenderer(slackService: slackService)
-        let messageProducer: Behavior.MessageProducer = slackService.start()
-            .flatMapError { _ in .empty }
-            .filterMap { event in
-                guard let channel = event.message?.channel, let messageText = event.message?.text else {
-                    return nil
-                }
-                return Behavior.Message(channel: channel, text: messageText)
-            }
-        return BotBehaviorRunner(messageProducer: messageProducer, outputRenderer: outputRenderer)
-    }
-    
-    static func consoleRunner() -> BotBehaviorRunner {
-        let outputRenderer = ConsoleOutputRenderer()
-        let messageProducer = Behavior.MessageProducer { observer, _ in
-            while (true) {
-                print("Enter input:")
-                guard let line = readLine() else {
-                    break
-                }
-                guard line != "exit" else {
-                    print("bye!")
-                    observer.sendInterrupted()
-                    exit(0)
-                }
-                
-                observer.send(value: Behavior.Message(channel: "console", text: line))
-            }
-        }
-        return BotBehaviorRunner(messageProducer: messageProducer, outputRenderer: outputRenderer)
-    }
     
     private let messageProducer: Behavior.MessageProducer
     private let effectorType: EffectorProtocol.Type
@@ -220,13 +44,13 @@ final class BotBehaviorRunner {
             createEffectsResultPipe()
         )
         .map(handleInput)
-        .startWithValues { [unowned self] transition in
+        .startWithValues { [unowned self] (channel, transition) in
             if let output = transition.output {
-                self.outputRenderer.render(output: output, forChannel: transition.channel)
+                self.outputRenderer.render(output: output, forChannel: channel)
             }
             if let effect = transition.effect, let observer = self.effectResultObserver {
                 let effector = self.effectorType.init(observer: observer)
-                effector.perform(effect: effect, forChannel: transition.channel)
+                effector.perform(effect: effect, forChannel: channel)
             }
         }
     }
@@ -240,6 +64,31 @@ final class BotBehaviorRunner {
     
 }
 
+extension BotBehaviorRunner {
+    
+    static func consoleRunner() -> BotBehaviorRunner {
+        let outputRenderer = ConsoleOutputRenderer()
+        let messageProducer = Behavior.MessageProducer { observer, _ in
+            while (true) {
+                print("Enter input:")
+                guard let line = readLine() else {
+                    break
+                }
+                guard line != "exit" else {
+                    print("bye!")
+                    observer.sendInterrupted()
+                    exit(0)
+                }
+                
+                let message = Behavior.Message(source: .console, channel: "console", text: line)
+                observer.send(value: (message, Behavior.Context()))
+            }
+        }
+        return BotBehaviorRunner(messageProducer: messageProducer, outputRenderer: outputRenderer)
+    }
+    
+}
+
 fileprivate extension BotBehaviorRunner {
     
     func createEffectsResultPipe() -> Behavior.InputProducer {
@@ -249,41 +98,57 @@ fileprivate extension BotBehaviorRunner {
         return SignalProducer(pipe.output).map(Behavior.Input.effectResult)
     }
     
-    func handleInput(_ input: Behavior.Input) -> Behavior.Transition {
+    func handleInput(_ input: Behavior.Input) -> (ChannelId, Behavior.StateTransitionOutput) {
         switch input {
-            
-        case .message(let message):
-            if var behavior = activeBehaviors[message.channel] {
-                let (isFinalState, transition) = behavior.update(input: message)
-                if isFinalState {
-                    activeBehaviors.removeValue(forKey: message.channel)
-                }
-                return transition
-            } else if let (behavior, stateTransition) = matchBehavior(for: message) {
-                if !stateTransition.isFinalState {
-                    activeBehaviors[message.channel] = behavior
-                }
-                return stateTransition.transition
-            } else {
-                return .unsupportedMessage(message)
-            }
-            
+        case .message(let message, let context):
+            return handleInput(message, with: context)
         case .effectResult(let taggedResult):
-            guard var behavior = activeBehaviors[taggedResult.channel] else {
-                print("WARN: There is no active behavior to handle effect result for channel '\(taggedResult.channel)'")
-                return .ignoreInput(input)
-            }
-            let (isFinalState, transition) = behavior.update(input: taggedResult)
-            if isFinalState {
-                activeBehaviors.removeValue(forKey: taggedResult.channel)
-            }
-            return transition
+            return handleInput(taggedResult)
         }
     }
     
-    func matchBehavior(for message: Behavior.Message) -> BehaviorProtocol.Instance? {
+    func handleInput(_ input: Behavior.Message, with context: Behavior.Context) -> (ChannelId, Behavior.StateTransitionOutput) {
+        if var behavior = activeBehaviors[input.channel] {
+            guard !input.isCancelMessage else {
+                activeBehaviors.removeValue(forKey: input.channel)
+                return (input.channel, .activeBehaviorCancelled(behaviorName: behavior.descriptionForCancellation))
+            }
+            
+            let transition = behavior.update(input: input, context: context)
+            if behavior.isInFinalState {
+                activeBehaviors.removeValue(forKey: input.channel)
+            } else {
+                activeBehaviors[input.channel] = behavior
+            }
+            return (input.channel, transition)
+        } else if let initialState = matchBehavior(for: input, context: context) {
+            if !initialState.isFinalState {
+                activeBehaviors[input.channel] = initialState.behavior
+            }
+            return (input.channel, initialState.transition)
+        } else {
+            return (input.channel, .unsupportedMessage)
+        }
+    }
+    
+    func handleInput(_ input: Behavior.TaggedResult) -> (ChannelId, Behavior.StateTransitionOutput) {
+        guard var behavior = activeBehaviors[input.channel] else {
+            print("WARN: There is no active behavior to handle effect result for channel '\(input.channel)'")
+            return (input.channel, .void)
+        }
+        
+        let transition = behavior.update(input: input)
+        if behavior.isInFinalState {
+            activeBehaviors.removeValue(forKey: input.channel)
+        } else {
+            activeBehaviors[input.channel] = behavior
+        }
+        return (input.channel, transition)
+    }
+    
+    func matchBehavior(for message: Behavior.Message, context: Behavior.Context) -> Behavior.InitialState? {
         for behaviorType in Behavior.behaviors {
-            if let instance = behaviorType.parse(input: message) {
+            if let instance = behaviorType.parse(input: message, context: context) {
                 return instance
             }
         }
@@ -291,3 +156,4 @@ fileprivate extension BotBehaviorRunner {
     }
     
 }
+
