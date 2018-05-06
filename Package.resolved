@@ -20,6 +20,15 @@
         }
       },
       {
+        "package": "SSCommonCrypto",
+        "repositoryURL": "https://github.com/daltoniam/common-crypto-spm",
+        "state": {
+          "branch": null,
+          "revision": "2eb3aff0fb57f92f5722fac5d6d20bf64669ca66",
+          "version": "1.1.0"
+        }
+      },
+      {
         "package": "CryptoSwift",
         "repositoryURL": "https://github.com/krzyzanowskim/CryptoSwift.git",
         "state": {
@@ -83,12 +92,93 @@
         }
       },
       {
+        "package": "SKClient",
+        "repositoryURL": "https://github.com/SlackKit/SKClient",
+        "state": {
+          "branch": null,
+          "revision": "008e10a402f17519750a5b94c4cf6b16310abf18",
+          "version": "4.1.0"
+        }
+      },
+      {
+        "package": "SKCore",
+        "repositoryURL": "https://github.com/SlackKit/SKCore",
+        "state": {
+          "branch": null,
+          "revision": "1ac0e21612d4390206adeb57eb5f8fcae66c0811",
+          "version": "4.1.1"
+        }
+      },
+      {
+        "package": "SKRTMAPI",
+        "repositoryURL": "https://github.com/SlackKit/SKRTMAPI",
+        "state": {
+          "branch": null,
+          "revision": "c46f78c588e619c0d547ecae264d77dfaff5c0f0",
+          "version": "4.1.2"
+        }
+      },
+      {
+        "package": "SKServer",
+        "repositoryURL": "https://github.com/SlackKit/SKServer",
+        "state": {
+          "branch": null,
+          "revision": "20eb55cef890bee253402865aad15318185696b7",
+          "version": "4.1.0"
+        }
+      },
+      {
+        "package": "SKWebAPI",
+        "repositoryURL": "https://github.com/SlackKit/SKWebAPI",
+        "state": {
+          "branch": null,
+          "revision": "b5b303c7e5cdecd587499061a81128ef4d7ed3f1",
+          "version": "4.1.3"
+        }
+      },
+      {
+        "package": "SlackKit",
+        "repositoryURL": "https://github.com/SlackKit/SlackKit.git",
+        "state": {
+          "branch": null,
+          "revision": "c2f3731a69df85f852d089839edd14b6ed461b02",
+          "version": "4.1.0"
+        }
+      },
+      {
+        "package": "Starscream",
+        "repositoryURL": "https://github.com/daltoniam/Starscream",
+        "state": {
+          "branch": null,
+          "revision": "114e5df9b6251970a069e8f1c0cbb5802759f0a9",
+          "version": "3.0.5"
+        }
+      },
+      {
+        "package": "Swifter",
+        "repositoryURL": "https://github.com/httpswift/swifter.git",
+        "state": {
+          "branch": null,
+          "revision": "c6d8ea04c7b5f00e7f688cff52100ecc8139f18a",
+          "version": "1.4.0"
+        }
+      },
+      {
         "package": "SwiftyBase64",
         "repositoryURL": "https://github.com/timburks/SwiftyBase64",
         "state": {
           "branch": null,
           "revision": "01f2f5c4886d0b8d7cb8c0e96b2aefccd1c7ccd8",
           "version": "1.2.0"
+        }
+      },
+      {
+        "package": "SSCZLib",
+        "repositoryURL": "https://github.com/daltoniam/zlib-spm.git",
+        "state": {
+          "branch": null,
+          "revision": "83ac8d719a2f3aa775dbdf116a57f56fb2c49abb",
+          "version": "1.1.0"
         }
       }
     ]
