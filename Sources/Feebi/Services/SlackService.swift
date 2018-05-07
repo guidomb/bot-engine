@@ -9,6 +9,7 @@ import Foundation
 import ReactiveSwift
 import SlackKit
 import Result
+import FeebiKit
 
 enum SlackServiceError: Swift.Error {
     
@@ -53,6 +54,7 @@ final class SlackService: SlackServiceProtocol {
                     // an infinite loop of messages.
                     return
                 }
+                // TODO Only responde to mentions in group channels and start a direct conversation
                 observer.send(value: event)
             }
             lifetime.observeEnded {
@@ -112,15 +114,19 @@ extension UserEntityInfo {
 
 extension BotBehaviorRunner {
     
-    static func slackRunner(token: String) -> BotBehaviorRunner {
-        let slackService = SlackService(token: token)
+    static func slackRunner(slackToken: String, googleToken: GoogleAPI.Token) -> BotBehaviorRunner {
+        let slackService = SlackService(token: slackToken)
         let outputRenderer = SlackOutputRenderer(slackService: slackService)
         let messageProducer: Behavior.MessageProducer = slackService.start()
             .flatMapError { _ in .empty }
             .filterMap(eventToBehaviorMessage)
             .flatMap(.concat, addContextToBehaviorMessage(slackService: slackService))
         
-        return BotBehaviorRunner(messageProducer: messageProducer, outputRenderer: outputRenderer)
+        return BotBehaviorRunner(
+            messageProducer: messageProducer,
+            outputRenderer: outputRenderer,
+            effectorCreator: { Effector(observer: $0, googleToken: googleToken) }
+        )
     }
     
 }

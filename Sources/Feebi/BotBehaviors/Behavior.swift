@@ -8,6 +8,7 @@
 import Foundation
 import ReactiveSwift
 import Result
+import FeebiKit
 
 protocol BehaviorProtocol {
     
@@ -31,6 +32,7 @@ struct Behavior {
     typealias EffectResult = Result<Effect.Response, Effect.Error>
     typealias EffectSignal = Signal<TaggedResult, NoError>
     typealias EffectObserver = EffectSignal.Observer
+    typealias EffectProducer = SignalProducer<TaggedResult, NoError>
     typealias InputProducer = SignalProducer<Input, NoError>
     typealias MessageProducer = SignalProducer<(Message, Context), NoError>
     
@@ -66,6 +68,8 @@ struct Behavior {
     enum Effect {
         
         enum Error: Swift.Error {
+            
+            case googleAPIError(GoogleAPI.RequestError)
             
         }
         

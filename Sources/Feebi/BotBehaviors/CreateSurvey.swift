@@ -126,7 +126,7 @@ struct CreateSurveyBehavior: BehaviorProtocol {
                 return .invalidConfirmation
             }
             
-        case .confirmed, .cancelled, .formAccessDenied:
+        case .confirmed, .cancelled, .formAccessDenied, .internalError:
             print("WARN: This should not happen. Cannot receive messages while in a final state.")
             return .void
 
@@ -200,7 +200,7 @@ fileprivate extension CreateSurveyBehavior {
     // This pattern matches valid Google Form URLs and extracts Form ID.
     // The optional characters '<' and '>' at the beginning and end of the URL
     // are needed because Slack adds them.
-    static let formURLPattern = "<?https://docs.google.com/forms/d/([a-zA-Z0-9]+)(/edit)?>"
+    static let formURLPattern = "<?https://docs.google.com/forms/d/([a-zA-Z0-9-_]+)(/edit)?>"
     
     // This accepts messages like:
     //      create new survey

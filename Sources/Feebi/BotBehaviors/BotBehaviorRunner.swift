@@ -8,6 +8,7 @@
 import Foundation
 import ReactiveSwift
 import Result
+import FeebiKit
 
 typealias ChannelId = String
 
@@ -24,18 +25,18 @@ struct UserEntityInfo {
 final class BotBehaviorRunner {
     
     private let messageProducer: Behavior.MessageProducer
-    private let effectorType: EffectorProtocol.Type
     private let outputRenderer: OutputRendererProtocol
+    private var effectorCreator: (Behavior.EffectObserver) -> EffectorProtocol
     private var effectResultObserver: Behavior.EffectObserver?
     private var disposable: Disposable?
     private var activeBehaviors: [ChannelId : BehaviorProtocol] = [:]
     
     init(messageProducer: Behavior.MessageProducer,
          outputRenderer: OutputRendererProtocol,
-         effectorType: EffectorProtocol.Type = Effector.self) {
+         effectorCreator: @escaping (Behavior.EffectObserver) -> EffectorProtocol) {
         self.messageProducer = messageProducer
         self.outputRenderer = outputRenderer
-        self.effectorType = effectorType
+        self.effectorCreator = effectorCreator
     }
     
     func run() {
@@ -49,7 +50,7 @@ final class BotBehaviorRunner {
                 self.outputRenderer.render(output: output, forChannel: channel)
             }
             if let effect = transition.effect, let observer = self.effectResultObserver {
-                let effector = self.effectorType.init(observer: observer)
+                let effector = self.effectorCreator(observer)
                 effector.perform(effect: effect, forChannel: channel)
             }
         }
@@ -66,7 +67,7 @@ final class BotBehaviorRunner {
 
 extension BotBehaviorRunner {
     
-    static func consoleRunner() -> BotBehaviorRunner {
+    static func consoleRunner(googleToken: GoogleAPI.Token) -> BotBehaviorRunner {
         let outputRenderer = ConsoleOutputRenderer()
         let messageProducer = Behavior.MessageProducer { observer, _ in
             while (true) {
@@ -84,7 +85,11 @@ extension BotBehaviorRunner {
                 observer.send(value: (message, Behavior.Context()))
             }
         }
-        return BotBehaviorRunner(messageProducer: messageProducer, outputRenderer: outputRenderer)
+        return BotBehaviorRunner(
+            messageProducer: messageProducer,
+            outputRenderer: outputRenderer,
+            effectorCreator: { Effector(observer: $0, googleToken: googleToken) }
+        )
     }
     
 }

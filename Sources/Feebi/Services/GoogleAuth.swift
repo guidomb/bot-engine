@@ -26,7 +26,8 @@ struct GoogleAuth {
     let credentialsFilename = "feebi.json"
     let scopes = [
         "https://www.googleapis.com/auth/spreadsheets.readonly",
-        "https://www.googleapis.com/auth/forms"
+        "https://www.googleapis.com/auth/forms",
+        "https://www.googleapis.com/auth/drive.metadata.readonly"
     ]
     
     func login() throws -> GoogleAPI.Token {
