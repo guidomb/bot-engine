@@ -43,19 +43,16 @@ struct CreateSurveyBehavior: BehaviorProtocol {
         }
         
         let behavior: BehaviorProtocol
-        let effect: Behavior.Effect?
-        let output: Behavior.Output
+        let transition: Behavior.StateTransitionOutput
         if let formId = result.substring(from: input.text, at: 5) {
             behavior = CreateSurveyBehavior(state: .waitingForFormAccessValidation(formId: formId))
-            effect = .validateFormAccess(formId: formId)
-            output = .textMessage("Give me a second while I validate that I can access the Google Form ...")
+            transition = .validateFormId(formId)
         } else {
             behavior = CreateSurveyBehavior(state: .waitingForFormId)
-            effect = .none
-            output = .textMessage("I need a Google Form's URL to create the survey from. A Google Form's URL usually looks like 'https://docs.google.com/forms/d/1mlteVfq46HlO4VPR4LQjUKAqGS8f8fE7AtqWapqoM3w/edit'.")
+            transition = .askForFormURL
         }
         
-        return Behavior.InitialState(behavior: behavior, output: output, effect: effect)
+        return Behavior.InitialState(behavior: behavior, transition: transition)
     }
     
     private var state: State
@@ -227,6 +224,10 @@ fileprivate extension CreateSurveyBehavior {
 
 fileprivate extension Behavior.StateTransitionOutput {
     
+    static let askForFormURL = Behavior.StateTransitionOutput(
+        output: .textMessage("I need a Google Form's URL to create the survey from. A Google Form's URL usually looks like 'https://docs.google.com/forms/d/1mlteVfq46HlO4VPR4LQjUKAqGS8f8fE7AtqWapqoM3w/edit'.")
+    )
+    
     static let invalidFormURL = Behavior.StateTransitionOutput(
         output: .textMessage("That doesn't look like a valid Google Form's URL. Try entering a valid Google Form's URL.")
     )
@@ -280,6 +281,7 @@ fileprivate extension Behavior.StateTransitionOutput {
         output: .textMessage("I'm kind of confused. Do you want me to create the survey?\nYou need to say 'yes' or 'no'")
     )
     
+    // TODO send effect to create survey
     static let surveyCreated = Behavior.StateTransitionOutput(
         output: .textMessage("Cool! Your survey has been created. You should be getting answers really soon!")
     )
