@@ -19,7 +19,7 @@ protocol EffectorProtocol {
 final class Effector: EffectorProtocol {
     
     private let observer: Behavior.EffectObserver
-    private var disposables: [ChannelId : Disposable] = [:]
+    private var disposables: [ChannelId : CompositeDisposable] = [:]
     private let googleToken: GoogleAPI.Token
     
     init(observer: Behavior.EffectObserver, googleToken: GoogleAPI.Token) {
@@ -29,8 +29,9 @@ final class Effector: EffectorProtocol {
     
     
     func perform(effect: Behavior.Effect, forChannel channel: ChannelId) {
+        cleanDisposedDisposables()
+        
         switch effect {
-           
         case .cancelRunningEffects:
             if let disposable = disposables[channel] {
                 disposable.dispose()
@@ -43,7 +44,17 @@ final class Effector: EffectorProtocol {
                 .then(effectSuccess(for: channel, response: .formAccessValidated(formId: formId)))
                 .flatMapError(handleFormAccessFailure(for: channel, formId: formId))
                 .start(observer)
-            
+                .register(with: channel, into: &disposables)
+        }
+    }
+    
+}
+
+fileprivate extension Effector {
+    
+    func cleanDisposedDisposables() {
+        for (channel, disposable) in disposables where disposable.isDisposed {
+            disposables.removeValue(forKey: channel)
         }
     }
     
@@ -57,6 +68,20 @@ fileprivate extension Behavior.TaggedResult {
     
     static func failure(error: Behavior.Effect.Error, channel: ChannelId) -> Behavior.TaggedResult {
         return .init(channel: channel, result: .failure(error))
+    }
+    
+}
+
+fileprivate extension Disposable {
+    
+    // TODO validate that CompositeDisposable isDisposed returns true only when all
+    // internal diposables are disposed.
+    func register(with channel: ChannelId, into disposables: inout [ChannelId : CompositeDisposable]) {
+        if let disposable = disposables[channel] {
+            disposable.add(self)
+        } else {
+            disposables[channel] = CompositeDisposable([self])
+        }
     }
     
 }
