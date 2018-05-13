@@ -9,16 +9,25 @@ GoogleAPI.shared.printRequest = true
 guard let googleToken = try? GoogleAuth().login() else {
     fatalError("Unable to login using Google OAuth")
 }
-
-let runner: BotBehaviorRunner
-if let slackToken = ProcessInfo.processInfo.environment["SLACK_API_TOKEN"] {
-    print("Using slack runner.")
-    runner = .slackRunner(slackToken: slackToken, googleToken: googleToken)
-} else {
-    print("Using console runner.")
-    runner = .consoleRunner(googleToken: googleToken)
+guard let slackToken = ProcessInfo.processInfo.environment["SLACK_API_TOKEN"] else {
+    fatalError("Missing Slack API token. You need to define SLACK_API_TOKEN env variable.")
 }
 
-print("Running bot ...")
-runner.run()
+//let jobOrchestrator = RecurringJobOrchestrator(store: InMemoryRecurringJobStore())
+//guard let bootstrapResult = jobOrchestrator.bootstrap().first() else {
+//    print("ERROR - Unable to bootstrap recurring job orchestrator.")
+//    exit(1)
+//}
+//switch bootstrapResult {
+//case .success(let activeJobs):
+//    print("Running recurring job orchestrator. There are \(activeJobs.count) active jobs.")
+//case .failure(let error):
+//    print("ERROR - Unable to bootstrap recurring job orchestrator: \(error)")
+//    exit(1)
+//}
+
+print("Running bot engine ...")
+let engine = BotEngine.slackBotEngine(slackToken: slackToken, googleToken: googleToken)
+engine.registerBehavior(CreateSurveyBehavior(googleToken: googleToken))
+engine.start()
 RunLoop.main.run()

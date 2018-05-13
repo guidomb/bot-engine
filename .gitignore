@@ -5,3 +5,4 @@
 .feebi-token
 bin/
 TODO.txt
+*.gs

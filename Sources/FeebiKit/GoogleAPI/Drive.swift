@@ -21,7 +21,7 @@ public extension GoogleAPI {
             
             // https://developers.google.com/drive/v3/reference/files/get
             public func get(
-                fileId: String,
+                byId fileId: String,
                 acknowledgeAbuse: Bool = false,
                 supportsTeamDrives: Bool = false) -> Resource<FileMetadata> {
                 

@@ -98,6 +98,33 @@ final class SlackService: SlackServiceProtocol {
     }
 }
 
+struct SlackOutputRenderer: BehaviorOutputRenderer {
+    
+    let slackService: SlackServiceProtocol
+    
+    func render(output: BehaviorOutput, forChannel channel: ChannelId) {
+        switch output {
+        case .textMessage(let message):
+            slackService.sendMessage(channel: channel, text: message).startWithFailed { error in
+                print("Error sending message:")
+                print("\tChannel: \(channel)")
+                print("\tMessage: \(message)")
+                print("\tError: \(error)")
+                print("")
+            }
+            
+        case .confirmationQuestion(let yesMessage, let noMessage):
+            slackService.sendMessage(channel: channel, text: "I need confirmation bitch!").startWithFailed { error in
+                print("Error sending message:")
+                print("\tChannel: \(channel)")
+                print("\tError: \(error)")
+                print("")
+            }
+        }
+    }
+    
+}
+
 extension UserEntityInfo {
     
     static func from(user: User) -> UserEntityInfo {
@@ -112,21 +139,17 @@ extension UserEntityInfo {
     
 }
 
-extension BotBehaviorRunner {
+extension BotEngine {
     
-    static func slackRunner(slackToken: String, googleToken: GoogleAPI.Token) -> BotBehaviorRunner {
+    static func slackBotEngine(slackToken: String, googleToken: GoogleAPI.Token) -> BotEngine {
         let slackService = SlackService(token: slackToken)
         let outputRenderer = SlackOutputRenderer(slackService: slackService)
-        let messageProducer: Behavior.MessageProducer = slackService.start()
+        let messageProducer: BotEngine.MessageProducer = slackService.start()
             .flatMapError { _ in .empty }
             .filterMap(eventToBehaviorMessage)
             .flatMap(.concat, addContextToBehaviorMessage(slackService: slackService))
         
-        return BotBehaviorRunner(
-            messageProducer: messageProducer,
-            outputRenderer: outputRenderer,
-            effectorCreator: { Effector(observer: $0, googleToken: googleToken) }
-        )
+        return BotEngine(inputProducer: messageProducer, outputRenderer: outputRenderer)
     }
     
 }
@@ -142,17 +165,17 @@ fileprivate extension SlackService {
     
 }
 
-fileprivate func eventToBehaviorMessage(_ event: Event) -> Behavior.Message? {
+fileprivate func eventToBehaviorMessage(_ event: Event) -> BehaviorMessage? {
     guard let channel = event.message?.channel, let messageText = event.message?.text else {
         return nil
     }
-    return Behavior.Message(source: .slack, channel: channel, text: messageText)
+    return BehaviorMessage(source: .slack, channel: channel, text: messageText)
 }
 
-fileprivate func addContextToBehaviorMessage(slackService: SlackService) -> (Behavior.Message) -> Behavior.MessageProducer {
+fileprivate func addContextToBehaviorMessage(slackService: SlackService) -> (BehaviorMessage) -> BotEngine.MessageProducer {
     return { message in
         guard !message.entities.isEmpty else {
-            return Behavior.MessageProducer(value: (message, Behavior.Context()))
+            return .init(value: (message, BehaviorMessage.Context()))
         }
         
         return slackService.fetchUsers(userIds: message.slackUserIdEntities)
@@ -161,10 +184,10 @@ fileprivate func addContextToBehaviorMessage(slackService: SlackService) -> (Beh
     }
 }
 
-fileprivate extension Behavior.Context {
+fileprivate extension BehaviorMessage.Context {
     
-    static func with(users: [User]) -> Behavior.Context {
-        return Behavior.Context(userEntitiesInfo: users.map(UserEntityInfo.from))
+    static func with(users: [User]) -> BehaviorMessage.Context {
+        return BehaviorMessage.Context(userEntitiesInfo: users.map(UserEntityInfo.from))
     }
     
 }
