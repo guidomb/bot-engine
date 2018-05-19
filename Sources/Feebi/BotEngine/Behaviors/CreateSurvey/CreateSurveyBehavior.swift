@@ -12,15 +12,28 @@ import FeebiKit
 
 struct CreateSurveyBehavior: BehaviorProtocol {
     
-    typealias _Behavior = Behavior<State, Effect, Effect.Response, Effect.Error>
+    enum JobMessage: AutoCodable {
+        
+        case sayBye(byeText: String)
+        case sayHello(helloText: String)
+        
+    }
+    
+    typealias _Behavior = Behavior<State, Effect>
     typealias TransitionOutput = _Behavior.TransitionOutput
     typealias Input = _Behavior.Input
-    typealias EffectResult = _Behavior.EffectResult
-    typealias EffectResultProducer = _Behavior.EffectResultProducer
     
     let effectPerformer: EffectPerformer
+    
     var descriptionForCancellation: String {
         return "the survey creation process"
+    }
+    
+    var schedulable: BehaviorSchedulableJobs<JobExecutor>? {
+        return BehaviorSchedulableJobs(
+            jobs: [SchedulableJob(interval: 15.0, message: .sayHello(helloText: "Fucker!"))],
+            executor: JobExecutor()
+        )
     }
     
     init(googleToken: GoogleAPI.Token) {
@@ -64,6 +77,7 @@ extension CreateSurveyBehavior {
         case ready(Survey)
         case confirmed(Survey)
         case cancelled(Survey)
+        case created(Survey)
         case internalError(Effect.Error)
         
         var isFinalState: Bool {
@@ -72,7 +86,7 @@ extension CreateSurveyBehavior {
             }
             
             switch self {
-            case .formAccessDenied, .confirmed, .cancelled:
+            case .formAccessDenied, .created, .cancelled:
                 return true
             default:
                 return false
@@ -89,6 +103,24 @@ extension CreateSurveyBehavior {
         
     }
     
+}
+
+extension CreateSurveyBehavior {
+
+    
+    struct JobExecutor: BehaviorJobExecutor {
+
+        func executeJob(with message: JobMessage) -> SignalProducer<BehaviorJobOutput, AnyError> {
+            switch message {
+            case .sayBye(let text):
+                return SignalProducer(value: .value(behaviorOutput: .textMessage("Bye from \(text)"), channel: "U02F7KUJM"))
+            case .sayHello(let text):
+                return SignalProducer(value: .value(behaviorOutput: .textMessage("Hello from \(text)"), channel: "U02F7KUJM"))
+            }
+        }
+
+    }
+
 }
 
 // MARK:- Behavior
@@ -137,30 +169,34 @@ fileprivate extension CreateSurveyBehavior {
             } else {
                 return .invalidConfirmationInput(survey: survey)
             }
+           
+        case .confirmed(let survey):
+            return .surveyCreated(survey: survey)
             
-        case .confirmed, .cancelled, .formAccessDenied, .internalError:
+        case .created, .cancelled, .formAccessDenied, .internalError:
             print("WARN: This should not happen. Cannot receive messages while in a final state.")
             return .init(state: state)
             
         }
     }
     
-    func update(state: State, effectResult: EffectResult) -> TransitionOutput {
-        guard case .waitingForFormAccessValidation(let formId) = state else {
-            print("WARN: Unexpected effect result while in state \(state)")
-            return .init(state: state)
-        }
-        
-        switch effectResult {
-        case .success(.formAccessValidated):
+    func update(state: State, effectResult: Effect.EffectResult) -> TransitionOutput {
+        switch (state, effectResult) {
+        case (.waitingForFormAccessValidation(let formId), .success(.formAccessValidated)):
             return .askForDestinataries(formId: formId)
             
-        case .success(.formAccessDenied):
+        case (.waitingForFormAccessValidation(let formId), .success(.formAccessDenied)):
             return .formAccessDenied(formId: formId)
             
-        case .failure(let error):
+        case (.waitingForFormAccessValidation, .failure(let error)):
             return .internalError(error)
             
+        case (.confirmed, .success(.surveyCreated(let survey))):
+            return .surveyCreated(survey: survey)
+            
+        default:
+            print("WARN: Unexpected effect result while in state \(state)")
+            return .init(state: state)
         }
     }
     
@@ -200,9 +236,7 @@ fileprivate extension CreateSurveyBehavior {
 
 fileprivate extension Behavior.TransitionOutput where
     StateType == CreateSurveyBehavior.State,
-    EffectType == CreateSurveyBehavior.Effect,
-    EffectResponseType == CreateSurveyBehavior.Effect.Response,
-    EffectErrorType == CreateSurveyBehavior.Effect.Error {
+    EffectType == CreateSurveyBehavior.Effect {
 
     static let askForFormURL = CreateSurveyBehavior.TransitionOutput(
         state: .waitingForFormId,
@@ -285,11 +319,11 @@ fileprivate extension Behavior.TransitionOutput where
         )
     }
 
-    // TODO send effect to create survey
     static func surveyConfirmed(survey: Survey) -> CreateSurveyBehavior.TransitionOutput {
         return .init(
             state: .confirmed(survey),
-            output: .textMessage("Cool! Your survey has been created. You should be getting answers really soon!")
+            output: .textMessage("Creating survey ..."),
+            effect: .createSurvey(survey)
         )
     }
     
@@ -297,6 +331,13 @@ fileprivate extension Behavior.TransitionOutput where
         return .init(
             state: .cancelled(survey),
             output: .textMessage("Really? OK. Maybe next time.")
+        )
+    }
+    
+    static func surveyCreated(survey: Survey)  -> CreateSurveyBehavior.TransitionOutput {
+        return .init(
+            state: .created(survey),
+            output: .textMessage("Cool! Your survey has been created. You should be getting answers really soon!")
         )
     }
 

@@ -15,19 +15,20 @@ protocol BehaviorProtocol {
     
     associatedtype StateType: BehaviorState
     associatedtype EffectType
-    associatedtype EffectResponseType
-    associatedtype EffectErrorType
-    associatedtype EffectPerformerType: BehaviorEffectPerformer where
-        EffectPerformerType.EffectType == EffectType,
-        EffectPerformerType.EffectResponseType == EffectResponseType,
-        EffectPerformerType.EffectErrorType ==EffectErrorType
+    associatedtype EffectPerformerType: BehaviorEffectPerformer
+        where EffectPerformerType.EffectType == EffectType
+    associatedtype BehaviorJobExecutorType: BehaviorJobExecutor
+        where EffectType.JobMessageType == BehaviorJobExecutorType.JobMessageType
     
-    typealias ConcreteBehavior = Behavior<StateType, EffectType, EffectResponseType, EffectErrorType>
+    typealias ConcreteBehavior = Behavior<StateType, EffectType>
     typealias BehaviorTransitionOutput = ConcreteBehavior.TransitionOutput
     typealias BehaviorInput = ConcreteBehavior.Input
+    typealias JobMessageType = BehaviorJobExecutorType.JobMessageType
+    typealias ScheduledJobType = ScheduledJob<JobMessageType>
     
     var effectPerformer: EffectPerformerType { get }
     var descriptionForCancellation: String { get }
+    var schedulable: BehaviorSchedulableJobs<BehaviorJobExecutorType>? { get }
     
     func create(message: BehaviorMessage, context: BehaviorMessage.Context) -> BehaviorTransitionOutput?
     
@@ -49,20 +50,26 @@ protocol ActiveBehavior {
     
     var descriptionForCancellation: String { get }
     
-    func mount(with observer: Signal<ChanneledBehaviorOutput, NoError>.Observer, for channel: ChannelId)
+    func mount(with observer: Signal<ChanneledBehaviorOutput, NoError>.Observer, scheduler: BehaviorJobScheduler, for channel: ChannelId)
     
     func handle(message: BehaviorMessage, with context: BehaviorMessage.Context)
-    
+        
 }
 
-struct AnyBehavior<StateType: BehaviorState, EffectType, EffectResponseType, EffectErrorType: Error>: BehaviorProtocol {
+struct AnyBehavior<
+    StateType: BehaviorState,
+    EffectType: BehaviorEffect,
+    BehaviorJobExecutorType: BehaviorJobExecutor>: BehaviorProtocol
+    where BehaviorJobExecutorType.JobMessageType == EffectType.JobMessageType {
     
-    typealias ConcreteBehavior = Behavior<StateType, EffectType, EffectResponseType, EffectErrorType>
+    typealias ConcreteBehavior = Behavior<StateType, EffectType>
     typealias BehaviorTransitionOutput = ConcreteBehavior.TransitionOutput
     typealias BehaviorInput = ConcreteBehavior.Input
+    typealias JobMessageType = BehaviorJobExecutorType.JobMessageType
     
-    let effectPerformer: AnyBehaviorEffectPerformer<EffectType, EffectResponseType, EffectErrorType>
+    let effectPerformer: AnyBehaviorEffectPerformer<EffectType>
     let descriptionForCancellation: String
+    let schedulable: BehaviorSchedulableJobs<BehaviorJobExecutorType>?
     
     private let _create: (BehaviorMessage, BehaviorMessage.Context) -> BehaviorTransitionOutput?
     private let _update: (StateType, BehaviorInput) -> BehaviorTransitionOutput
@@ -70,10 +77,10 @@ struct AnyBehavior<StateType: BehaviorState, EffectType, EffectResponseType, Eff
     init<BehaviorType: BehaviorProtocol>(_ behavior: BehaviorType) where
         BehaviorType.StateType == StateType,
         BehaviorType.EffectType == EffectType,
-        BehaviorType.EffectResponseType == EffectResponseType,
-        BehaviorType.EffectErrorType == EffectErrorType {
+        BehaviorType.BehaviorJobExecutorType == BehaviorJobExecutorType {
         self.effectPerformer = AnyBehaviorEffectPerformer(behavior.effectPerformer)
         self.descriptionForCancellation = behavior.descriptionForCancellation
+        self.schedulable = behavior.schedulable
         self._create = behavior.create
         self._update = behavior.update
     }
@@ -88,18 +95,16 @@ struct AnyBehavior<StateType: BehaviorState, EffectType, EffectResponseType, Eff
     
 }
 
-struct Behavior<StateType: BehaviorState, EffectType, EffectResponseType, EffectErrorType: Error> {
+struct Behavior<StateType: BehaviorState, EffectType: BehaviorEffect> {
 
-    typealias EffectPerformer = AnyBehaviorEffectPerformer<EffectType, EffectResponseType, EffectErrorType>
-    typealias EffectResult = Result<EffectResponseType, EffectErrorType>
-    typealias EffectResultProducer = SignalProducer<EffectResult, NoError>
+    typealias EffectPerformer = AnyBehaviorEffectPerformer<EffectType>
     typealias Create = (BehaviorMessage, BehaviorMessage.Context) -> TransitionOutput?
     typealias Update = (StateType, Input) -> TransitionOutput
     
     enum Input {
         
         case message(BehaviorMessage, BehaviorMessage.Context)
-        case effectResult(EffectResult)
+        case effectResult(EffectType.EffectResult)
     
     }
     

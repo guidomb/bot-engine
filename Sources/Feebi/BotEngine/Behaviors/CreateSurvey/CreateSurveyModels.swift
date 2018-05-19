@@ -82,26 +82,3 @@ struct Survey: Codable {
     let deadline: Date
     
 }
-
-final class SurveyJob: RecurringJob {
-    
-    var id: UUID?
-    var executedAt: Date?
-    let survey: Survey
-    
-    var executionInterval: TimeInterval {
-        return 10
-    }
-    
-    init(survey: Survey) {
-        self.survey = survey
-    }
-    
-    func execute() -> SignalProducer<RecurringJobExecutionResult, AnyError> {
-        guard Date() + executionInterval < survey.deadline else {
-            return SignalProducer(value: .completed)
-        }
-        return .empty
-    }
-    
-}

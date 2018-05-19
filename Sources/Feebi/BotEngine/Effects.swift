@@ -9,44 +9,43 @@ import Foundation
 import ReactiveSwift
 import Result
 
-enum EffectfulAction<EffectResponseType, EffectErrorType: Error> {
+protocol BehaviorEffect {
     
-    typealias EffectResult = Result<EffectResponseType, EffectErrorType>
-    typealias EffectResultProducer = SignalProducer<EffectResult, NoError>
+    associatedtype ResponseType
+    associatedtype ErrorType: Error
+    associatedtype JobMessageType: Codable
+    
+    typealias EffectResult = Result<ResponseType, ErrorType>
+    typealias EffectOutput = (result: EffectResult, job: SchedulableJob<JobMessageType>?)
+    typealias ResultProducer = SignalProducer<EffectOutput, NoError>
+    
+}
+
+enum EffectfulAction<EffectType: BehaviorEffect> {
     
     case cancellAllRunningEffects
-    case effectResultProducer(EffectResultProducer)
+    case effectResultProducer(EffectType.ResultProducer)
     
 }
 
 protocol BehaviorEffectPerformer {
     
-    associatedtype EffectType
-    associatedtype EffectResponseType
-    associatedtype EffectErrorType: Error
-    
-    typealias EffectResult = Result<EffectResponseType, EffectErrorType>
-    typealias EffectResultProducer = SignalProducer<EffectResult, NoError>
-    
-    func perform(effect: EffectType) -> EffectfulAction<EffectResponseType, EffectErrorType>
+    associatedtype EffectType: BehaviorEffect
+
+    func perform(effect: EffectType) -> EffectfulAction<EffectType>
     
 }
 
-struct AnyBehaviorEffectPerformer<EffectType, EffectResponseType, EffectErrorType: Error>: BehaviorEffectPerformer {
+struct AnyBehaviorEffectPerformer<EffectType: BehaviorEffect>: BehaviorEffectPerformer {
     
-    typealias EffectResult = Result<EffectResponseType, EffectErrorType>
-    typealias EffectResultProducer = SignalProducer<EffectResult, NoError>
-    
-    private let performEffect: (EffectType) -> EffectfulAction<EffectResponseType, EffectErrorType>
+    private let performEffect: (EffectType) -> EffectfulAction<EffectType>
     
     init<BehaviorEffectPerformerType: BehaviorEffectPerformer>(_ effectPerformer: BehaviorEffectPerformerType)
-        where   BehaviorEffectPerformerType.EffectType == EffectType,
-        BehaviorEffectPerformerType.EffectResponseType == EffectResponseType,
-        BehaviorEffectPerformerType.EffectErrorType ==EffectErrorType {
-            self.performEffect = effectPerformer.perform(effect:)
+        where   BehaviorEffectPerformerType.EffectType == EffectType {
+        self.performEffect = effectPerformer.perform(effect:)
     }
     
-    func perform(effect: EffectType) -> EffectfulAction<EffectResponseType, EffectErrorType> {
+    func perform(effect: EffectType) -> EffectfulAction<EffectType> {
         return performEffect(effect)
     }
     

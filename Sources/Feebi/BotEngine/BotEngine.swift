@@ -19,20 +19,25 @@ final class BotEngine {
     private let outputRenderer: BehaviorOutputRenderer
     private var activeBehaviors: [ChannelId : ActiveBehavior] = [:]
     private var behaviorFactories: [BehaviorFactory] = []
-    private var disposable: Disposable?
+    private var disposable = CompositeDisposable()
     private let output: Signal<ChanneledBehaviorOutput, NoError>
     private let outputObserver: Signal<ChanneledBehaviorOutput, NoError>.Observer
+    private let jobScheduler: JobScheduler
     
-    init(inputProducer: SignalProducer<MessageWithContext, NoError>, outputRenderer: BehaviorOutputRenderer) {
+    init(inputProducer: SignalProducer<MessageWithContext, NoError>,
+         outputRenderer: BehaviorOutputRenderer,
+         repository: ObjectRepository) {
         self.inputProducer = inputProducer
         self.outputRenderer = outputRenderer
+        self.jobScheduler = JobScheduler(repository: repository, outputRenderer: outputRenderer)
         (output, outputObserver) =  Signal<ChanneledBehaviorOutput, NoError>.pipe()
     }
     
     func start() {
-        disposable?.dispose()
-        disposable = inputProducer.startWithValues(handle(input:))
-        output.observeValues(outputRenderer.render)
+        disposable.dispose()
+        disposable = CompositeDisposable()
+        disposable += inputProducer.startWithValues(handle(input:))
+        output.observeValues { [weak self] in self?.outputRenderer.render(output: $0.output, forChannel: $0.channel) }
     }
     
     func registerBehaviorFactory(_ behaviorFactory: @escaping BehaviorFactory) {
@@ -41,6 +46,7 @@ final class BotEngine {
     
     func registerBehavior<BehaviorType: BehaviorProtocol>(_ behavior: BehaviorType) {
         registerBehaviorFactory(behavior.parse)
+        scheduleJobs(from: behavior)
     }
     
     private func handle(input: MessageWithContext) {
@@ -61,10 +67,12 @@ final class BotEngine {
                 activeBehaviors.removeValue(forKey: channel)
             }
         } else if let activeBehavior = findBehavior(for: input) {
-            activeBehavior.mount(with: outputObserver, for: channel)
+            activeBehavior.mount(with: outputObserver, scheduler: jobScheduler, for: channel)
             if !activeBehavior.isInFinalState {
                 activeBehaviors[channel] = activeBehavior
             }
+            // TODO handle error state
+            // if activeBehavior.isInErrorState
         } else {
             send(reply: .dontUnderstandMessage, for: channel)
         }
@@ -115,11 +123,108 @@ fileprivate extension BotEngine {
     
 }
 
+fileprivate extension BotEngine {
+    
+    final class JobScheduler: BehaviorJobScheduler {
+        
+        private let queue = DispatchQueue(
+            label: "BotEngine.JobScheduler.ScheduledJobsQueue",
+            attributes: .concurrent
+        )
+        private let repository: ObjectRepository
+        private let outputRenderer: BehaviorOutputRenderer
+        
+        init(repository: ObjectRepository, outputRenderer: BehaviorOutputRenderer) {
+            self.repository = repository
+            self.outputRenderer = outputRenderer
+        }
+        
+        func startScheduledJobs<BehaviorType: BehaviorProtocol>(for behavior: BehaviorType) {
+            guard let executor = behavior.schedulable?.executor else {
+                return
+            }
+            guard case .some(let result) = repository.fetchAll(ScheduledJob<BehaviorType.JobMessageType>.self).first() else {
+                fatalError("ERROR - Unable to fetch scheduled jobs for behavior \(String(describing: BehaviorType.self))")
+            }
+            
+            switch result {
+            case .success(let scheduledJobs):
+                scheduledJobs.forEach { enqueueJob($0, with: executor) }
+            case .failure(let error):
+                fatalError("ERROR - Unable to fetch scheduled jobs for behavior \(String(describing: BehaviorType.self)): \(error)")
+            }
+        }
+        
+        func schedule<BehaviorType: BehaviorProtocol>(job: SchedulableJob<BehaviorType.JobMessageType>,
+                                                      for behavior: BehaviorType) {
+            guard let executor = behavior.schedulable?.executor else {
+                fatalError("ERROR - Cannot schedule job without executor.")
+            }
+            
+            repository.save(object: ScheduledJob(job))
+                .on(value: { self.enqueueJob($0, with: executor) })
+                .startWithResult { result in
+                    switch result {
+                    case .success(let jobIdentifier):
+                        print("INFO - Job with identifier '\(jobIdentifier)' successfuly scheduled")
+                        break
+                    case .failure(let error):
+                        // TODO report error
+                        break
+                    }
+                }
+        }
+        
+        func enqueueJob<BehaviorJobExecutorType: BehaviorJobExecutor>(_ scheduledJob: ScheduledJob<BehaviorJobExecutorType.JobMessageType>, with executor: BehaviorJobExecutorType) {
+            queue.asyncAfter(deadline: .now() + scheduledJob.job.interval) {
+                self.executeJob(scheduledJob, with: executor)
+            }
+        }
+    
+        func executeJob<BehaviorJobExecutorType: BehaviorJobExecutor>(_ scheduledJob: ScheduledJob<BehaviorJobExecutorType.JobMessageType>, with executor: BehaviorJobExecutorType) {
+            executor.executeJob(with: scheduledJob.job.message).startWithResult { result in
+                switch result {
+                case .success(let output):
+                    switch output {
+                    case .completed:
+                        self.deleteJob(scheduledJob)
+                    case .success:
+                        self.enqueueJob(scheduledJob, with: executor)
+                    case .value(let behaviorOutput, let channel):
+                        self.outputRenderer.render(output: behaviorOutput, forChannel: channel)
+                        self.enqueueJob(scheduledJob, with: executor)
+                    }
+                case .failure(let error):
+                    // TODO Better handle this
+                    print("ERROR - Unable to execute scheduled job: \(error)")
+                }
+            }
+        }
+        
+        func deleteJob<JobMessageType: Codable>(_ scheduledJob: ScheduledJob<JobMessageType>) {
+            repository.delete(object: scheduledJob).startWithFailed { error in
+                // TODO Better handle this
+                print("ERROR - Unable to delete scheduled job: \(error)")
+            }
+        }
+        
+    }
+    
+    func scheduleJobs<BehaviorType: BehaviorProtocol>(from behavior: BehaviorType) {
+        guard let schedulable = behavior.schedulable else {
+            return
+        }
+        jobScheduler.startScheduledJobs(for: behavior)
+        schedulable.jobs.forEach { jobScheduler.schedule(job: $0, for: behavior) }
+    }
+    
+}
+
 fileprivate extension BehaviorProtocol {
     
     func parse(message: BehaviorMessage, with context: BehaviorMessage.Context) -> ActiveBehavior? {
         return create(message: message, context: context).map { transition in
-            Behavior.Runner(initialTransition: transition, behavior: AnyBehavior(self))
+            Behavior.Runner<Self.BehaviorJobExecutorType>(initialTransition: transition, behavior: AnyBehavior(self))
         }
     }
     

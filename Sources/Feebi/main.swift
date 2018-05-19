@@ -27,7 +27,11 @@ guard let slackToken = ProcessInfo.processInfo.environment["SLACK_API_TOKEN"] el
 //}
 
 print("Running bot engine ...")
-let engine = BotEngine.slackBotEngine(slackToken: slackToken, googleToken: googleToken)
+let engine = BotEngine.slackBotEngine(
+    slackToken: slackToken,
+    googleToken: googleToken,
+    repository: InMemoryObjectRepository()
+)
 engine.registerBehavior(CreateSurveyBehavior(googleToken: googleToken))
 engine.start()
 RunLoop.main.run()

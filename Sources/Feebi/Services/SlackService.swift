@@ -141,7 +141,7 @@ extension UserEntityInfo {
 
 extension BotEngine {
     
-    static func slackBotEngine(slackToken: String, googleToken: GoogleAPI.Token) -> BotEngine {
+    static func slackBotEngine(slackToken: String, googleToken: GoogleAPI.Token, repository: ObjectRepository) -> BotEngine {
         let slackService = SlackService(token: slackToken)
         let outputRenderer = SlackOutputRenderer(slackService: slackService)
         let messageProducer: BotEngine.MessageProducer = slackService.start()
@@ -149,7 +149,7 @@ extension BotEngine {
             .filterMap(eventToBehaviorMessage)
             .flatMap(.concat, addContextToBehaviorMessage(slackService: slackService))
         
-        return BotEngine(inputProducer: messageProducer, outputRenderer: outputRenderer)
+        return BotEngine(inputProducer: messageProducer, outputRenderer: outputRenderer, repository: repository)
     }
     
 }
