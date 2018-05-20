@@ -49,16 +49,22 @@ struct SchedulableJob<JobMessageType: Codable>: Codable {
 
 struct ScheduledJob<JobMessageType: Codable>: Identifiable, Codable {
     
-    var id: Identifier<ScheduledJob>?
-    let job: SchedulableJob<JobMessageType>
-    
-    init(id: Identifier<ScheduledJob>? = .none, job: SchedulableJob<JobMessageType>) {
-        self.id = id
-        self.job = job
+    static func cancelableJob<JobMessageType: Codable>(_ job: SchedulableJob<JobMessageType>) -> ScheduledJob<JobMessageType> {
+        return .init(job: job, isCancelable: true)
     }
     
-    init(_ job: SchedulableJob<JobMessageType>) {
-        self.init(id: .none, job: job)
+    static func longLived<JobMessageType: Codable>(_ job: SchedulableJob<JobMessageType>) -> ScheduledJob<JobMessageType> {
+        return .init(job: job, isCancelable: false)
+    }
+    
+    var id: Identifier<ScheduledJob>?
+    let isCancelable: Bool
+    let job: SchedulableJob<JobMessageType>
+    
+    private init(id: Identifier<ScheduledJob>? = .none, job: SchedulableJob<JobMessageType>,  isCancelable: Bool) {
+        self.id = id
+        self.isCancelable = isCancelable
+        self.job = job
     }
     
 }

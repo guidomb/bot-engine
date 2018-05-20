@@ -161,7 +161,7 @@ fileprivate extension BotEngine {
                 fatalError("ERROR - Cannot schedule job without executor.")
             }
             
-            repository.save(object: ScheduledJob(job))
+            repository.save(object: ScheduledJob<BehaviorType.JobMessageType>.cancelableJob(job))
                 .on(value: { self.enqueueJob($0, with: executor) })
                 .startWithResult { result in
                     switch result {
@@ -187,7 +187,13 @@ fileprivate extension BotEngine {
                 case .success(let output):
                     switch output {
                     case .completed:
-                        self.deleteJob(scheduledJob)
+                        if scheduledJob.isCancelable {
+                            self.deleteJob(scheduledJob)
+                        } else {
+                            // TODO better handle this case
+                            let jobId = scheduledJob.id?.description ?? ".none"
+                            print("WARN - Cannot cancel a non-cancelable job. Job id: \(jobId)")
+                        }
                     case .success:
                         self.enqueueJob(scheduledJob, with: executor)
                     case .value(let behaviorOutput, let channel):
@@ -214,8 +220,11 @@ fileprivate extension BotEngine {
         guard let schedulable = behavior.schedulable else {
             return
         }
+        
         jobScheduler.startScheduledJobs(for: behavior)
-        schedulable.jobs.forEach { jobScheduler.schedule(job: $0, for: behavior) }
+        schedulable.jobs.forEach {
+            jobScheduler.enqueueJob(ScheduledJob<BehaviorType.JobMessageType>.longLived($0), with: schedulable.executor)
+        }
     }
     
 }
