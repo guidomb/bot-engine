@@ -15,15 +15,40 @@ protocol Identifiable {
     
 }
 
+protocol Persistable: Identifiable, Codable {
+    
+    static var collectionName: String { get }
+    
+    var isPersisted: Bool { get }
+    
+}
+
+extension Persistable {
+    
+    static var collectionName: String {
+        let name = String(reflecting: Self.self)
+            .lowercased()
+            .replacingOccurrences(of: ".", with: "_")
+            .replacingOccurrences(of: "<", with: "_")
+            .replacingOccurrences(of: ">", with: "_")
+        return name.last == "_" ? String(name.dropLast()) : name
+    }
+    
+    var isPersisted: Bool {
+        return id != nil
+    }
+    
+}
+
 protocol ObjectRepository {
     
-    func save<ObjectType: Identifiable & Codable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError>
+    func save<ObjectType: Persistable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError>
     
-    func fetch<ObjectType: Identifiable & Codable>(byId id: Identifier<ObjectType>) -> SignalProducer<ObjectType?, AnyError>
+    func fetch<ObjectType: Persistable>(byId id: Identifier<ObjectType>) -> SignalProducer<ObjectType, AnyError>
     
-    func fetchAll<ObjectType: Identifiable & Codable>(_ objectType: ObjectType.Type) -> SignalProducer<[ObjectType], AnyError>
+    func fetchAll<ObjectType: Persistable>(_ objectType: ObjectType.Type) -> SignalProducer<[ObjectType], AnyError>
     
-    func delete<ObjectType: Identifiable & Codable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError>
+    func delete<ObjectType: Persistable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError>
     
 }
 
@@ -33,12 +58,13 @@ final class InMemoryObjectRepository: ObjectRepository {
         
         case objectRepositoryDoesNotExist
         case objectIsNotPersisted
+        case objectNotFound
         
     }
     
     private var repository: [String: [String : Any]] = [:]
     
-    func save<ObjectType: Identifiable & Codable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
+    func save<ObjectType: Persistable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
         let key = String(describing: ObjectType.self)
         var objectRepository = repository[key] ?? [:]
         if let id = object.id {
@@ -55,12 +81,16 @@ final class InMemoryObjectRepository: ObjectRepository {
         }
     }
     
-    func fetch<ObjectType: Identifiable & Codable>(byId id: Identifier<ObjectType>) -> SignalProducer<ObjectType?, AnyError> {
+    func fetch<ObjectType: Persistable>(byId id: Identifier<ObjectType>) -> SignalProducer<ObjectType, AnyError> {
         let key = String(describing: ObjectType.self)
-        return SignalProducer(value: repository[key].flatMap { $0[id.description] as? ObjectType })
+        if let object = repository[key].flatMap({ $0[id.description] as? ObjectType }) {
+            return SignalProducer(value: object)
+        } else {
+            return SignalProducer(error: AnyError(Error.objectNotFound))
+        }
     }
     
-    func fetchAll<ObjectType: Identifiable & Codable>(_ objectType: ObjectType.Type) -> SignalProducer<[ObjectType], AnyError> {
+    func fetchAll<ObjectType: Persistable>(_ objectType: ObjectType.Type) -> SignalProducer<[ObjectType], AnyError> {
         let key = String(describing: ObjectType.self)
         guard let values = repository[key]?.values else {
             return SignalProducer(value: [])
@@ -74,7 +104,7 @@ final class InMemoryObjectRepository: ObjectRepository {
         return SignalProducer(value: objects)
     }
     
-    func delete<ObjectType: Identifiable & Codable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
+    func delete<ObjectType: Persistable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
         let key = String(describing: ObjectType.self)
         guard let id = object.id?.description else {
             return SignalProducer(error: AnyError(Error.objectIsNotPersisted))

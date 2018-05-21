@@ -26,6 +26,11 @@ protocol BehaviorProtocol {
     typealias JobMessageType = BehaviorJobExecutorType.JobMessageType
     typealias ScheduledJobType = ScheduledJob<JobMessageType>
     
+    // TODO effectPerfomer should be a factory method
+    // that receives an ObjectRepository as input parameter.
+    // It should probably also receive process env variables
+    // and user info dictionary with objects that can interpreted
+    // by each behavior. For example GoogleAPI.Token object.
     var effectPerformer: EffectPerformerType { get }
     var descriptionForCancellation: String { get }
     var schedulable: BehaviorSchedulableJobs<BehaviorJobExecutorType>? { get }

@@ -66,6 +66,8 @@ final class BotEngine {
             if activeBehavior.isInFinalState {
                 activeBehaviors.removeValue(forKey: channel)
             }
+            // TODO handle error state
+            // if activeBehavior.isInErrorState
         } else if let activeBehavior = findBehavior(for: input) {
             activeBehavior.mount(with: outputObserver, scheduler: jobScheduler, for: channel)
             if !activeBehavior.isInFinalState {
@@ -161,7 +163,7 @@ fileprivate extension BotEngine {
                 fatalError("ERROR - Cannot schedule job without executor.")
             }
             
-            repository.save(object: ScheduledJob<BehaviorType.JobMessageType>.cancelableJob(job))
+            repository.save(object: job.asCancelableJob())
                 .on(value: { self.enqueueJob($0, with: executor) })
                 .startWithResult { result in
                     switch result {
@@ -223,7 +225,7 @@ fileprivate extension BotEngine {
         
         jobScheduler.startScheduledJobs(for: behavior)
         schedulable.jobs.forEach {
-            jobScheduler.enqueueJob(ScheduledJob<BehaviorType.JobMessageType>.longLived($0), with: schedulable.executor)
+            jobScheduler.enqueueJob($0.asLongLivedJob(), with: schedulable.executor)
         }
     }
     

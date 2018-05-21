@@ -28,6 +28,12 @@ extension GoogleAPIResourceExecutor {
         }
     }
     
+    public func execute(resource: GoogleAPI.Resource<Void>, token: GoogleAPI.Token,
+                               session: URLSession = .shared) -> GoogleAPI.ResourceProducer<Void> {
+        return execute(resource: resource, token: token, session: session) { data, _ in
+            Result.success(())
+        }
+    }
 }
 
 public final class GoogleAPI: GoogleAPIResourceExecutor {
@@ -42,6 +48,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         case get    = "GET"
         case post   = "POST"
         case put    = "PUT"
+        case patch  = "PATCH"
         case delete = "DELETE"
         
     }
@@ -54,7 +61,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         let method: HTTPMethod
         
         var urlPath: String {
-            if let queryString = queryParameters() {
+            if let queryString = queryParameters(), !queryString.isEmpty {
                 return "\(path)?\(queryString)"
             } else {
                 return path
@@ -213,6 +220,15 @@ public extension GoogleAPI.Resource where T: Decodable {
     
     func execute(using token: GoogleAPI.Token,
                  with executor: GoogleAPIResourceExecutor = GoogleAPI.shared)  -> GoogleAPI.ResourceProducer<T> {
+        return executor.execute(resource: self, token: token)
+    }
+    
+}
+
+public extension GoogleAPI.Resource where T == Void {
+    
+    func execute(using token: GoogleAPI.Token,
+                 with executor: GoogleAPIResourceExecutor = GoogleAPI.shared)  -> GoogleAPI.ResourceProducer<Void> {
         return executor.execute(resource: self, token: token)
     }
     

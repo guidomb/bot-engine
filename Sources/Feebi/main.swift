@@ -13,24 +13,15 @@ guard let slackToken = ProcessInfo.processInfo.environment["SLACK_API_TOKEN"] el
     fatalError("Missing Slack API token. You need to define SLACK_API_TOKEN env variable.")
 }
 
-//let jobOrchestrator = RecurringJobOrchestrator(store: InMemoryRecurringJobStore())
-//guard let bootstrapResult = jobOrchestrator.bootstrap().first() else {
-//    print("ERROR - Unable to bootstrap recurring job orchestrator.")
-//    exit(1)
-//}
-//switch bootstrapResult {
-//case .success(let activeJobs):
-//    print("Running recurring job orchestrator. There are \(activeJobs.count) active jobs.")
-//case .failure(let error):
-//    print("ERROR - Unable to bootstrap recurring job orchestrator: \(error)")
-//    exit(1)
-//}
-
 print("Running bot engine ...")
 let engine = BotEngine.slackBotEngine(
     slackToken: slackToken,
     googleToken: googleToken,
-    repository: InMemoryObjectRepository()
+    repository: FirebaseObjectRepository(
+        token: googleToken,
+        projectId: "feedi-dev",
+        databaseId: "(default)"
+    )
 )
 engine.registerBehavior(CreateSurveyBehavior(googleToken: googleToken))
 engine.start()

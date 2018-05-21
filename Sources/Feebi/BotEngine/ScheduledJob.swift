@@ -45,9 +45,17 @@ struct SchedulableJob<JobMessageType: Codable>: Codable {
     let interval: TimeInterval
     let message: JobMessageType
     
+    func asLongLivedJob() -> ScheduledJob<JobMessageType> {
+        return ScheduledJob<JobMessageType>.longLived(self)
+    }
+    
+    func asCancelableJob() -> ScheduledJob<JobMessageType> {
+        return ScheduledJob<JobMessageType>.cancelableJob(self)
+    }
+    
 }
 
-struct ScheduledJob<JobMessageType: Codable>: Identifiable, Codable {
+struct ScheduledJob<JobMessageType: Codable>: Persistable, Codable {
     
     static func cancelableJob<JobMessageType: Codable>(_ job: SchedulableJob<JobMessageType>) -> ScheduledJob<JobMessageType> {
         return .init(job: job, isCancelable: true)

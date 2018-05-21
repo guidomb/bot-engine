@@ -27,7 +27,8 @@ struct GoogleAuth {
     let scopes = [
         "https://www.googleapis.com/auth/spreadsheets.readonly",
         "https://www.googleapis.com/auth/forms",
-        "https://www.googleapis.com/auth/drive.metadata.readonly"
+        "https://www.googleapis.com/auth/drive.metadata.readonly",
+        "https://www.googleapis.com/auth/datastore",
     ]
     
     func login() throws -> GoogleAPI.Token {
