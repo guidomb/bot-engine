@@ -11,6 +11,13 @@ import ReactiveSwift
 
 final class BotEngine {
     
+    struct Services {
+        
+        let jobScheduler: BehaviorJobScheduler
+        let repository: ObjectRepository
+        
+    }
+    
     typealias MessageWithContext = (message: BehaviorMessage, context: BehaviorMessage.Context)
     typealias MessageProducer = SignalProducer<MessageWithContext, NoError>
     typealias BehaviorFactory = (MessageWithContext) -> ActiveBehavior?
@@ -22,14 +29,19 @@ final class BotEngine {
     private var disposable = CompositeDisposable()
     private let output: Signal<ChanneledBehaviorOutput, NoError>
     private let outputObserver: Signal<ChanneledBehaviorOutput, NoError>.Observer
-    private let jobScheduler: JobScheduler
+    private let services: Services
+    
+    fileprivate var jobScheduler: JobScheduler {
+        return services.jobScheduler as! JobScheduler
+    }
     
     init(inputProducer: SignalProducer<MessageWithContext, NoError>,
          outputRenderer: BehaviorOutputRenderer,
          repository: ObjectRepository) {
         self.inputProducer = inputProducer
         self.outputRenderer = outputRenderer
-        self.jobScheduler = JobScheduler(repository: repository, outputRenderer: outputRenderer)
+        let jobScheduler = JobScheduler(repository: repository, outputRenderer: outputRenderer)
+        self.services = Services(jobScheduler: jobScheduler, repository: repository)
         (output, outputObserver) =  Signal<ChanneledBehaviorOutput, NoError>.pipe()
     }
     
@@ -69,7 +81,7 @@ final class BotEngine {
             // TODO handle error state
             // if activeBehavior.isInErrorState
         } else if let activeBehavior = findBehavior(for: input) {
-            activeBehavior.mount(with: outputObserver, scheduler: jobScheduler, for: channel)
+            activeBehavior.mount(using: services, with: outputObserver, for: channel)
             if !activeBehavior.isInFinalState {
                 activeBehaviors[channel] = activeBehavior
             }

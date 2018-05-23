@@ -31,10 +31,11 @@ extension Behavior {
         private let behavior: BehaviorType
         private let mutableState: MutableProperty<StateType?>
         private let outputObserver: Signal<ChanneledBehaviorOutput, NoError>.Observer
-        private var jobScheduler: BehaviorJobScheduler? = .none
         private var initialTransition: TransitionOutput?
         private var disposable = CompositeDisposable()
-
+        private var services: BotEngine.Services?
+        private var effectPerformer: AnyBehaviorEffectPerformer<EffectType>?
+        
         init(initialTransition: TransitionOutput, behavior: BehaviorType) {
             (self.output, self.outputObserver) = Signal<ChanneledBehaviorOutput, NoError>.pipe()
             self.mutableState = MutableProperty(.none)
@@ -47,15 +48,16 @@ extension Behavior {
             handle(input: .message(message, context), for: message.channel)
         }
         
-        func mount(with observer: Signal<ChanneledBehaviorOutput, NoError>.Observer,
-                   scheduler: BehaviorJobScheduler,
+        func mount(using services: BotEngine.Services,
+                   with observer: Signal<ChanneledBehaviorOutput, NoError>.Observer,
                    for channel: ChannelId) {
             guard let initialTransition = self.initialTransition else {
                 fatalError("Behavior has already been mounted")
             }
             
             self.initialTransition = .none
-            self.jobScheduler = scheduler
+            self.services = services
+            self.effectPerformer = behavior.createEffectPerformer(repository: services.repository)
             output.observe(observer)
             handle(transition: initialTransition, for: channel)
         }
@@ -90,7 +92,11 @@ fileprivate extension Behavior.Runner {
     }
     
     func performEffect(_ effect: EffectType, for channel: ChannelId) {
-        switch behavior.effectPerformer.perform(effect: effect) {
+        guard let effectPerformer = self.effectPerformer else {
+            fatalError("ERROR - Cannot perform effect if effect performer is not available. Maybe you forgot to mount the runner")
+        }
+        
+        switch effectPerformer.perform(effect: effect) {
         case .cancellAllRunningEffects:
             cancellAllRunningEffects()
             
@@ -112,7 +118,7 @@ fileprivate extension Behavior.Runner {
         guard let job = maybeJob else {
             return
         }
-        guard let scheduler = jobScheduler else {
+        guard let scheduler = services?.jobScheduler else {
             fatalError("ERROR - Cannot schedule job. There is no scheduler. Behavior was not properly mounted.")
         }
         scheduler.schedule(job: job, for: behavior)

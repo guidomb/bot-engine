@@ -23,8 +23,6 @@ struct CreateSurveyBehavior: BehaviorProtocol {
     typealias TransitionOutput = _Behavior.TransitionOutput
     typealias Input = _Behavior.Input
     
-    let effectPerformer: EffectPerformer
-    
     var descriptionForCancellation: String {
         return "the survey creation process"
     }
@@ -36,8 +34,14 @@ struct CreateSurveyBehavior: BehaviorProtocol {
         )
     }
     
+    private let googleToken: GoogleAPI.Token
+    
     init(googleToken: GoogleAPI.Token) {
-        self.effectPerformer = EffectPerformer(googleToken: googleToken)
+        self.googleToken = googleToken
+    }
+    
+    func createEffectPerformer(repository: ObjectRepository) -> EffectPerformer {
+        return EffectPerformer(googleToken: googleToken, repository: repository)
     }
     
     func create(message: BehaviorMessage, context: BehaviorMessage.Context) -> TransitionOutput? {

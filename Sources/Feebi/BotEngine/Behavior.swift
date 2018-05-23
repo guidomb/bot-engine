@@ -26,14 +26,10 @@ protocol BehaviorProtocol {
     typealias JobMessageType = BehaviorJobExecutorType.JobMessageType
     typealias ScheduledJobType = ScheduledJob<JobMessageType>
     
-    // TODO effectPerfomer should be a factory method
-    // that receives an ObjectRepository as input parameter.
-    // It should probably also receive process env variables
-    // and user info dictionary with objects that can interpreted
-    // by each behavior. For example GoogleAPI.Token object.
-    var effectPerformer: EffectPerformerType { get }
     var descriptionForCancellation: String { get }
     var schedulable: BehaviorSchedulableJobs<BehaviorJobExecutorType>? { get }
+    
+    func createEffectPerformer(repository: ObjectRepository) -> EffectPerformerType
     
     func create(message: BehaviorMessage, context: BehaviorMessage.Context) -> BehaviorTransitionOutput?
     
@@ -55,7 +51,9 @@ protocol ActiveBehavior {
     
     var descriptionForCancellation: String { get }
     
-    func mount(with observer: Signal<ChanneledBehaviorOutput, NoError>.Observer, scheduler: BehaviorJobScheduler, for channel: ChannelId)
+    func mount(using services: BotEngine.Services,
+               with observer: Signal<ChanneledBehaviorOutput, NoError>.Observer,
+               for channel: ChannelId)
     
     func handle(message: BehaviorMessage, with context: BehaviorMessage.Context)
         
@@ -72,22 +70,26 @@ struct AnyBehavior<
     typealias BehaviorInput = ConcreteBehavior.Input
     typealias JobMessageType = BehaviorJobExecutorType.JobMessageType
     
-    let effectPerformer: AnyBehaviorEffectPerformer<EffectType>
     let descriptionForCancellation: String
     let schedulable: BehaviorSchedulableJobs<BehaviorJobExecutorType>?
     
     private let _create: (BehaviorMessage, BehaviorMessage.Context) -> BehaviorTransitionOutput?
     private let _update: (StateType, BehaviorInput) -> BehaviorTransitionOutput
+    private let _createEffectPerformer: (ObjectRepository) -> AnyBehaviorEffectPerformer<EffectType>
     
     init<BehaviorType: BehaviorProtocol>(_ behavior: BehaviorType) where
         BehaviorType.StateType == StateType,
         BehaviorType.EffectType == EffectType,
         BehaviorType.BehaviorJobExecutorType == BehaviorJobExecutorType {
-        self.effectPerformer = AnyBehaviorEffectPerformer(behavior.effectPerformer)
         self.descriptionForCancellation = behavior.descriptionForCancellation
         self.schedulable = behavior.schedulable
         self._create = behavior.create
         self._update = behavior.update
+        self._createEffectPerformer = { AnyBehaviorEffectPerformer(behavior.createEffectPerformer(repository: $0)) }
+    }
+    
+    func createEffectPerformer(repository: ObjectRepository) -> AnyBehaviorEffectPerformer<EffectType> {
+        return _createEffectPerformer(repository)
     }
     
     func create(message: BehaviorMessage, context: BehaviorMessage.Context) -> BehaviorTransitionOutput? {

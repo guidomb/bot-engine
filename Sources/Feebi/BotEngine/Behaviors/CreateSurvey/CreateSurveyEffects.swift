@@ -44,9 +44,11 @@ extension CreateSurveyBehavior {
     struct EffectPerformer: BehaviorEffectPerformer {
         
         private let googleToken: GoogleAPI.Token
+        private let repository: ObjectRepository
         
-        init(googleToken: GoogleAPI.Token) {
+        init(googleToken: GoogleAPI.Token, repository: ObjectRepository) {
             self.googleToken = googleToken
+            self.repository = repository
         }
         
         func perform(effect: Effect) -> EffectfulAction<Effect> {
