@@ -474,8 +474,7 @@ public extension FirestoreDocument {
                     }
                     
                 case .optional:
-                    switch childMirror.children.first {
-                    case let .some((.some("some"), childValue)):
+                    if case .some((.some("some"), let childValue)) = childMirror.children.first {
                         let innerSkipFields = filterSkipFields(skipFields, property: label)
                         if let mapValue = serializeFields(object: childValue, skipFields: innerSkipFields) {
                             fields[label] = .mapValue(MapValue(fields: mapValue))
@@ -484,15 +483,9 @@ public extension FirestoreDocument {
                         } else {
                             print("WARN - Unable to serialize optional property '\(label)' with value '\(value)' into FirestoreDocument.Value")
                         }
-                    default:
+                    } else {
                         fields[label] = .nullValue
                     }
-                    break
-                    
-                // TODO try to handle enums using Mirror API
-                // It should be able to handle enums with associated
-                // values
-                // case .enum:
                     
                 default:
                     let innerSkipFields = filterSkipFields(skipFields, property: label)
