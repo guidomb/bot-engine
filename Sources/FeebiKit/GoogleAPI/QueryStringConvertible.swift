@@ -22,7 +22,8 @@ public func toQueryString(object: Any) -> String? {
     switch displayStyle {
     case .class, .struct, .dictionary:
         return mirror.children.lazy
-            .filter { $0 != nil || $1 is QueryStringConvertible}
+            .filter { isOptional($0) }
+            .filter { $0 != nil || $1 is QueryStringConvertible }
             .map { "\($0!)=\($1)".urlEncoded }
             .joined(separator: "&")
     default:
@@ -60,4 +61,12 @@ extension String {
         return self.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? self
     }
     
+}
+
+fileprivate func isOptional(_ object: Any) -> Bool {
+    if case .some(.optional) = Mirror(reflecting: object).displayStyle {
+        return true
+    } else {
+        return false
+    }
 }
