@@ -256,7 +256,7 @@ public struct FirestorePatchDocumentOptions: QueryStringConvertible {
 
 public struct FirestoreDocumentList: Decodable {
     
-    public let documents: [FirestoreDocument]
+    public let documents: [FirestoreDocument]?
     public let nextPageToken: String?
     
     public init(documents: [FirestoreDocument], nextPageToken: String? = .none) {

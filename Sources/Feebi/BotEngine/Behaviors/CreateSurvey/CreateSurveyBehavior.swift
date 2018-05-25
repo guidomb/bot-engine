@@ -29,7 +29,7 @@ struct CreateSurveyBehavior: BehaviorProtocol {
     
     var schedulable: BehaviorSchedulableJobs<JobExecutor>? {
         return BehaviorSchedulableJobs(
-            jobs: [SchedulableJob(interval: 15.0, message: .sayHello(helloText: "Fucker!"))],
+            jobs: [],
             executor: JobExecutor()
         )
     }
@@ -58,10 +58,25 @@ struct CreateSurveyBehavior: BehaviorProtocol {
     
     func update(state: State, input: Input) -> TransitionOutput {
         switch input {
+        
         case .message(let message, let context):
             return update(state: state, message: message, context: context)
+        
         case .effectResult(let effectResult):
             return update(state: state, effectResult: effectResult)
+            
+        case .interactiveMessageAnswer(let answer):
+            guard case .ready(let survey) = state else {
+                print("WARN: This should not happen. Cannot confirmation message while being in state \(state)")
+                return .init(state: state)
+            }
+            if answer == "yes" {
+                return .surveyConfirmed(survey: survey)
+            } else if answer == "no" {
+                return .surveyCancelled(survey: survey)
+            } else {
+                return .invalidConfirmationInput(survey: survey)
+            }
         }
     }
 
@@ -165,14 +180,8 @@ fileprivate extension CreateSurveyBehavior {
             let survey = Survey(formId: formId, destinataries: destinataries, deadline: deadline)
             return .confirmSurveyCreation(survey: survey)
             
-        case .ready(let survey):
-            if message.text.lowercased() == "yes" {
-                return .surveyConfirmed(survey: survey)
-            } else if message.text.lowercased() == "no" {
-                return .surveyCancelled(survey: survey)
-            } else {
-                return .invalidConfirmationInput(survey: survey)
-            }
+        case .ready:
+            return .init(state: state)
            
         case .confirmed(let survey):
             return .surveyCreated(survey: survey)
@@ -312,7 +321,10 @@ fileprivate extension Behavior.TransitionOutput where
     static func confirmSurveyCreation(survey: Survey) -> CreateSurveyBehavior.TransitionOutput {
         return .init(
             state: .ready(survey),
-            output: .textMessage("I'm about to create a new survey that will be sent to \(survey.printableDestinataries()) with deadline '\(survey.deadline)'.\nDo you want me to proceed?")
+            output: .confirmationQuestion(
+                message: "I'm about to create a new survey that will be sent to \(survey.printableDestinataries()) with deadline '\(survey.deadline)'",
+                question: "Do you want me to proceed?"
+            )
         )
     }
     

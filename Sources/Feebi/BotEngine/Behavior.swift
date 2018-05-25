@@ -55,7 +55,7 @@ protocol ActiveBehavior {
                with observer: Signal<ChanneledBehaviorOutput, NoError>.Observer,
                for channel: ChannelId)
     
-    func handle(message: BehaviorMessage, with context: BehaviorMessage.Context)
+    func handle(input: BotEngine.Input)
         
 }
 
@@ -112,6 +112,7 @@ struct Behavior<StateType: BehaviorState, EffectType: BehaviorEffect> {
         
         case message(BehaviorMessage, BehaviorMessage.Context)
         case effectResult(EffectType.EffectResult)
+        case interactiveMessageAnswer(String)
     
     }
     

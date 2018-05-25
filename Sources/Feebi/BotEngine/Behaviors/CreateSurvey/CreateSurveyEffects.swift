@@ -62,8 +62,7 @@ extension CreateSurveyBehavior {
                     .asEffectfulAction
 
             case .createSurvey(let survey):
-                let job = SchedulableJob(interval: 10.0, message: CreateSurveyBehavior.JobMessage.sayBye(byeText: "Mister"))
-                return successfulResponse(.surveyCreated(survey), job: job).asEffectfulAction
+                return successfulResponse(.surveyCreated(survey)).asEffectfulAction
 
             }
         }

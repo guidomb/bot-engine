@@ -119,8 +119,11 @@ fileprivate extension FirebaseObjectRepository {
     
     func deserialize<ObjectType: Persistable>(as objectType: ObjectType.Type) -> (FirestoreDocumentList) -> SignalProducer<[ObjectType], AnyError> {
         return { documentList in
+            guard let documents = documentList.documents else {
+                return SignalProducer(value: [])
+            }
             do {
-                return SignalProducer(value: try documentList.documents.map { try $0.deserialize() })
+                return SignalProducer(value: try documents.map { try $0.deserialize() })
             } catch let error {
                 return SignalProducer(error: Error.deserializationError(error).asAnyError)
             }
@@ -169,8 +172,10 @@ fileprivate extension Persistable {
 fileprivate extension FirestoreDocumentList {
     
     func concat(with list: FirestoreDocumentList) -> FirestoreDocumentList {
-        var newDocuments = self.documents
-        newDocuments.append(contentsOf: list.documents)
+        var newDocuments = self.documents ?? []
+        if let documents = list.documents {
+            newDocuments.append(contentsOf: documents)            
+        }
         return FirestoreDocumentList(documents: newDocuments, nextPageToken: list.nextPageToken)
     }
     

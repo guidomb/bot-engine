@@ -16,6 +16,6 @@ protocol BehaviorOutputRenderer {
 enum BehaviorOutput {
     
     case textMessage(String)
-    case confirmationQuestion(yesMessage: String, noMessage: String)
+    case confirmationQuestion(message: String, question: String)
     
 }

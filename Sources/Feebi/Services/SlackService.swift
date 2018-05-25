@@ -27,6 +27,11 @@ protocol SlackServiceProtocol {
     
     func sendMessage(channel: String, text: String) -> SignalProducer<(), SlackServiceError>
     
+    func sendMessage<ButtonType: ButtonMessage>(
+        channel: String,
+        text: String,
+        buttonsSectionTitle: String,
+        buttons: [ButtonType]) -> SignalProducer<ButtonType, SlackServiceError>
 }
 
 protocol ButtonMessage {
@@ -94,8 +99,11 @@ final class SlackService: SlackServiceProtocol {
         }
     }
     
-    func sendMessage<ButtonType: ButtonMessage>(channel: String, text: String, buttons: [ButtonType])
-        -> SignalProducer<ButtonType, SlackServiceError> {
+    func sendMessage<ButtonType: ButtonMessage>(
+        channel: String,
+        text: String,
+        buttonsSectionTitle: String,
+        buttons: [ButtonType]) -> SignalProducer<ButtonType, SlackServiceError> {
         guard let webAPI = self.slackKit?.webAPI else {
             return SignalProducer(error: .webAPINotAvailable)
         }
@@ -106,13 +114,13 @@ final class SlackService: SlackServiceProtocol {
         }
         let fallbacks = text +
             buttons.enumerated().map { "\t\($0) - \($1.text)" }.joined(separator: "\n")
-        let attachment = Attachment(fallback: fallbacks, title: text, callbackID: callbackID, actions: actions)
+        let attachment = Attachment(fallback: fallbacks, title: buttonsSectionTitle, callbackID: callbackID, actions: actions)
         
         return SignalProducer { [middleware = self.middleware] observer, _ in
             middleware.registerObserver(observer, for: callbackID)
             webAPI.sendMessage(
                 channel: channel,
-                text: "",
+                text: text,
                 attachments: [attachment],
                 success: { _ in print("Message with buttons sent. CallbackId: \(callbackID)") },
                 failure: { observer.send(error: .sendMessageFailure($0)) }
@@ -143,7 +151,34 @@ final class SlackService: SlackServiceProtocol {
 
 struct SlackOutputRenderer: BehaviorOutputRenderer {
     
+    enum ConfirmationButton: String, ButtonMessage {
+        
+        static let options: [ConfirmationButton] = [.yes, .no]
+        
+        case yes
+        case no
+        
+        var text: String {
+            return self.rawValue
+        }
+        
+        var response: String {
+            return "👍"
+        }
+        
+        init?(from: String) {
+            self.init(rawValue: from)
+        }
+        
+    }
+    
     let slackService: SlackServiceProtocol
+    
+    fileprivate let (signal, observer) = Signal<(answer: String, channel: ChannelId), NoError>.pipe()
+    
+    init(slackService: SlackServiceProtocol) {
+        self.slackService = slackService
+    }
     
     func render(output: BehaviorOutput, forChannel channel: ChannelId) {
         switch output {
@@ -156,12 +191,21 @@ struct SlackOutputRenderer: BehaviorOutputRenderer {
                 print("")
             }
             
-        case .confirmationQuestion(let yesMessage, let noMessage):
-            slackService.sendMessage(channel: channel, text: "I need confirmation bitch!").startWithFailed { error in
-                print("Error sending message:")
-                print("\tChannel: \(channel)")
-                print("\tError: \(error)")
-                print("")
+        case .confirmationQuestion(let message, let question):
+            slackService.sendMessage(
+                channel: channel,
+                text: message,
+                buttonsSectionTitle: question,
+                buttons: ConfirmationButton.options).startWithResult { result in
+                switch result {
+                case .success(let answer):
+                    self.observer.send(value: (answer.text, channel))
+                case .failure(let error):
+                    print("Error sending message:")
+                    print("\tChannel: \(channel)")
+                    print("\tError: \(error)")
+                    print("")
+                }
             }
         }
     }
@@ -192,12 +236,19 @@ extension BotEngine {
         
         let slackService = SlackService(token: slackToken, verificationToken: verificationToken)
         let outputRenderer = SlackOutputRenderer(slackService: slackService)
-        let messageProducer: BotEngine.MessageProducer = slackService.start()
+        let messageProducer: BotEngine.InputProducer = slackService.start()
             .flatMapError { _ in .empty }
             .filterMap(eventToBehaviorMessage)
             .flatMap(.concat, addContextToBehaviorMessage(slackService: slackService))
         
-        return BotEngine(inputProducer: messageProducer, outputRenderer: outputRenderer, repository: repository)
+        return BotEngine(
+            inputProducer: BotEngine.InputProducer.merge([
+                messageProducer,
+                SignalProducer(outputRenderer.signal).map(BotEngine.Input.interactiveMessageAnswer)
+            ]),
+            outputRenderer: outputRenderer,
+            repository: repository
+        )
     }
     
 }
@@ -310,14 +361,14 @@ fileprivate func eventToBehaviorMessage(_ event: Event) -> BehaviorMessage? {
     return BehaviorMessage(source: .slack, channel: channel, text: messageText)
 }
 
-fileprivate func addContextToBehaviorMessage(slackService: SlackService) -> (BehaviorMessage) -> BotEngine.MessageProducer {
+fileprivate func addContextToBehaviorMessage(slackService: SlackService) -> (BehaviorMessage) -> BotEngine.InputProducer {
     return { message in
         guard !message.entities.isEmpty else {
-            return .init(value: (message, BehaviorMessage.Context()))
+            return .init(value: .message(message: message, context: BehaviorMessage.Context()))
         }
         
         return slackService.fetchUsers(userIds: message.slackUserIdEntities)
-            .map { (message, .with(users: $0)) }
+            .map { .message(message: message, context: .with(users: $0)) }
             .flatMapError { _ in .empty }
     }
 }

@@ -18,11 +18,27 @@ final class BotEngine {
         
     }
     
+    enum Input {
+        
+        case message(message: BehaviorMessage, context: BehaviorMessage.Context)
+        case interactiveMessageAnswer(answer: String, channel: ChannelId)
+        
+        var channel: ChannelId {
+            switch self {
+            case .message(let message, _):
+                return message.channel
+            case .interactiveMessageAnswer(_, let channel):
+                return channel
+            }
+        }
+        
+    }
+    
     typealias MessageWithContext = (message: BehaviorMessage, context: BehaviorMessage.Context)
-    typealias MessageProducer = SignalProducer<MessageWithContext, NoError>
+    typealias InputProducer = SignalProducer<Input, NoError>
     typealias BehaviorFactory = (MessageWithContext) -> ActiveBehavior?
     
-    private let inputProducer: MessageProducer
+    private let inputProducer: InputProducer
     private let outputRenderer: BehaviorOutputRenderer
     private var activeBehaviors: [ChannelId : ActiveBehavior] = [:]
     private var behaviorFactories: [BehaviorFactory] = []
@@ -35,7 +51,7 @@ final class BotEngine {
         return services.jobScheduler as! JobScheduler
     }
     
-    init(inputProducer: SignalProducer<MessageWithContext, NoError>,
+    init(inputProducer: InputProducer,
          outputRenderer: BehaviorOutputRenderer,
          repository: ObjectRepository) {
         self.inputProducer = inputProducer
@@ -61,46 +77,6 @@ final class BotEngine {
         scheduleJobs(from: behavior)
     }
     
-    private func handle(input: MessageWithContext) {
-        let channel = input.message.channel
-        guard !input.message.isCancelMessage else {
-            if let activeBehavior = activeBehaviors[channel] {
-                activeBehaviors.removeValue(forKey: channel)
-                send(reply: .cancelConfirmation(description: activeBehavior.descriptionForCancellation), for: channel)
-            } else {
-                send(reply: .nothingToCancel, for: channel)
-            }
-            return
-        }
-        
-        if let activeBehavior = activeBehaviors[channel] {
-            activeBehavior.handle(message: input.message, with: input.context)
-            if activeBehavior.isInFinalState {
-                activeBehaviors.removeValue(forKey: channel)
-            }
-            // TODO handle error state
-            // if activeBehavior.isInErrorState
-        } else if let activeBehavior = findBehavior(for: input) {
-            activeBehavior.mount(using: services, with: outputObserver, for: channel)
-            if !activeBehavior.isInFinalState {
-                activeBehaviors[channel] = activeBehavior
-            }
-            // TODO handle error state
-            // if activeBehavior.isInErrorState
-        } else {
-            send(reply: .dontUnderstandMessage, for: channel)
-        }
-    }
-    
-    private func findBehavior(for message: MessageWithContext) -> ActiveBehavior? {
-        for behaviorFactory in behaviorFactories {
-            if let activeBehavior = behaviorFactory(message) {
-                return activeBehavior
-            }
-        }
-        return .none
-    }
-    
 }
 
 fileprivate extension BotEngine {
@@ -123,6 +99,76 @@ fileprivate extension BotEngine {
         }
     }
     
+    func handle(input: Input) {
+        switch input {
+        case .message(let message, let context):
+            handle(message: message, context: context)
+        case .interactiveMessageAnswer(let answer, let channel):
+            handle(answer: answer, channel: channel)
+        }
+    }
+    
+    func handle(message: BehaviorMessage, context: BehaviorMessage.Context) {
+        let channel = message.channel
+        guard !message.isCancelMessage else {
+            cancelActiveBehavior(for: channel)
+            return
+        }
+        
+        if let activeBehavior = activeBehaviors[channel] {
+            handle(input: .message(message: message, context: context), with: activeBehavior)
+        } else if let activeBehavior = findBehavior(for: (message, context)) {
+            mount(behavior: activeBehavior, for: channel)
+        } else {
+            send(reply: .dontUnderstandMessage, for: channel)
+        }
+    }
+    
+    func cancelActiveBehavior(for channel: ChannelId) {
+        if let activeBehavior = activeBehaviors[channel] {
+            activeBehaviors.removeValue(forKey: channel)
+            send(reply: .cancelConfirmation(description: activeBehavior.descriptionForCancellation), for: channel)
+        } else {
+            send(reply: .nothingToCancel, for: channel)
+        }
+    }
+    
+    func handle(answer: String, channel: ChannelId) {
+        guard let activeBehavior = activeBehaviors[channel] else {
+            print("WARN - There is not active behavior for channel '\(channel)' to handle interactive message answer 'answer'")
+            return
+        }
+        
+        handle(input: .interactiveMessageAnswer(answer: answer, channel: channel), with: activeBehavior)
+    }
+    
+    func handle(input: Input, with behavior: ActiveBehavior) {
+        behavior.handle(input: input)
+        if behavior.isInFinalState {
+            activeBehaviors.removeValue(forKey: input.channel)
+        }
+        // TODO handle error state
+        // if activeBehavior.isInErrorState
+    }
+    
+    func mount(behavior: ActiveBehavior, for channel: ChannelId) {
+        behavior.mount(using: services, with: outputObserver, for: channel)
+        if !behavior.isInFinalState {
+            activeBehaviors[channel] = behavior
+        }
+        // TODO handle error state
+        // if activeBehavior.isInErrorState
+    }
+    
+    func findBehavior(for message: MessageWithContext) -> ActiveBehavior? {
+        for behaviorFactory in behaviorFactories {
+            if let activeBehavior = behaviorFactory(message) {
+                return activeBehavior
+            }
+        }
+        return .none
+    }
+    
     func send(reply: DefaultReply, for channel: ChannelId) {
         send(message: reply.message, for: channel)
     }
@@ -131,7 +177,7 @@ fileprivate extension BotEngine {
         outputObserver.send(value: (.textMessage(message), channel))
     }
     
-    private func send(output: BehaviorOutput, for channel: ChannelId) {
+    func send(output: BehaviorOutput, for channel: ChannelId) {
         outputObserver.send(value: (output, channel))
     }
     

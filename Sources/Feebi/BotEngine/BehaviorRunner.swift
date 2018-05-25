@@ -44,8 +44,8 @@ extension Behavior {
             self.behavior = behavior
         }
         
-        func handle(message: BehaviorMessage, with context: BehaviorMessage.Context) {
-            handle(input: .message(message, context), for: message.channel)
+        func handle(input: BotEngine.Input) {
+            handle(input: asBehaviorInput(input), for: input.channel)
         }
         
         func mount(using services: BotEngine.Services,
@@ -122,6 +122,15 @@ fileprivate extension Behavior.Runner {
             fatalError("ERROR - Cannot schedule job. There is no scheduler. Behavior was not properly mounted.")
         }
         scheduler.schedule(job: job, for: behavior)
+    }
+    
+    func asBehaviorInput(_ input: BotEngine.Input) -> Behavior.Input {
+        switch input {
+        case .message(let message, let context):
+            return .message(message, context)
+        case .interactiveMessageAnswer(let answer, _):
+            return .interactiveMessageAnswer(answer)
+        }
     }
     
 }
