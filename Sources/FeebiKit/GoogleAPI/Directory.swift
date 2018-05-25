@@ -54,8 +54,29 @@ public extension GoogleAPI {
             
         }
         
+        public struct Users {
+            
+            private let basePath: String
+            
+            fileprivate init(basePath: String) {
+                self.basePath = "\(basePath)/users"
+            }
+            
+            // https://developers.google.com/admin-sdk/directory/v1/reference/users/list
+            public func list(options: ListUsersOptions = .init()) -> Resource<UserList> {
+                return Resource(
+                    path: basePath,
+                    queryParameters: options,
+                    method: .get
+                )
+            }
+            
+        }
+        
         fileprivate init() {}
 
+        public var users: Users { return Users(basePath: basePath) }
+        
         public func members(for groupKey: String) -> Members { return Members(basePath: basePath, groupKey: groupKey) }
         
     }
@@ -72,6 +93,55 @@ public struct ListMembersOptions: QueryStringConvertible {
     public var maxResults: Int?
     public var pageToken: String?
     public var roles: Member.Role?
+    
+    public var asQueryString: String {
+        return toQueryString(object: self) ?? ""
+    }
+    
+    public init() { }
+    
+}
+
+public struct UserList: Decodable {
+    
+    public let users: [User]
+    public let nextPageToken: String?
+    
+}
+
+public struct ListUsersOptions: QueryStringConvertible {
+    
+    public enum SortOder: String {
+        
+        case ascending  = "ASCENDING"
+        case descending = "DESCENDING"
+        
+    }
+    
+    public enum ViewType: String {
+        
+        case AdminView      = "admin_view"
+        case DomainPublic   = "domain_public"
+    }
+    
+    public enum Projection: String {
+        
+        case basic  = "basic"
+        case custom = "custom"
+        case full   = "full"
+        
+    }
+    
+    public var maxResults: Int?
+    public var orderBy: String?
+    public var pageToken: String?
+    public var sortOrder: SortOder?
+    public var viewType: String?
+    public var showDeleted: Bool?
+    public var domain: String?
+    public var customer: String?
+    public var customFieldMask: String?
+    public var projection: Projection?
     
     public var asQueryString: String {
         return toQueryString(object: self) ?? ""
@@ -120,5 +190,23 @@ public struct Member: Codable {
     public let role: Role
     public let type: MemberType?
     public let status: Status?
+    
+}
+
+public struct User: Decodable {
+    
+    public struct Name: Decodable {
+        
+        public let givenName: String
+        public let familyName: String
+        public let fullName: String
+        
+    }
+    
+    public let id: String
+    public let primaryEmail: String
+    public let name: Name
+    public let isAdmin: Bool
+    public let isDelegatedAdmin: Bool
     
 }

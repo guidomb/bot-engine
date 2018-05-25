@@ -29,7 +29,8 @@ struct GoogleAuth {
         "https://www.googleapis.com/auth/forms",
         "https://www.googleapis.com/auth/drive.metadata.readonly",
         "https://www.googleapis.com/auth/datastore",
-        "https://www.googleapis.com/auth/admin.directory.group"
+        "https://www.googleapis.com/auth/admin.directory.group",
+        " https://www.googleapis.com/auth/admin.directory.user.readonly"
     ]
     
     func login() throws -> GoogleAPI.Token {
