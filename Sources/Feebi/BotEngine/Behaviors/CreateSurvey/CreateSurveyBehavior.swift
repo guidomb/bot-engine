@@ -40,8 +40,8 @@ struct CreateSurveyBehavior: BehaviorProtocol {
         self.googleToken = googleToken
     }
     
-    func createEffectPerformer(repository: ObjectRepository) -> EffectPerformer {
-        return EffectPerformer(googleToken: googleToken, repository: repository)
+    func createEffectPerformer(services: EffectPerformerServices) -> EffectPerformer {
+        return EffectPerformer(services: services)
     }
     
     func create(message: BehaviorMessage, context: BehaviorMessage.Context) -> TransitionOutput? {
@@ -96,7 +96,7 @@ extension CreateSurveyBehavior {
         case ready(Survey)
         case confirmed(Survey)
         case cancelled(Survey)
-        case created(Survey)
+        case created(ActiveSurvey)
         case internalError(Effect.Error)
         
         var isFinalState: Bool {
@@ -181,13 +181,15 @@ fileprivate extension CreateSurveyBehavior {
             return .confirmSurveyCreation(survey: survey)
             
         case .ready:
+            print("WARN - Ignoring messages while in ready state. Waiting for interactive message confirmation")
             return .init(state: state)
            
-        case .confirmed(let survey):
-            return .surveyCreated(survey: survey)
+        case .confirmed:
+            print("WARN - Ignoring messages while in confirmed state. Waiting for survey to be activated via effect result.")
+            return .init(state: state)
             
         case .created, .cancelled, .formAccessDenied, .internalError:
-            print("WARN: This should not happen. Cannot receive messages while in a final state.")
+            print("WARN -This should not happen. Cannot receive messages while in a final state.")
             return .init(state: state)
             
         }
@@ -350,7 +352,7 @@ fileprivate extension Behavior.TransitionOutput where
         )
     }
     
-    static func surveyCreated(survey: Survey)  -> CreateSurveyBehavior.TransitionOutput {
+    static func surveyCreated(survey: ActiveSurvey)  -> CreateSurveyBehavior.TransitionOutput {
         return .init(
             state: .created(survey),
             output: .textMessage("Cool! Your survey has been created. You should be getting answers really soon!")

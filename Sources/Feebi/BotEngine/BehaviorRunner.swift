@@ -57,7 +57,7 @@ extension Behavior {
             
             self.initialTransition = .none
             self.services = services
-            self.effectPerformer = behavior.createEffectPerformer(repository: services.repository)
+            self.effectPerformer = behavior.createEffectPerformer(services: services.effectPerformerServices)
             output.observe(observer)
             handle(transition: initialTransition, for: channel)
         }

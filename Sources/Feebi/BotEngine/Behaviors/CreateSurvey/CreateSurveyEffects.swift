@@ -21,6 +21,8 @@ extension CreateSurveyBehavior {
         enum Error: Swift.Error {
             
             case googleAPIError(GoogleAPI.RequestError)
+            case repositoryError(AnyError)
+            case slackServiceError(SlackServiceError)
             
         }
         
@@ -28,7 +30,7 @@ extension CreateSurveyBehavior {
             
             case formAccessValidated(formId: String)
             case formAccessDenied(formId: String)
-            case surveyCreated(Survey)
+            case surveyCreated(ActiveSurvey)
             
         }
         
@@ -45,10 +47,18 @@ extension CreateSurveyBehavior {
         
         private let googleToken: GoogleAPI.Token
         private let repository: ObjectRepository
+        private let slackService: SlackServiceProtocol
         
-        init(googleToken: GoogleAPI.Token, repository: ObjectRepository) {
+        init(services: EffectPerformerServices) {
+            guard let googleToken = (services.context["GoogleToken"] as? GoogleAPI.Token) else {
+                fatalError("ERROR - Google API token is not available in services context.")
+            }
+            guard let slackService = services.slackService else {
+                fatalError("ERROR - Slack service instance is not available in services.")
+            }
             self.googleToken = googleToken
-            self.repository = repository
+            self.repository = services.repository
+            self.slackService = slackService
         }
         
         func perform(effect: Effect) -> EffectfulAction<Effect> {
@@ -62,7 +72,10 @@ extension CreateSurveyBehavior {
                     .asEffectfulAction
 
             case .createSurvey(let survey):
-                return successfulResponse(.surveyCreated(survey)).asEffectfulAction
+                 return createActiveSurvey(survey)
+                    .flatMap(.concat, saveActiveSurvey)
+                    .flatMapError(failureResponse)
+                    .asEffectfulAction
 
             }
         }
@@ -73,23 +86,52 @@ extension CreateSurveyBehavior {
 
 fileprivate extension CreateSurveyBehavior.EffectPerformer {
     
-    func handleFormAccessFailure(formId: String) -> (GoogleAPI.RequestError) -> CreateSurveyBehavior.Effect.ResultProducer {
-        return { requestError in
-            guard case .resourceError(let resourceError) = requestError, resourceError.error.code == 404 else {
-                return .init(value: (.failure(.googleAPIError(requestError)), .none))
-            }
-            return .init(value: (.success(.formAccessDenied(formId: formId)), .none))
+    func createActiveSurvey(_ survey: Survey) -> SignalProducer<ActiveSurvey, CreateSurveyBehavior.Effect.Error> {
+        let destinataries = Set<String>(survey.userDestinataryIds)
+        let channelDestinataryIds = survey.channelDestinataryIds
+        if !channelDestinataryIds.isEmpty {
+            return SignalProducer.merge(channelDestinataryIds.map(slackService.fetchUsersInChannel))
+                .collect()
+                .map { result in
+                    var newDestinataries = Set(result.flatMap { $0.compactMap { $0.id } })
+                    for destinatary in destinataries {
+                        newDestinataries.insert(destinatary)
+                    }
+                    return ActiveSurvey(survey: survey, destinataries: newDestinataries)
+                }
+                .mapError(CreateSurveyBehavior.Effect.Error.slackServiceError)
+        } else {
+            return .init(value: ActiveSurvey(survey: survey, destinataries: destinataries))
         }
     }
     
-    func successfulResponse(_ response: CreateSurveyBehavior.Effect.Response, job: SchedulableJob<CreateSurveyBehavior.JobMessage>? = .none) -> CreateSurveyBehavior.Effect.ResultProducer {
-        return .init(value: (.success(response), job))
+    func saveActiveSurvey(_ survey: ActiveSurvey) -> CreateSurveyBehavior.Effect.EffectOutputProducer {
+        return repository.save(object: survey)
+            .flatMap(.concat) { successfulResponse(.surveyCreated($0)) }
+            .flatMapError { failureResponse(.repositoryError($0)) }
     }
     
 }
 
+fileprivate func handleFormAccessFailure(formId: String) -> (GoogleAPI.RequestError) -> CreateSurveyBehavior.Effect.EffectOutputProducer {
+    return { requestError in
+        guard case .resourceError(let resourceError) = requestError, resourceError.error.code == 404 else {
+            return .init(value: (.failure(.googleAPIError(requestError)), .none))
+        }
+        return .init(value: (.success(.formAccessDenied(formId: formId)), .none))
+    }
+}
+
+fileprivate func successfulResponse(_ response: CreateSurveyBehavior.Effect.Response, job: SchedulableJob<CreateSurveyBehavior.JobMessage>? = .none) -> CreateSurveyBehavior.Effect.EffectOutputProducer {
+    return .init(value: (.success(response), job))
+}
+
+fileprivate func failureResponse(_ error: CreateSurveyBehavior.Effect.Error) -> CreateSurveyBehavior.Effect.EffectOutputProducer {
+    return .init(value: (.failure(error), .none))
+}
+
 fileprivate extension SignalProducer where
-    Value == (result: CreateSurveyBehavior.Effect.EffectResult, job: SchedulableJob<CreateSurveyBehavior.Effect.JobMessageType>?),
+    Value == CreateSurveyBehavior.Effect.EffectOutput,
     Error == NoError {
 
     var asEffectfulAction: EffectfulAction<CreateSurveyBehavior.Effect> {

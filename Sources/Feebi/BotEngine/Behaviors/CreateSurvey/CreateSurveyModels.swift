@@ -82,3 +82,46 @@ struct Survey: Codable {
     let deadline: Date
     
 }
+
+struct ActiveSurvey: Persistable {
+    
+    var id: Identifier<ActiveSurvey>?
+    let survey: Survey
+    let destinataries: Set<String>
+    let responders: Set<String>
+    
+    init(survey: Survey, destinataries: Set<String>) {
+        self.id = .none
+        self.survey = survey
+        self.destinataries = destinataries
+        self.responders = Set()
+    }
+    
+    var isCompleted: Bool {
+        return Date() > survey.deadline || destinataries.count == responders.count
+    }
+}
+
+extension Survey {
+    
+    var userDestinataryIds: [String] {
+        return self.destinataries.compactMap { destinatary -> String? in
+            if case .slackUser(let id, _ ) = destinatary {
+                return id
+            } else {
+                return .none
+            }
+        }
+    }
+    
+    var channelDestinataryIds: [String] {
+        return self.destinataries.compactMap { destinatary -> String? in
+            if case .slackChannel(let id, _) = destinatary {
+                return id
+            } else {
+                return .none
+            }
+        }
+    }
+    
+}

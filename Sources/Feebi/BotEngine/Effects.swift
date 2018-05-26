@@ -17,14 +17,14 @@ protocol BehaviorEffect {
     
     typealias EffectResult = Result<ResponseType, ErrorType>
     typealias EffectOutput = (result: EffectResult, job: SchedulableJob<JobMessageType>?)
-    typealias ResultProducer = SignalProducer<EffectOutput, NoError>
+    typealias EffectOutputProducer = SignalProducer<EffectOutput, NoError>
     
 }
 
 enum EffectfulAction<EffectType: BehaviorEffect> {
     
     case cancellAllRunningEffects
-    case effectResultProducer(EffectType.ResultProducer)
+    case effectResultProducer(EffectType.EffectOutputProducer)
     
 }
 
@@ -33,6 +33,26 @@ protocol BehaviorEffectPerformer {
     associatedtype EffectType: BehaviorEffect
 
     func perform(effect: EffectType) -> EffectfulAction<EffectType>
+    
+}
+
+struct EffectPerformerServices {
+    
+    var environment: [String : String]
+    var repository: ObjectRepository
+    var context: [String : Any]
+    var slackService: SlackServiceProtocol?
+    
+    init(
+        environment: [String : String] = ProcessInfo.processInfo.environment,
+        repository: ObjectRepository,
+        context: [String : Any] = [:],
+        slackService: SlackServiceProtocol? = .none) {
+        self.environment = environment
+        self.repository = repository
+        self.context = context
+        self.slackService = slackService
+    }
     
 }
 

@@ -29,7 +29,7 @@ protocol BehaviorProtocol {
     var descriptionForCancellation: String { get }
     var schedulable: BehaviorSchedulableJobs<BehaviorJobExecutorType>? { get }
     
-    func createEffectPerformer(repository: ObjectRepository) -> EffectPerformerType
+    func createEffectPerformer(services: EffectPerformerServices) -> EffectPerformerType
     
     func create(message: BehaviorMessage, context: BehaviorMessage.Context) -> BehaviorTransitionOutput?
     
@@ -75,7 +75,7 @@ struct AnyBehavior<
     
     private let _create: (BehaviorMessage, BehaviorMessage.Context) -> BehaviorTransitionOutput?
     private let _update: (StateType, BehaviorInput) -> BehaviorTransitionOutput
-    private let _createEffectPerformer: (ObjectRepository) -> AnyBehaviorEffectPerformer<EffectType>
+    private let _createEffectPerformer: (EffectPerformerServices) -> AnyBehaviorEffectPerformer<EffectType>
     
     init<BehaviorType: BehaviorProtocol>(_ behavior: BehaviorType) where
         BehaviorType.StateType == StateType,
@@ -85,11 +85,11 @@ struct AnyBehavior<
         self.schedulable = behavior.schedulable
         self._create = behavior.create
         self._update = behavior.update
-        self._createEffectPerformer = { AnyBehaviorEffectPerformer(behavior.createEffectPerformer(repository: $0)) }
+        self._createEffectPerformer = { AnyBehaviorEffectPerformer(behavior.createEffectPerformer(services: $0)) }
     }
-    
-    func createEffectPerformer(repository: ObjectRepository) -> AnyBehaviorEffectPerformer<EffectType> {
-        return _createEffectPerformer(repository)
+
+    func createEffectPerformer(services: EffectPerformerServices) -> AnyBehaviorEffectPerformer<EffectType> {
+        return _createEffectPerformer(services)
     }
     
     func create(message: BehaviorMessage, context: BehaviorMessage.Context) -> BehaviorTransitionOutput? {

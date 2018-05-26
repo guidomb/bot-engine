@@ -14,7 +14,7 @@ final class BotEngine {
     struct Services {
         
         let jobScheduler: BehaviorJobScheduler
-        let repository: ObjectRepository
+        let effectPerformerServices: EffectPerformerServices
         
     }
     
@@ -53,11 +53,11 @@ final class BotEngine {
     
     init(inputProducer: InputProducer,
          outputRenderer: BehaviorOutputRenderer,
-         repository: ObjectRepository) {
+         services: EffectPerformerServices) {
         self.inputProducer = inputProducer
         self.outputRenderer = outputRenderer
-        let jobScheduler = JobScheduler(repository: repository, outputRenderer: outputRenderer)
-        self.services = Services(jobScheduler: jobScheduler, repository: repository)
+        let jobScheduler = JobScheduler(repository: services.repository, outputRenderer: outputRenderer)
+        self.services = Services(jobScheduler: jobScheduler, effectPerformerServices: services)
         (output, outputObserver) =  Signal<ChanneledBehaviorOutput, NoError>.pipe()
     }
     

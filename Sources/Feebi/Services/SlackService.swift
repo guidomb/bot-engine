@@ -32,6 +32,12 @@ protocol SlackServiceProtocol {
         text: String,
         buttonsSectionTitle: String,
         buttons: [ButtonType]) -> SignalProducer<ButtonType, SlackServiceError>
+    
+    func fetchUsers(userIds: [String]) -> SignalProducer<[SKCore.User], SlackServiceError>
+    
+    func fetchUserInfo(userId: String) -> SignalProducer<SKCore.User, SlackServiceError>
+
+    func fetchUsersInChannel(_ channelId: String) -> SignalProducer<[SKCore.User], SlackServiceError>
 }
 
 protocol ButtonMessage {
@@ -128,11 +134,11 @@ final class SlackService: SlackServiceProtocol {
         }
     }
     
-    func fetchUsers(userIds: [String]) -> SignalProducer<[SKCore.User], SlackServiceError>{
+    func fetchUsers(userIds: [String]) -> SignalProducer<[SKCore.User], SlackServiceError> {
         return SignalProducer.merge(userIds.map(fetchUserInfo)).collect()
     }
     
-    func fetchUserInfo(userId: String)  -> SignalProducer<SKCore.User, SlackServiceError>{
+    func fetchUserInfo(userId: String) -> SignalProducer<SKCore.User, SlackServiceError> {
         guard let webAPI = self.slackKit?.webAPI else {
             return SignalProducer(error: .webAPINotAvailable)
         }
@@ -146,6 +152,10 @@ final class SlackService: SlackServiceProtocol {
                 failure: { observer.send(error: .fetchUserInfoFailure($0)) }
             )
         }
+    }
+    
+    func fetchUsersInChannel(_ channelId: String) -> SignalProducer<[SKCore.User], SlackServiceError> {
+        return .empty
     }
 }
 
@@ -240,14 +250,19 @@ extension BotEngine {
             .flatMapError { _ in .empty }
             .filterMap(eventToBehaviorMessage)
             .flatMap(.concat, addContextToBehaviorMessage(slackService: slackService))
-        
         return BotEngine(
             inputProducer: BotEngine.InputProducer.merge([
                 messageProducer,
                 SignalProducer(outputRenderer.signal).map(BotEngine.Input.interactiveMessageAnswer)
             ]),
             outputRenderer: outputRenderer,
-            repository: repository
+            services: EffectPerformerServices(
+                repository: repository,
+                context: [
+                    "GoogleToken" : googleToken
+                ],
+                slackService: slackService
+            )
         )
     }
     
