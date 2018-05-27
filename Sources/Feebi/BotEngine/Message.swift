@@ -43,20 +43,20 @@ struct BehaviorMessage {
         
     }
     
-    let source: Source
     let channel: ChannelId
     let text: String
+    let senderId: String
     let entities: [Entity]
     
     var isCancelMessage: Bool {
         return text == "cancel"
     }
     
-    init(source: Source, channel: ChannelId, text: String) {
-        self.source = source
+    init(channel: ChannelId, senderId: String, text: String) {
         self.channel = channel
+        self.senderId = senderId
         self.text = text
-        self.entities = source == .slack ? BehaviorMessage.parseSlackEntities(from: text) : []
+        self.entities = BehaviorMessage.parseSlackEntities(from: text)
     }
     
 }
@@ -84,7 +84,7 @@ fileprivate extension BehaviorMessage.Entity {
 fileprivate extension BehaviorMessage {
     
     static func parseSlackEntities(from text: String) -> [Entity] {
-        return text.split(" ")
+        return text.split(separator: " ")
             .filter {
                 // <#U234AFG|channelName> or <@U2345AD>
                 $0.last == ">" && ($0.starts(with: "<@") || ($0.starts(with: "<#") && $0.contains("|")))

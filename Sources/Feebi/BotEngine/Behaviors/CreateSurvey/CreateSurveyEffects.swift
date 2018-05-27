@@ -49,7 +49,7 @@ extension CreateSurveyBehavior {
         private let repository: ObjectRepository
         private let slackService: SlackServiceProtocol
         
-        init(services: EffectPerformerServices) {
+        init(services: BotEngine.Services) {
             guard let googleToken = (services.context["GoogleToken"] as? GoogleAPI.Token) else {
                 fatalError("ERROR - Google API token is not available in services context.")
             }
@@ -61,7 +61,7 @@ extension CreateSurveyBehavior {
             self.slackService = slackService
         }
         
-        func perform(effect: Effect) -> EffectfulAction<Effect> {
+        func perform(effect: Effect, for channel: ChannelId) -> Effect.EffectOutputProducer {
             switch effect {
 
             case .validateFormAccess(let formId):
@@ -69,13 +69,11 @@ extension CreateSurveyBehavior {
                     .execute(using: googleToken)
                     .then(successfulResponse(.formAccessValidated(formId: formId)))
                     .flatMapError(handleFormAccessFailure(formId: formId))
-                    .asEffectfulAction
 
             case .createSurvey(let survey):
-                 return createActiveSurvey(survey)
+                return createActiveSurvey(survey, creator: channel)
                     .flatMap(.concat, saveActiveSurvey)
                     .flatMapError(failureResponse)
-                    .asEffectfulAction
 
             }
         }
@@ -86,7 +84,7 @@ extension CreateSurveyBehavior {
 
 fileprivate extension CreateSurveyBehavior.EffectPerformer {
     
-    func createActiveSurvey(_ survey: Survey) -> SignalProducer<ActiveSurvey, CreateSurveyBehavior.Effect.Error> {
+    func createActiveSurvey(_ survey: Survey, creator: ChannelId) -> SignalProducer<ActiveSurvey, CreateSurveyBehavior.Effect.Error> {
         let destinataries = Set<String>(survey.userDestinataryIds)
         let channelDestinataryIds = survey.channelDestinataryIds
         if !channelDestinataryIds.isEmpty {
@@ -128,14 +126,4 @@ fileprivate func successfulResponse(_ response: CreateSurveyBehavior.Effect.Resp
 
 fileprivate func failureResponse(_ error: CreateSurveyBehavior.Effect.Error) -> CreateSurveyBehavior.Effect.EffectOutputProducer {
     return .init(value: (.failure(error), .none))
-}
-
-fileprivate extension SignalProducer where
-    Value == CreateSurveyBehavior.Effect.EffectOutput,
-    Error == NoError {
-
-    var asEffectfulAction: EffectfulAction<CreateSurveyBehavior.Effect> {
-        return .effectResultProducer(self)
-    }
-
 }

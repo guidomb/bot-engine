@@ -11,9 +11,8 @@ import ReactiveSwift
 
 enum BehaviorJobOutput {
     
-    case completed
-    case success
-    case value(behaviorOutput: BehaviorOutput, channel: ChannelId)
+    case completed(outputs: [ChanneledBehaviorOutput])
+    case success(outputs: [ChanneledBehaviorOutput])
     
 }
 

@@ -3,7 +3,6 @@ import ReactiveSwift
 import Result
 
 typealias ChannelId = String
-typealias ChanneledBehaviorOutput = (output: BehaviorOutput, channel: ChannelId)
 
 protocol BehaviorState {
     
@@ -27,9 +26,10 @@ protocol BehaviorProtocol {
     typealias ScheduledJobType = ScheduledJob<JobMessageType>
     
     var descriptionForCancellation: String { get }
-    var schedulable: BehaviorSchedulableJobs<BehaviorJobExecutorType>? { get }
     
-    func createEffectPerformer(services: EffectPerformerServices) -> EffectPerformerType
+    func createSchedulable(services: BotEngine.Services) -> BehaviorSchedulableJobs<BehaviorJobExecutorType>?
+    
+    func createEffectPerformer(services: BotEngine.Services) -> EffectPerformerType
     
     func create(message: BehaviorMessage, context: BehaviorMessage.Context) -> BehaviorTransitionOutput?
     
@@ -51,12 +51,19 @@ protocol ActiveBehavior {
     
     var descriptionForCancellation: String { get }
     
-    func mount(using services: BotEngine.Services,
-               with observer: Signal<ChanneledBehaviorOutput, NoError>.Observer,
+    func mount(using dependencies: BehaviorDependencies,
+               with observer: BotEngine.OutputSignal.Observer,
                for channel: ChannelId)
     
     func handle(input: BotEngine.Input)
         
+}
+
+struct BehaviorDependencies {
+    
+    let scheduler: BehaviorJobScheduler
+    let services: BotEngine.Services
+    
 }
 
 struct AnyBehavior<
@@ -71,24 +78,28 @@ struct AnyBehavior<
     typealias JobMessageType = BehaviorJobExecutorType.JobMessageType
     
     let descriptionForCancellation: String
-    let schedulable: BehaviorSchedulableJobs<BehaviorJobExecutorType>?
     
     private let _create: (BehaviorMessage, BehaviorMessage.Context) -> BehaviorTransitionOutput?
     private let _update: (StateType, BehaviorInput) -> BehaviorTransitionOutput
-    private let _createEffectPerformer: (EffectPerformerServices) -> AnyBehaviorEffectPerformer<EffectType>
+    private let _createEffectPerformer: (BotEngine.Services) -> AnyBehaviorEffectPerformer<EffectType>
+    private let _createSchedulable: (BotEngine.Services) -> BehaviorSchedulableJobs<BehaviorJobExecutorType>?
     
     init<BehaviorType: BehaviorProtocol>(_ behavior: BehaviorType) where
         BehaviorType.StateType == StateType,
         BehaviorType.EffectType == EffectType,
         BehaviorType.BehaviorJobExecutorType == BehaviorJobExecutorType {
         self.descriptionForCancellation = behavior.descriptionForCancellation
-        self.schedulable = behavior.schedulable
         self._create = behavior.create
         self._update = behavior.update
         self._createEffectPerformer = { AnyBehaviorEffectPerformer(behavior.createEffectPerformer(services: $0)) }
+        self._createSchedulable = behavior.createSchedulable
     }
 
-    func createEffectPerformer(services: EffectPerformerServices) -> AnyBehaviorEffectPerformer<EffectType> {
+    func createSchedulable(services: BotEngine.Services) -> BehaviorSchedulableJobs<BehaviorJobExecutorType>? {
+        return _createSchedulable(services)
+    }
+    
+    func createEffectPerformer(services: BotEngine.Services) -> AnyBehaviorEffectPerformer<EffectType> {
         return _createEffectPerformer(services)
     }
     
@@ -112,22 +123,30 @@ struct Behavior<StateType: BehaviorState, EffectType: BehaviorEffect> {
         
         case message(BehaviorMessage, BehaviorMessage.Context)
         case effectResult(EffectType.EffectResult)
-        case interactiveMessageAnswer(String)
+        case interactiveMessageAnswer(String, String)
     
+    }
+    
+    enum Effect {
+        
+        case effect(EffectType)
+        case cancelAllRunningEffects
+        case startConversation(ChanneledBehaviorOutput)
+        // TODO case scheduleJob(SchedulableJob<JobMessageType>)
     }
     
     struct TransitionOutput {
         
         let state: StateType
         let output: BehaviorOutput?
-        let effect: EffectType?
+        let effect: Effect?
         
-        init(state: StateType, output: BehaviorOutput? = .none, effect: EffectType? = .none) {
+        init(state: StateType, output: BehaviorOutput? = .none, effect: Effect? = .none) {
             self.state = state
             self.output = output
             self.effect = effect
         }
-        
+                
     }
     
 }

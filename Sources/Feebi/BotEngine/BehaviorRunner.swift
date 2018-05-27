@@ -18,7 +18,6 @@ extension Behavior {
         typealias SchedulableJobType = SchedulableJob<BehaviorJobExecutorType.JobMessageType>
         
         let state: Property<StateType?>
-        let output: Signal<ChanneledBehaviorOutput, NoError>
         
         var isInFinalState: Bool {
             return state.value?.isFinalState ?? false
@@ -30,17 +29,30 @@ extension Behavior {
         
         private let behavior: BehaviorType
         private let mutableState: MutableProperty<StateType?>
-        private let outputObserver: Signal<ChanneledBehaviorOutput, NoError>.Observer
-        private var initialTransition: TransitionOutput?
+        
         private var disposable = CompositeDisposable()
-        private var services: BotEngine.Services?
-        private var effectPerformer: AnyBehaviorEffectPerformer<EffectType>?
+        private var runningState: RunningState
+        
+        var dependencies: BehaviorDependencies? {
+            if case .mounted(let mount) = runningState {
+                return mount.dependencies
+            } else {
+                return .none
+            }
+        }
+        
+        var effectPerformer: EffectPerformer? {
+            if case .mounted(let mount) = runningState {
+                return mount.effectPerformer
+            } else {
+                return .none
+            }
+        }
         
         init(initialTransition: TransitionOutput, behavior: BehaviorType) {
-            (self.output, self.outputObserver) = Signal<ChanneledBehaviorOutput, NoError>.pipe()
             self.mutableState = MutableProperty(.none)
             self.state = Property(mutableState)
-            self.initialTransition = initialTransition
+            self.runningState = .waitingToBeMounted(initialTransition: initialTransition)
             self.behavior = behavior
         }
         
@@ -48,17 +60,18 @@ extension Behavior {
             handle(input: asBehaviorInput(input), for: input.channel)
         }
         
-        func mount(using services: BotEngine.Services,
-                   with observer: Signal<ChanneledBehaviorOutput, NoError>.Observer,
+        func mount(using dependencies: BehaviorDependencies,
+                   with observer: BotEngine.OutputSignal.Observer,
                    for channel: ChannelId) {
-            guard let initialTransition = self.initialTransition else {
-                fatalError("Behavior has already been mounted")
+            guard case .waitingToBeMounted(let initialTransition) = runningState else {
+                fatalError("ERROR - Behavior has already been mounted.")
             }
             
-            self.initialTransition = .none
-            self.services = services
-            self.effectPerformer = behavior.createEffectPerformer(services: services.effectPerformerServices)
-            output.observe(observer)
+            self.runningState = .mounted(Mounted(
+                dependencies: dependencies,
+                outputObserver: observer,
+                effectPerformer: behavior.createEffectPerformer(services: dependencies.services)
+            ))
             handle(transition: initialTransition, for: channel)
         }
         
@@ -67,6 +80,21 @@ extension Behavior {
 }
 
 fileprivate extension Behavior.Runner {
+    
+    enum RunningState {
+        
+        case waitingToBeMounted(initialTransition: Behavior.TransitionOutput)
+        case mounted(Mounted)
+        
+    }
+    
+    struct Mounted {
+        
+        let dependencies: BehaviorDependencies
+        let outputObserver: BotEngine.OutputSignal.Observer
+        let effectPerformer: AnyBehaviorEffectPerformer<EffectType>
+        
+    }
     
     func handle(effectResult: EffectType.EffectResult, for channel: ChannelId) {
         handle(input: .effectResult(effectResult), for: channel)
@@ -84,27 +112,31 @@ fileprivate extension Behavior.Runner {
     func handle(transition: Behavior.TransitionOutput, for channel: ChannelId) {
         mutableState.value = transition.state
         if let output = transition.output {
-            outputObserver.send(value: (output, channel))
+            send(output: .init(output: output, channel: channel))
         }
         if let effect = transition.effect {
             performEffect(effect, for: channel)
         }
     }
     
-    func performEffect(_ effect: EffectType, for channel: ChannelId) {
-        guard let effectPerformer = self.effectPerformer else {
-            fatalError("ERROR - Cannot perform effect if effect performer is not available. Maybe you forgot to mount the runner")
-        }
-        
-        switch effectPerformer.perform(effect: effect) {
-        case .cancellAllRunningEffects:
-            cancellAllRunningEffects()
+    func performEffect(_ effect: Behavior.Effect, for channel: ChannelId) {
+        switch effect {
             
-        case .effectResultProducer(let producer):
-            disposable += producer.startWithValues { (result, job) in
+        case .effect(let effect):
+            guard let effectPerformer = self.effectPerformer else {
+                fatalError("ERROR - Cannot perform effect if effect performer is not available. Maybe you forgot to mount the runner")
+            }
+            
+            disposable += effectPerformer.perform(effect: effect, for: channel).startWithValues { (result, job) in
                 self.handle(effectResult: result, for: channel)
                 self.scheduleJob(job)
             }
+            
+        case .startConversation(let channeledOutput):
+            send(output: channeledOutput)
+            
+        case .cancelAllRunningEffects:
+            cancellAllRunningEffects()
         }
         
     }
@@ -118,7 +150,7 @@ fileprivate extension Behavior.Runner {
         guard let job = maybeJob else {
             return
         }
-        guard let scheduler = services?.jobScheduler else {
+        guard let scheduler = dependencies?.scheduler else {
             fatalError("ERROR - Cannot schedule job. There is no scheduler. Behavior was not properly mounted.")
         }
         scheduler.schedule(job: job, for: behavior)
@@ -128,9 +160,17 @@ fileprivate extension Behavior.Runner {
         switch input {
         case .message(let message, let context):
             return .message(message, context)
-        case .interactiveMessageAnswer(let answer, _):
-            return .interactiveMessageAnswer(answer)
+        case .interactiveMessageAnswer(let answer, _, let senderId):
+            return .interactiveMessageAnswer(answer, senderId)
         }
+    }
+    
+    func send(output: ChanneledBehaviorOutput) {
+        guard case .mounted(let mount) = runningState else {
+            print("WARN - Trying to send output when behavior is not mounted. Ignoring output.")
+            return
+        }
+        mount.outputObserver.send(value: output)
     }
     
 }

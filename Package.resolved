@@ -87,8 +87,8 @@
         "repositoryURL": "https://github.com/attaswift/SipHash",
         "state": {
           "branch": null,
-          "revision": "7b47e3f23a66770b1eb18e15e20546aad398c9dd",
-          "version": "1.2.0"
+          "revision": "fb754d4b54913352e34474dba82be63eb55c5ba6",
+          "version": "1.2.1"
         }
       },
       {
@@ -159,8 +159,8 @@
         "repositoryURL": "https://github.com/httpswift/swifter.git",
         "state": {
           "branch": null,
-          "revision": "c6d8ea04c7b5f00e7f688cff52100ecc8139f18a",
-          "version": "1.4.0"
+          "revision": "eafa10b5ce4389c497ab7fde0a747661d99e0a4b",
+          "version": "1.4.1"
         }
       },
       {

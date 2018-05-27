@@ -6,25 +6,17 @@
 extension CreateSurveyBehavior.JobMessage {
 
     enum CodingKeys: String, CodingKey {
-        case sayBye
-        case sayHello
-        case byeText
-        case helloText
+        case monitorSurvey
+        case surveyId
     }
 
     internal init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        if container.allKeys.contains(.sayBye), try container.decodeNil(forKey: .sayBye) == false {
-            let associatedValues = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .sayBye)
-            let byeText = try associatedValues.decode(String.self, forKey: .byeText)
-            self = .sayBye(byeText: byeText)
-            return
-        }
-        if container.allKeys.contains(.sayHello), try container.decodeNil(forKey: .sayHello) == false {
-            let associatedValues = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .sayHello)
-            let helloText = try associatedValues.decode(String.self, forKey: .helloText)
-            self = .sayHello(helloText: helloText)
+        if container.allKeys.contains(.monitorSurvey), try container.decodeNil(forKey: .monitorSurvey) == false {
+            let associatedValues = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .monitorSurvey)
+            let surveyId = try associatedValues.decode(Identifier<ActiveSurvey>.self, forKey: .surveyId)
+            self = .monitorSurvey(surveyId: surveyId)
             return
         }
         throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Unknown enum case"))
@@ -34,12 +26,9 @@ extension CreateSurveyBehavior.JobMessage {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         switch self {
-        case let .sayBye(byeText):
-            var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .sayBye)
-            try associatedValues.encode(byeText, forKey: .byeText)
-        case let .sayHello(helloText):
-            var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .sayHello)
-            try associatedValues.encode(helloText, forKey: .helloText)
+        case let .monitorSurvey(surveyId):
+            var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .monitorSurvey)
+            try associatedValues.encode(surveyId, forKey: .surveyId)
         }
     }
 

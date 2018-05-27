@@ -21,52 +21,43 @@ protocol BehaviorEffect {
     
 }
 
-enum EffectfulAction<EffectType: BehaviorEffect> {
-    
-    case cancellAllRunningEffects
-    case effectResultProducer(EffectType.EffectOutputProducer)
-    
-}
-
 protocol BehaviorEffectPerformer {
     
     associatedtype EffectType: BehaviorEffect
 
-    func perform(effect: EffectType) -> EffectfulAction<EffectType>
-    
-}
-
-struct EffectPerformerServices {
-    
-    var environment: [String : String]
-    var repository: ObjectRepository
-    var context: [String : Any]
-    var slackService: SlackServiceProtocol?
-    
-    init(
-        environment: [String : String] = ProcessInfo.processInfo.environment,
-        repository: ObjectRepository,
-        context: [String : Any] = [:],
-        slackService: SlackServiceProtocol? = .none) {
-        self.environment = environment
-        self.repository = repository
-        self.context = context
-        self.slackService = slackService
-    }
+    func perform(effect: EffectType, for channel: ChannelId) -> EffectType.EffectOutputProducer
     
 }
 
 struct AnyBehaviorEffectPerformer<EffectType: BehaviorEffect>: BehaviorEffectPerformer {
     
-    private let performEffect: (EffectType) -> EffectfulAction<EffectType>
+    private let performEffect: (EffectType, ChannelId) -> EffectType.EffectOutputProducer
     
     init<BehaviorEffectPerformerType: BehaviorEffectPerformer>(_ effectPerformer: BehaviorEffectPerformerType)
         where   BehaviorEffectPerformerType.EffectType == EffectType {
-        self.performEffect = effectPerformer.perform(effect:)
+        self.performEffect = effectPerformer.perform
     }
     
-    func perform(effect: EffectType) -> EffectfulAction<EffectType> {
-        return performEffect(effect)
+    func perform(effect: EffectType, for channel: ChannelId) -> EffectType.EffectOutputProducer {
+        return performEffect(effect, channel)
+    }
+    
+}
+
+struct NoEffect: BehaviorEffect {
+    
+    enum Response { }
+    
+    typealias ResponseType = Response
+    typealias ErrorType = NoError
+    typealias JobMessageType = NoJobMessage
+    
+}
+
+struct NoEffectPerformer: BehaviorEffectPerformer {
+    
+    func perform(effect: NoEffect, for channel: ChannelId) -> NoEffect.EffectOutputProducer {
+        return .empty
     }
     
 }

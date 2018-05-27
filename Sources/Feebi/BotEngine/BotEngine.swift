@@ -13,22 +13,44 @@ final class BotEngine {
     
     struct Services {
         
-        let jobScheduler: BehaviorJobScheduler
-        let effectPerformerServices: EffectPerformerServices
+        var environment: [String : String]
+        var repository: ObjectRepository
+        var context: [String : Any]
+        var slackService: SlackServiceProtocol?
+        
+        init(
+            environment: [String : String] = ProcessInfo.processInfo.environment,
+            repository: ObjectRepository,
+            context: [String : Any] = [:],
+            slackService: SlackServiceProtocol? = .none) {
+            self.environment = environment
+            self.repository = repository
+            self.context = context
+            self.slackService = slackService
+        }
         
     }
     
     enum Input {
         
         case message(message: BehaviorMessage, context: BehaviorMessage.Context)
-        case interactiveMessageAnswer(answer: String, channel: ChannelId)
+        case interactiveMessageAnswer(answer: String, channel: ChannelId, senderId: String)
         
         var channel: ChannelId {
             switch self {
             case .message(let message, _):
                 return message.channel
-            case .interactiveMessageAnswer(_, let channel):
+            case .interactiveMessageAnswer(_, let channel, _):
                 return channel
+            }
+        }
+        
+        var senderId: String {
+            switch self {
+            case .message(let message, _):
+                return message.senderId
+            case .interactiveMessageAnswer(_, _, let senderId):
+                return senderId
             }
         }
         
@@ -37,35 +59,43 @@ final class BotEngine {
     typealias MessageWithContext = (message: BehaviorMessage, context: BehaviorMessage.Context)
     typealias InputProducer = SignalProducer<Input, NoError>
     typealias BehaviorFactory = (MessageWithContext) -> ActiveBehavior?
+    typealias OutputSignal = Signal<ChanneledBehaviorOutput, NoError>
     
     private let inputProducer: InputProducer
     private let outputRenderer: BehaviorOutputRenderer
+    private let output: OutputSignal
+    private let outputObserver: OutputSignal.Observer
+    private let services: Services
+    private let jobScheduler: JobScheduler
+    private let transformsRegistry = ResponseTransformRegistry()
+
     private var activeBehaviors: [ChannelId : ActiveBehavior] = [:]
     private var behaviorFactories: [BehaviorFactory] = []
     private var disposable = CompositeDisposable()
-    private let output: Signal<ChanneledBehaviorOutput, NoError>
-    private let outputObserver: Signal<ChanneledBehaviorOutput, NoError>.Observer
-    private let services: Services
     
-    fileprivate var jobScheduler: JobScheduler {
-        return services.jobScheduler as! JobScheduler
+    fileprivate var repository: ObjectRepository {
+        return services.repository
     }
     
     init(inputProducer: InputProducer,
          outputRenderer: BehaviorOutputRenderer,
-         services: EffectPerformerServices) {
+         services: Services) {
+        (output, outputObserver) =  OutputSignal.pipe()
         self.inputProducer = inputProducer
         self.outputRenderer = outputRenderer
-        let jobScheduler = JobScheduler(repository: services.repository, outputRenderer: outputRenderer)
-        self.services = Services(jobScheduler: jobScheduler, effectPerformerServices: services)
-        (output, outputObserver) =  Signal<ChanneledBehaviorOutput, NoError>.pipe()
+        self.services = services
+        self.jobScheduler = JobScheduler(
+            services: services,
+            outputRenderer: outputRenderer,
+            transformsRegistry: transformsRegistry
+        )
     }
     
     func start() {
         disposable.dispose()
         disposable = CompositeDisposable()
         disposable += inputProducer.startWithValues(handle(input:))
-        output.observeValues { [weak self] in self?.outputRenderer.render(output: $0.output, forChannel: $0.channel) }
+        output.observeValues { [unowned self] in self.render(output: $0) }
     }
     
     func registerBehaviorFactory(_ behaviorFactory: @escaping BehaviorFactory) {
@@ -100,11 +130,11 @@ fileprivate extension BotEngine {
     }
     
     func handle(input: Input) {
-        switch input {
+        switch transformsRegistry.applyTransform(to: input) {
         case .message(let message, let context):
             handle(message: message, context: context)
-        case .interactiveMessageAnswer(let answer, let channel):
-            handle(answer: answer, channel: channel)
+        case .interactiveMessageAnswer(let answer, let channel, let senderId):
+            handle(answer: answer, channel: channel, senderId: senderId)
         }
     }
     
@@ -124,22 +154,13 @@ fileprivate extension BotEngine {
         }
     }
     
-    func cancelActiveBehavior(for channel: ChannelId) {
-        if let activeBehavior = activeBehaviors[channel] {
-            activeBehaviors.removeValue(forKey: channel)
-            send(reply: .cancelConfirmation(description: activeBehavior.descriptionForCancellation), for: channel)
-        } else {
-            send(reply: .nothingToCancel, for: channel)
-        }
-    }
-    
-    func handle(answer: String, channel: ChannelId) {
+    func handle(answer: String, channel: ChannelId, senderId: String) {
         guard let activeBehavior = activeBehaviors[channel] else {
             print("WARN - There is not active behavior for channel '\(channel)' to handle interactive message answer 'answer'")
             return
         }
         
-        handle(input: .interactiveMessageAnswer(answer: answer, channel: channel), with: activeBehavior)
+        handle(input: .interactiveMessageAnswer(answer: answer, channel: channel, senderId: senderId), with: activeBehavior)
     }
     
     func handle(input: Input, with behavior: ActiveBehavior) {
@@ -152,7 +173,11 @@ fileprivate extension BotEngine {
     }
     
     func mount(behavior: ActiveBehavior, for channel: ChannelId) {
-        behavior.mount(using: services, with: outputObserver, for: channel)
+        behavior.mount(
+            using: BehaviorDependencies(scheduler: jobScheduler, services: services),
+            with: outputObserver,
+            for: channel
+        )
         if !behavior.isInFinalState {
             activeBehaviors[channel] = behavior
         }
@@ -169,125 +194,190 @@ fileprivate extension BotEngine {
         return .none
     }
     
+    func cancelActiveBehavior(for channel: ChannelId) {
+        if let activeBehavior = activeBehaviors[channel] {
+            activeBehaviors.removeValue(forKey: channel)
+            send(reply: .cancelConfirmation(description: activeBehavior.descriptionForCancellation), for: channel)
+        } else {
+            send(reply: .nothingToCancel, for: channel)
+        }
+    }
+    
+    func render(output: ChanneledBehaviorOutput) {
+        transformsRegistry.registerTransforms(output.transforms, for: output.channel)
+        outputRenderer.render(output: output.output, forChannel: output.channel)
+    }
+    
     func send(reply: DefaultReply, for channel: ChannelId) {
         send(message: reply.message, for: channel)
     }
     
     func send(message: String, for channel: ChannelId) {
-        outputObserver.send(value: (.textMessage(message), channel))
+        outputObserver.send(value: .init(output: .textMessage(message), channel: channel))
     }
     
     func send(output: BehaviorOutput, for channel: ChannelId) {
-        outputObserver.send(value: (output, channel))
-    }
-    
-}
-
-fileprivate extension BotEngine {
-    
-    final class JobScheduler: BehaviorJobScheduler {
-        
-        private let queue = DispatchQueue(
-            label: "BotEngine.JobScheduler.ScheduledJobsQueue",
-            attributes: .concurrent
-        )
-        private let repository: ObjectRepository
-        private let outputRenderer: BehaviorOutputRenderer
-        
-        init(repository: ObjectRepository, outputRenderer: BehaviorOutputRenderer) {
-            self.repository = repository
-            self.outputRenderer = outputRenderer
-        }
-        
-        func startScheduledJobs<BehaviorType: BehaviorProtocol>(for behavior: BehaviorType) {
-            guard let executor = behavior.schedulable?.executor else {
-                return
-            }
-            guard case .some(let result) = repository.fetchAll(ScheduledJob<BehaviorType.JobMessageType>.self).first() else {
-                fatalError("ERROR - Unable to fetch scheduled jobs for behavior \(String(describing: BehaviorType.self))")
-            }
-            
-            switch result {
-            case .success(let scheduledJobs):
-                scheduledJobs.forEach { enqueueJob($0, with: executor) }
-            case .failure(let error):
-                fatalError("ERROR - Unable to fetch scheduled jobs for behavior \(String(describing: BehaviorType.self)): \(error)")
-            }
-        }
-        
-        func schedule<BehaviorType: BehaviorProtocol>(job: SchedulableJob<BehaviorType.JobMessageType>,
-                                                      for behavior: BehaviorType) {
-            guard let executor = behavior.schedulable?.executor else {
-                fatalError("ERROR - Cannot schedule job without executor.")
-            }
-            
-            repository.save(object: job.asCancelableJob())
-                .on(value: { self.enqueueJob($0, with: executor) })
-                .startWithResult { result in
-                    switch result {
-                    case .success(let jobIdentifier):
-                        print("INFO - Job with identifier '\(jobIdentifier)' successfuly scheduled")
-                        break
-                    case .failure(let error):
-                        // TODO report error
-                        break
-                    }
-                }
-        }
-        
-        func enqueueJob<BehaviorJobExecutorType: BehaviorJobExecutor>(_ scheduledJob: ScheduledJob<BehaviorJobExecutorType.JobMessageType>, with executor: BehaviorJobExecutorType) {
-            queue.asyncAfter(deadline: .now() + scheduledJob.job.interval) {
-                self.executeJob(scheduledJob, with: executor)
-            }
-        }
-    
-        func executeJob<BehaviorJobExecutorType: BehaviorJobExecutor>(_ scheduledJob: ScheduledJob<BehaviorJobExecutorType.JobMessageType>, with executor: BehaviorJobExecutorType) {
-            executor.executeJob(with: scheduledJob.job.message).startWithResult { result in
-                switch result {
-                case .success(let output):
-                    switch output {
-                    case .completed:
-                        if scheduledJob.isCancelable {
-                            self.deleteJob(scheduledJob)
-                        } else {
-                            // TODO better handle this case
-                            let jobId = scheduledJob.id?.description ?? ".none"
-                            print("WARN - Cannot cancel a non-cancelable job. Job id: \(jobId)")
-                        }
-                    case .success:
-                        self.enqueueJob(scheduledJob, with: executor)
-                    case .value(let behaviorOutput, let channel):
-                        self.outputRenderer.render(output: behaviorOutput, forChannel: channel)
-                        self.enqueueJob(scheduledJob, with: executor)
-                    }
-                case .failure(let error):
-                    // TODO Better handle this
-                    print("ERROR - Unable to execute scheduled job: \(error)")
-                }
-            }
-        }
-        
-        func deleteJob<JobMessageType: Codable>(_ scheduledJob: ScheduledJob<JobMessageType>) {
-            repository.delete(object: scheduledJob).startWithFailed { error in
-                // TODO Better handle this
-                print("ERROR - Unable to delete scheduled job: \(error)")
-            }
-        }
-        
+        outputObserver.send(value: .init(output: output, channel: channel))
     }
     
     func scheduleJobs<BehaviorType: BehaviorProtocol>(from behavior: BehaviorType) {
-        guard let schedulable = behavior.schedulable else {
+        guard let schedulable = behavior.createSchedulable(services: services) else {
             return
         }
         
-        jobScheduler.startScheduledJobs(for: behavior)
+        jobScheduler.startScheduledJobs(for: behavior, with: schedulable.executor)
         schedulable.jobs.forEach {
             jobScheduler.enqueueJob($0.asLongLivedJob(), with: schedulable.executor)
         }
     }
     
 }
+
+fileprivate final class ResponseTransformRegistry {
+    
+    private var transformsByChannel: [ChannelId : [ResponseTransform]] = [:]
+    
+    func registerTransforms(_ transforms: [ResponseTransform], for channel: ChannelId) {
+        guard !transforms.isEmpty else {
+            return
+        }
+        transformsByChannel[channel] = transforms
+    }
+    
+    func applyTransform(to input: BotEngine.Input) -> BotEngine.Input {
+        if let transform = transform(for: input) {
+            transformsByChannel.removeValue(forKey: input.channel)
+            return transform.transformedResponse
+        } else {
+            return input
+        }
+    }
+    
+    func transform(for input: BotEngine.Input) -> ResponseTransform? {
+        guard let transforms = transformsByChannel[input.senderId] else {
+            return .none
+        }
+        
+        return transforms.first { transform in
+            switch (transform.expectedResponse, input) {
+            case (.message(let expectedMessage, _), .message(let message, _)):
+                return expectedMessage.text == message.text
+            case (.interactiveMessageAnswer(let expectedAnswer, _, _), .interactiveMessageAnswer(let answer, _, _)):
+                return expectedAnswer == answer
+            default:
+                return false
+            }
+        }
+    }
+    
+}
+
+fileprivate final class JobScheduler: BehaviorJobScheduler {
+    
+    private let queue = DispatchQueue(
+        label: "BotEngine.JobScheduler.ScheduledJobsQueue",
+        attributes: .concurrent
+    )
+    private let services: BotEngine.Services
+    private let outputRenderer: BehaviorOutputRenderer
+    private let transformsRegistry: ResponseTransformRegistry
+    
+    private var repository: ObjectRepository {
+        return services.repository
+    }
+    
+    init(
+        services: BotEngine.Services,
+        outputRenderer: BehaviorOutputRenderer,
+        transformsRegistry: ResponseTransformRegistry) {
+        self.services = services
+        self.outputRenderer = outputRenderer
+        self.transformsRegistry = transformsRegistry
+    }
+    
+    func startScheduledJobs<BehaviorType: BehaviorProtocol>(
+        for behavior: BehaviorType,
+        with executor: AnyBehaviorJobExecutor<BehaviorType.JobMessageType>) {
+        
+        guard case .some(let result) = repository.fetchAll(ScheduledJob<BehaviorType.JobMessageType>.self).first() else {
+            fatalError("ERROR - Unable to fetch scheduled jobs for behavior \(String(describing: BehaviorType.self))")
+        }
+        
+        switch result {
+        case .success(let scheduledJobs):
+            scheduledJobs.forEach { enqueueJob($0, with: executor) }
+        case .failure(let error):
+            fatalError("ERROR - Unable to fetch scheduled jobs for behavior \(String(describing: BehaviorType.self)): \(error)")
+        }
+    }
+    
+    func schedule<BehaviorType: BehaviorProtocol>(job: SchedulableJob<BehaviorType.JobMessageType>,
+                                                  for behavior: BehaviorType) {
+        guard let executor = behavior.createSchedulable(services: services)?.executor else {
+            fatalError("ERROR - Cannot schedule job without executor.")
+        }
+        
+        repository.save(object: job.asCancelableJob())
+            .on(value: { self.enqueueJob($0, with: executor) })
+            .startWithResult { result in
+                switch result {
+                case .success(let jobIdentifier):
+                    print("INFO - Job with identifier '\(jobIdentifier)' successfuly scheduled")
+                    break
+                case .failure(let error):
+                    // TODO report error
+                    break
+                }
+        }
+    }
+    
+    func enqueueJob<BehaviorJobExecutorType: BehaviorJobExecutor>(_ scheduledJob: ScheduledJob<BehaviorJobExecutorType.JobMessageType>, with executor: BehaviorJobExecutorType) {
+        queue.asyncAfter(deadline: .now() + scheduledJob.job.interval) {
+            self.executeJob(scheduledJob, with: executor)
+        }
+    }
+    
+    func executeJob<BehaviorJobExecutorType: BehaviorJobExecutor>(_ scheduledJob: ScheduledJob<BehaviorJobExecutorType.JobMessageType>, with executor: BehaviorJobExecutorType) {
+        executor.executeJob(with: scheduledJob.job.message).startWithResult { result in
+            switch result {
+            case .success(let output):
+                switch output {
+                case .completed(let channeledOutputs):
+                    self.render(outputs: channeledOutputs)
+                    if scheduledJob.isCancelable {
+                        self.deleteJob(scheduledJob)
+                    } else {
+                        // TODO better handle this case
+                        let jobId = scheduledJob.id?.description ?? ".none"
+                        print("WARN - Cannot cancel a non-cancelable job. Job id: \(jobId)")
+                    }
+                case .success(let channeledOutputs):
+                    self.render(outputs: channeledOutputs)
+                    self.enqueueJob(scheduledJob, with: executor)
+                }
+            case .failure(let error):
+                // TODO Better handle this
+                print("ERROR - Unable to execute scheduled job: \(error)")
+            }
+        }
+    }
+    
+    func deleteJob<JobMessageType: Codable>(_ scheduledJob: ScheduledJob<JobMessageType>) {
+        repository.delete(object: scheduledJob).startWithFailed { error in
+            // TODO Better handle this
+            print("ERROR - Unable to delete scheduled job: \(error)")
+        }
+    }
+    
+    func render(outputs: [ChanneledBehaviorOutput]) {
+        for channeledOutput in outputs {
+            transformsRegistry.registerTransforms(channeledOutput.transforms, for: channeledOutput.channel)
+            outputRenderer.render(output: channeledOutput.output, forChannel: channeledOutput.channel)
+        }
+    }
+    
+}
+
 
 fileprivate extension BehaviorProtocol {
     

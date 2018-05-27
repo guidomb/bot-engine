@@ -14,8 +14,7 @@ struct CreateSurveyBehavior: BehaviorProtocol {
     
     enum JobMessage: AutoCodable {
         
-        case sayBye(byeText: String)
-        case sayHello(helloText: String)
+        case monitorSurvey(surveyId: Identifier<ActiveSurvey>)
         
     }
     
@@ -27,20 +26,14 @@ struct CreateSurveyBehavior: BehaviorProtocol {
         return "the survey creation process"
     }
     
-    var schedulable: BehaviorSchedulableJobs<JobExecutor>? {
+    func createSchedulable(services: BotEngine.Services) -> BehaviorSchedulableJobs<JobExecutor>? {
         return BehaviorSchedulableJobs(
             jobs: [],
-            executor: JobExecutor()
+            executor: JobExecutor(repository: services.repository)
         )
     }
     
-    private let googleToken: GoogleAPI.Token
-    
-    init(googleToken: GoogleAPI.Token) {
-        self.googleToken = googleToken
-    }
-    
-    func createEffectPerformer(services: EffectPerformerServices) -> EffectPerformer {
+    func createEffectPerformer(services: BotEngine.Services) -> EffectPerformer {
         return EffectPerformer(services: services)
     }
     
@@ -65,7 +58,7 @@ struct CreateSurveyBehavior: BehaviorProtocol {
         case .effectResult(let effectResult):
             return update(state: state, effectResult: effectResult)
             
-        case .interactiveMessageAnswer(let answer):
+        case .interactiveMessageAnswer(let answer, _):
             guard case .ready(let survey) = state else {
                 print("WARN: This should not happen. Cannot confirmation message while being in state \(state)")
                 return .init(state: state)
@@ -124,24 +117,6 @@ extension CreateSurveyBehavior {
     
 }
 
-extension CreateSurveyBehavior {
-
-    
-    struct JobExecutor: BehaviorJobExecutor {
-
-        func executeJob(with message: JobMessage) -> SignalProducer<BehaviorJobOutput, AnyError> {
-            switch message {
-            case .sayBye(let text):
-                return SignalProducer(value: .value(behaviorOutput: .textMessage("Bye from \(text)"), channel: "U02F7KUJM"))
-            case .sayHello(let text):
-                return SignalProducer(value: .value(behaviorOutput: .textMessage("Hello from \(text)"), channel: "U02F7KUJM"))
-            }
-        }
-
-    }
-
-}
-
 // MARK:- Behavior
 
 fileprivate extension CreateSurveyBehavior {
@@ -177,7 +152,12 @@ fileprivate extension CreateSurveyBehavior {
             guard deadline > Date() else {
                 return .dateIsNotInTheFuture(formId: formId, destinataries: destinataries)
             }
-            let survey = Survey(formId: formId, destinataries: destinataries, deadline: deadline)
+            let survey = Survey(
+                formId: formId,
+                destinataries: destinataries,
+                deadline: deadline,
+                creatorId: message.senderId
+            )
             return .confirmSurveyCreation(survey: survey)
             
         case .ready:
@@ -267,14 +247,14 @@ fileprivate extension Behavior.TransitionOutput where
         return .init(
             state: .waitingForFormAccessValidation(formId: formId),
             output: .textMessage("Give me a second while I validate if I can access the form ..."),
-            effect: .validateFormAccess(formId: formId)
+            effect: .effect(.validateFormAccess(formId: formId))
         )
     }
 
     static func formAccessDenied(formId: String) -> CreateSurveyBehavior.TransitionOutput {
         return .init(
             state: .formAccessDenied(formId: formId),
-            output: .textMessage("I cannot access form with id '\(formId)'. Check the form's permission and make sure that anyone with the link can access it.")
+            output: .textMessage("I cannot access form with id *'\(formId)'*. Check the form's permission and make sure that anyone with the link can access it.")
         )
     }
 
@@ -324,7 +304,7 @@ fileprivate extension Behavior.TransitionOutput where
         return .init(
             state: .ready(survey),
             output: .confirmationQuestion(
-                message: "I'm about to create a new survey that will be sent to \(survey.printableDestinataries()) with deadline '\(survey.deadline)'",
+                message: "I'm about to create a new survey that will be sent to \(survey.printableDestinataries()) with deadline *'\(survey.deadline)'*",
                 question: "Do you want me to proceed?"
             )
         )
@@ -341,7 +321,7 @@ fileprivate extension Behavior.TransitionOutput where
         return .init(
             state: .confirmed(survey),
             output: .textMessage("Creating survey ..."),
-            effect: .createSurvey(survey)
+            effect: .effect(.createSurvey(survey))
         )
     }
     

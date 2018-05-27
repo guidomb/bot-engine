@@ -145,7 +145,7 @@ fileprivate extension FirebaseObjectRepository {
 fileprivate extension FirestoreDocument {
     
     var id: String? {
-        return name?.split("/").last
+        return name?.split(separator: "/").last.map(String.init)
     }
     
     func deserialize<ObjectType: Persistable>() throws -> ObjectType {

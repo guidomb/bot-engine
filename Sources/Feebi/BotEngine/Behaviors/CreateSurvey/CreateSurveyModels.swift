@@ -80,6 +80,7 @@ struct Survey: Codable {
     let formId: String
     let destinataries: [Destinatary]
     let deadline: Date
+    let creatorId: String
     
 }
 
@@ -100,6 +101,11 @@ struct ActiveSurvey: Persistable {
     var isCompleted: Bool {
         return Date() > survey.deadline || destinataries.count == responders.count
     }
+    
+    var pendingResponders: Set<String> {
+        return destinataries.subtracting(responders)
+    }
+    
 }
 
 extension Survey {

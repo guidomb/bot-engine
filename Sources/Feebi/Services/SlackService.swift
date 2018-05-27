@@ -18,6 +18,7 @@ enum SlackServiceError: Swift.Error {
     case webAPINotAvailable
     case sendMessageFailure(SlackError)
     case fetchUserInfoFailure(SlackError)
+    case directMessageChannelNotAvailable
     
 }
 
@@ -38,6 +39,9 @@ protocol SlackServiceProtocol {
     func fetchUserInfo(userId: String) -> SignalProducer<SKCore.User, SlackServiceError>
 
     func fetchUsersInChannel(_ channelId: String) -> SignalProducer<[SKCore.User], SlackServiceError>
+    
+    func openDirectMessageChannel(withUser userId: String) -> SignalProducer<String, SlackServiceError>
+    
 }
 
 protocol ButtonMessage {
@@ -157,6 +161,25 @@ final class SlackService: SlackServiceProtocol {
     func fetchUsersInChannel(_ channelId: String) -> SignalProducer<[SKCore.User], SlackServiceError> {
         return .empty
     }
+    
+    func openDirectMessageChannel(withUser userId: String) -> SignalProducer<String, SlackServiceError> {
+        guard let webAPI = self.slackKit?.webAPI else {
+            return SignalProducer(error: .webAPINotAvailable)
+        }
+        return SignalProducer { observer, _ in
+            webAPI.openIM(
+                userID: userId,
+                success: { response in
+                    if let directMessageChannel = response {
+                        observer.send(value: directMessageChannel)
+                        observer.sendCompleted()
+                    } else {
+                        observer.send(error: .directMessageChannelNotAvailable)
+                    }
+                },
+                failure: { observer.send(error: .fetchUserInfoFailure($0)) })
+        }
+    }
 }
 
 struct SlackOutputRenderer: BehaviorOutputRenderer {
@@ -184,40 +207,61 @@ struct SlackOutputRenderer: BehaviorOutputRenderer {
     
     let slackService: SlackServiceProtocol
     
-    fileprivate let (signal, observer) = Signal<(answer: String, channel: ChannelId), NoError>.pipe()
+    fileprivate let (signal, observer) = Signal<(answer: String, channel: ChannelId, senderId: String), NoError>.pipe()
     
     init(slackService: SlackServiceProtocol) {
         self.slackService = slackService
     }
     
     func render(output: BehaviorOutput, forChannel channel: ChannelId) {
+        // If you send a message to a User channel the message is sent
+        // by Slackbot not by your application's bot. That is why we
+        // need to open a direct message channel with a user.
+        // More info: https://api.slack.com/methods/chat.postMessage#channels
+        let actualOutputChannel: SignalProducer<String, SlackServiceError>
+        if channel.starts(with: "U") {
+            actualOutputChannel = slackService.openDirectMessageChannel(withUser: channel)
+        } else {
+            actualOutputChannel = SignalProducer(value: channel)
+        }
+        
         switch output {
         case .textMessage(let message):
-            slackService.sendMessage(channel: channel, text: message).startWithFailed { error in
-                print("Error sending message:")
-                print("\tChannel: \(channel)")
-                print("\tMessage: \(message)")
-                print("\tError: \(error)")
-                print("")
+            actualOutputChannel.flatMap(.concat) {
+                self.slackService.sendMessage(channel: $0, text: message)
             }
+            .startWithFailed { self.handle(error: $0, for: channel) }
             
         case .confirmationQuestion(let message, let question):
-            slackService.sendMessage(
-                channel: channel,
-                text: message,
-                buttonsSectionTitle: question,
-                buttons: ConfirmationButton.options).startWithResult { result in
+            actualOutputChannel.flatMap(.concat) { actualChannel in
+                self.slackService.sendMessage(
+                    channel: actualChannel,
+                    text: message,
+                    buttonsSectionTitle: question,
+                    buttons: ConfirmationButton.options
+                )
+                .map { ($0, actualChannel) }
+            }
+            .startWithResult { result in
                 switch result {
-                case .success(let answer):
-                    self.observer.send(value: (answer.text, channel))
+                case .success((let answer, let actualChannel)):
+                    self.observer.send(value: (answer.text, actualChannel, channel))
                 case .failure(let error):
-                    print("Error sending message:")
-                    print("\tChannel: \(channel)")
-                    print("\tError: \(error)")
-                    print("")
+                    self.handle(error: error, for: channel)
                 }
             }
         }
+    }
+    
+}
+
+fileprivate extension SlackOutputRenderer {
+    
+    func handle(error: SlackServiceError, for channel: ChannelId) {
+        print("Error sending message:")
+        print("\tChannel: \(channel)")
+        print("\tError: \(error)")
+        print("")
     }
     
 }
@@ -239,28 +283,33 @@ extension UserEntityInfo {
 extension BotEngine {
     
     static func slackBotEngine(
-        slackToken: String,
-        verificationToken: String,
-        googleToken: GoogleAPI.Token,
-        repository: ObjectRepository) -> BotEngine {
+        repository: ObjectRepository,
+        context: [String : Any] = [:],
+        environment: [String : String] = ProcessInfo.processInfo.environment) -> BotEngine {
         
-        let slackService = SlackService(token: slackToken, verificationToken: verificationToken)
+        guard let token = environment["SLACK_API_TOKEN"] else {
+            fatalError("ERROR - Missing Slack API token. You need to define SLACK_API_TOKEN env variable.")
+        }
+        guard let verificationToken = environment["SLACK_VERIFICATION_TOKEN"] else {
+            fatalError("ERROR - Missing Slack verification token. You need to define SLACK_VERIFICATION_TOKEN env variable.")
+        }
+        
+        let slackService = SlackService(token: token, verificationToken: verificationToken)
         let outputRenderer = SlackOutputRenderer(slackService: slackService)
         let messageProducer: BotEngine.InputProducer = slackService.start()
             .flatMapError { _ in .empty }
             .filterMap(eventToBehaviorMessage)
             .flatMap(.concat, addContextToBehaviorMessage(slackService: slackService))
+        
         return BotEngine(
             inputProducer: BotEngine.InputProducer.merge([
                 messageProducer,
                 SignalProducer(outputRenderer.signal).map(BotEngine.Input.interactiveMessageAnswer)
             ]),
             outputRenderer: outputRenderer,
-            services: EffectPerformerServices(
+            services: BotEngine.Services(
                 repository: repository,
-                context: [
-                    "GoogleToken" : googleToken
-                ],
+                context: context,
                 slackService: slackService
             )
         )
@@ -370,10 +419,12 @@ fileprivate final class SlackServiceActionMiddleware: Middleware {
 }
 
 fileprivate func eventToBehaviorMessage(_ event: Event) -> BehaviorMessage? {
-    guard let channel = event.message?.channel, let messageText = event.message?.text else {
+    guard   let channel = event.message?.channel,
+            let messageText = event.message?.text,
+            let userId = event.user?.id else {
         return nil
     }
-    return BehaviorMessage(source: .slack, channel: channel, text: messageText)
+    return BehaviorMessage(channel: channel, senderId: userId, text: messageText)
 }
 
 fileprivate func addContextToBehaviorMessage(slackService: SlackService) -> (BehaviorMessage) -> BotEngine.InputProducer {
