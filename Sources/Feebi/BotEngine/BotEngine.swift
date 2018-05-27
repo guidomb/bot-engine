@@ -130,6 +130,30 @@ fileprivate extension BotEngine {
     }
     
     func handle(input: Input) {
+        // Input transforms are registered by behavior
+        // that start a conversation with a user.
+        // Transforms are used to transforms the answer
+        // a question a bot may have asked to user into
+        // an input that can be understood by another
+        // behavior to trigger a conversation.
+        //
+        // For example if a behavior starts an scheduled
+        // job that asks a questions using interactive
+        // buttons to a group of users, when a user
+        // clicks on a button that actions sends
+        // a text message as a response.
+        //
+        // Lets say that answer is the string "yes".
+        // If we want to to trigger a behavior where the initial
+        // input should "start process", we then
+        // need to register an input transform the user's
+        // channel to transform "yes" into "start process".
+        //
+        // Then the transformed input is handled as any
+        // other input. There can only be one registered
+        // input transform per channel. Which means that
+        // you cannot ask user more than a question
+        // at a given time.
         switch transformsRegistry.applyTransform(to: input) {
         case .message(let message, let context):
             handle(message: message, context: context)
