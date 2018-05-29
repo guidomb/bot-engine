@@ -39,9 +39,82 @@ struct NoJobMessage: Codable {
     
 }
 
+struct DayTime: Codable {
+    
+    static func at(_ dayTimeHours: String, in timeZone: String? = .none) -> DayTime? {
+        let components = dayTimeHours.split(separator: ":")
+        guard components.count == 2, let hours = Int(components[0]), let minutes = Int(components[1]) else {
+            return .none
+        }
+        return at(hours: hours, minutes: minutes, timeZone: timeZone)
+    }
+    
+    static func at(hours: Int, minutes: Int, timeZone: String? = .none) -> DayTime? {
+        if timeZone == nil {
+            return DayTime(hours: hours, minutes: minutes)
+        } else {
+            guard let timeZone = timeZone.flatMap({ TimeZone(identifier: $0) }) else {
+                return .none
+            }
+            return DayTime(hours: hours, minutes: minutes, timeZone: timeZone)
+        }
+    }
+    
+    let hours: Int
+    let minutes: Int
+    let timeZone: TimeZone
+    
+    init?(hours: Int, minutes: Int, timeZone: TimeZone = TimeZone.current) {
+        guard hours >= 0 && hours < 24 else {
+            return nil
+        }
+        guard minutes >= 0 && minutes < 60 else {
+            return nil
+        }
+        self.hours = hours
+        self.minutes = minutes
+        self.timeZone = timeZone
+    }
+    
+    func toDate(in day: Date = Date()) -> Date? {
+        var calendar = Calendar.current
+        calendar.timeZone = timeZone
+        return calendar.date(bySettingHour: hours, minute: minutes, second: 0, of: day)
+    }
+    
+    func intervalSinceNow() -> TimeInterval? {
+        guard let interval = toDate()?.timeIntervalSinceNow else {
+            return .none
+        }
+        
+        // If interval is negative it means that `self`
+        // (today's day time) has already passed.
+        // In which case we need to calculate the interval
+        // for the same day time but for the following day
+        return interval > 0 ? interval : ((24 * 60 * 60) + interval)
+    }
+    
+}
+
 struct SchedulableJob<JobMessageType: Codable>: Codable {
     
-    let interval: TimeInterval
+    enum Interval: AutoCodable {
+        
+        case every(seconds: TimeInterval)
+        case everyDay(at: DayTime)
+        
+        func intervalSinceNow() -> TimeInterval? {
+            switch self {
+            case .every(let seconds):
+                return seconds
+            case .everyDay(let dayTime):
+                return dayTime.intervalSinceNow()
+            }
+        }
+        
+    }
+    
+    let interval: Interval
     let message: JobMessageType
     
     func asLongLivedJob() -> ScheduledJob<JobMessageType> {

@@ -12,6 +12,8 @@ import FeebiKit
 
 struct CreateSurveyBehavior: BehaviorProtocol {
     
+    static var surveyMonitorIntervalTimeZoneIdentifier = "America/Argentina/Buenos_Aires"
+    
     enum JobMessage: AutoCodable {
         
         case monitorSurvey(surveyId: Identifier<ActiveSurvey>)
@@ -182,15 +184,16 @@ fileprivate extension CreateSurveyBehavior {
             
         case (.waitingForFormAccessValidation(let formId), .success(.formAccessDenied)):
             return .formAccessDenied(formId: formId)
-            
-        case (.waitingForFormAccessValidation, .failure(let error)):
-            return .internalError(error)
-            
+        
         case (.confirmed, .success(.surveyCreated(let survey))):
             return .surveyCreated(survey: survey)
+          
+        case (_, .failure(let error)):
+            print("ERROR - Effect result with error: \(error)")
+            return .internalError(error)
             
         default:
-            print("WARN: Unexpected effect result while in state \(state)")
+            print("WARN - Unexpected effect result while in state \(state)")
             return .init(state: state)
         }
     }

@@ -15,6 +15,18 @@ struct UserEntityInfo: Codable {
     let firstName: String?
     let lastName: String?
     
+    init(
+        id: String,
+        name: String? = .none,
+        email: String? = .none,
+        firstName: String? = .none,
+        lastName: String? = .none) {
+        self.id = id
+        self.name = name
+        self.email = email
+        self.firstName = firstName
+        self.lastName = lastName
+    }
 }
 
 struct BehaviorMessage {

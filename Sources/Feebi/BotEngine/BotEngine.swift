@@ -356,7 +356,11 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
     }
     
     func enqueueJob<BehaviorJobExecutorType: BehaviorJobExecutor>(_ scheduledJob: ScheduledJob<BehaviorJobExecutorType.JobMessageType>, with executor: BehaviorJobExecutorType) {
-        queue.asyncAfter(deadline: .now() + scheduledJob.job.interval) {
+        guard let interval = scheduledJob.job.interval.intervalSinceNow() else {
+            fatalError("ERROR - Could not get enqueue job. Unable to get scheduled job interval since now.")
+        }
+
+        queue.asyncAfter(deadline: .now() + interval) {
             self.executeJob(scheduledJob, with: executor)
         }
     }

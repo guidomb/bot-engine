@@ -35,7 +35,7 @@ extension CreateSurveyBehavior {
             }
             
             return repository.fetch(byId: surveyId)
-                .flatMap(.concat, handleSurvey)
+                .flatMap(.concat, askPendingRespondersToCompleteSurvey)
         }
         
     }
@@ -44,8 +44,8 @@ extension CreateSurveyBehavior {
 
 fileprivate extension CreateSurveyBehavior.JobExecutor {
     
-    func handleSurvey(_ survey: ActiveSurvey) -> SignalProducer<BehaviorJobOutput, AnyError> {
-        guard let surveyId = survey.id else {
+    func askPendingRespondersToCompleteSurvey(_ survey: ActiveSurvey) -> SignalProducer<BehaviorJobOutput, AnyError> {
+        guard survey.id != nil else {
             fatalError("ERROR - Cannot handle non-persisted active survey")
         }
         guard !survey.isCompleted else {
@@ -66,7 +66,9 @@ fileprivate extension CreateSurveyBehavior.JobExecutor {
     }
     
     func surveyCompletedOutput(for survey: ActiveSurvey) -> BehaviorJobOutput {
-        let surveyId = survey.id?.description ?? "MISSING_ID"
+        guard let surveyId = survey.id else {
+            fatalError("ERROR - Cannot create job output for non-persisted active survey")
+        }
         let message = "Survey with id *'\(surveyId)'* is completed. There were *\(survey.responders.count)* responders *out of* a total of *\(survey.destinataries.count)* destinataries."
         return .completed(outputs: [.init(output: .textMessage(message), channel: survey.survey.creatorId)])
     }

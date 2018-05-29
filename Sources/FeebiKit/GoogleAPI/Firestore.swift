@@ -287,14 +287,14 @@ public struct FirestoreDocument: Codable {
         
         case nullValue
         case booleanValue(Bool)
-        case integerValue(Int)
+        case integerValue(String)
         case doubleValue(Double)
         case timestampValue(String)
         case stringValue(String)
         case bytesValue(String)
         case referenceValue(String)
         case geoPointValue(LatLng)
-        case arrayValue([Value])
+        case arrayValue(ArrayValue)
         case mapValue(MapValue)
         
         public init(from decoder: Decoder) throws {
@@ -303,7 +303,7 @@ public struct FirestoreDocument: Codable {
                 self = .nullValue
             } else if let value = try container.decodeIfPresent(Bool.self, forKey: .booleanValue) {
                 self = .booleanValue(value)
-            } else if let value = try container.decodeIfPresent(Int.self, forKey: .integerValue) {
+            } else if let value = try container.decodeIfPresent(String.self, forKey: .integerValue) {
                 self = .integerValue(value)
             } else if let value = try container.decodeIfPresent(Double.self, forKey: .doubleValue) {
                 self = .doubleValue(value)
@@ -317,7 +317,7 @@ public struct FirestoreDocument: Codable {
                 self = .referenceValue(value)
             } else if let value = try container.decodeIfPresent(LatLng.self, forKey: .geoPointValue) {
                 self = .geoPointValue(value)
-            } else if let value = try container.decodeIfPresent([Value].self, forKey: .arrayValue) {
+            } else if let value = try container.decodeIfPresent(ArrayValue.self, forKey: .arrayValue) {
                 self = .arrayValue(value)
             } else if let value = try container.decodeIfPresent(MapValue.self, forKey: .mapValue) {
                 self = .mapValue(value)
@@ -368,22 +368,36 @@ public struct FirestoreDocument: Codable {
         
     }
     
+    public struct ArrayValue: Codable {
+        
+        public let values: [Value]?
+        
+        init(_ values: [Value]) {
+            self.values = values
+        }
+        
+        init<SequenceType: Sequence>(_ values: SequenceType) where SequenceType.Element == Value {
+            self.values = Array(values)
+        }
+        
+    }
+    
     public struct MapValue: Codable {
         
-        public let fields: [String : Value]
+        public let fields: [String : Value]?
         
         public init(fields: [String : Value]) {
             self.fields = fields
         }
         
         func flattenFieldKeys(prefix: String = "") -> [String] {
-            return fields.flatMap { pair -> [String] in
+            return fields?.flatMap { pair -> [String] in
                 if case .mapValue(let map) = pair.value {
                     return map.flattenFieldKeys(prefix: pair.key)
                 } else {
                     return ["\(prefix).\(pair.key)"]
                 }
-            }
+            } ?? []
         }
         
     }
@@ -420,14 +434,25 @@ public struct FirestoreDocument: Codable {
 
 public extension FirestoreDocument {
     
+    static var printSerializationDebugLog = false
+    
     static func serialize(object: Any, skipFields: [String] = []) -> FirestoreDocument? {
+        if printSerializationDebugLog {
+            print("DEBUG - FirestoreDocument.serialize() - skipFields: \(skipFields), object: \(object)")
+        }
         return serializeFields(object: object, skipFields: Set(skipFields)).map { FirestoreDocument(fields: $0) }
     }
     
     static func serializeFields(object: Any, skipFields: Set<String> = Set()) -> [String : FirestoreDocument.Value]? {
         let mirror = Mirror(reflecting: object)
         guard mirror.displayStyle == .struct || mirror.displayStyle == .class || mirror.displayStyle == .dictionary else {
-            return .none
+            if  let jsonRepresentable = object as? JSONRepresentable,
+                let maybeJson = try? jsonRepresentable.asJson(),
+                let json = maybeJson {
+                return serializeFields(object: json, skipFields: skipFields)
+            } else {
+                return .none
+            }
         }
         
         let children: [Mirror.Child]
@@ -445,7 +470,9 @@ public extension FirestoreDocument {
 
         var fields: [String : FirestoreDocument.Value] = [:]
         for case let (label?, value) in children where !skipFields.contains(label) {
-            print("\(label) -> \(value): \(type(of: value))")
+            if printSerializationDebugLog {
+                print("DEBUG - FirestoreDocument.serializeFields() - \(label): \(type(of: value)) = \(value)")
+            }
             let childMirror = Mirror(reflecting: value)
             // First try to serialize as a simple value
             // because there are some types that are classes but
@@ -453,17 +480,25 @@ public extension FirestoreDocument {
             // that can be cast to String. In that previous example,
             // a value of type NSTaggedPointerString would have
             // .`class` as displayStyle.
-            if let serializedValue = serializeSimpleValue(value) {
+            if canBeCastToSimpleValue(value), let serializedValue = serializeSimpleValue(value) {
                 fields[label] = serializedValue
             } else if let displayStyle = childMirror.displayStyle {
                 switch displayStyle {
                     
-                case .collection:
+                case .collection, .set:
                     let values = childMirror.children.lazy
-                        .map { serializeSimpleValue($0.value) }
+                        .map { (label, value) -> FirestoreDocument.Value? in
+                            let innerSkipFields: Set<String>
+                            if let label = label {
+                                innerSkipFields = filterSkipFields(skipFields, property: label)
+                            } else {
+                                innerSkipFields = Set()
+                            }
+                            return serializeSimpleValue(value, skipFields: innerSkipFields)
+                        }
                         .filter { $0 != nil }
                         .map { $0! }
-                    fields[label] = .arrayValue(Array(values))
+                    fields[label] = .arrayValue(ArrayValue(values))
                     
                 case .dictionary,.`struct`, .`class`:
                     let innerSkipFields = filterSkipFields(skipFields, property: label)
@@ -493,10 +528,9 @@ public extension FirestoreDocument {
                         let maybeJson = try? jsonRepresentable.asJson(),
                         let json = maybeJson,
                         let mapValue = serializeFields(object: json, skipFields: innerSkipFields) {
-                        print(json)
                         fields[label] = .mapValue(MapValue(fields: mapValue))
                     } else {
-                        print("WARN - Unable to serialize enum property '\(label)' with value '\(value)' into FirestoreDocument.Value")
+                        print("WARN - Unable to serialize property '\(label)' with value '\(value)' into FirestoreDocument.Value")
                     }
                 }
             } else {
@@ -507,11 +541,19 @@ public extension FirestoreDocument {
         return fields
     }
     
-    static func serializeSimpleValue(_ value: Any) -> FirestoreDocument.Value? {
+    static func canBeCastToSimpleValue(_ value: Any) -> Bool {
+        return  value as? Bool != nil   ||
+                value as? Int != nil    ||
+                value as? Double != nil ||
+                value as? Date != nil   ||
+                value as? String != nil
+    }
+    
+    static func serializeSimpleValue(_ value: Any, skipFields: Set<String> = Set()) -> FirestoreDocument.Value? {
         if let booleanValue = value as? Bool {
             return .booleanValue(booleanValue)
         } else if let integerValue = value as? Int {
-            return .integerValue(integerValue)
+            return .integerValue(String(integerValue))
         } else if let doubleValue = value as? Double {
             return .doubleValue(doubleValue)
         } else if let dateValue = value as? Date {
@@ -522,6 +564,8 @@ public extension FirestoreDocument {
             return .bytesValue(dataValue.base64EncodedString())
         } else if let stringValue = value as? String {
             return .stringValue(stringValue)
+        } else if let mapValueFields = serializeFields(object: value, skipFields: skipFields) {
+            return .mapValue(.init(fields: mapValueFields))
         } else {
             return .none
         }
@@ -556,11 +600,33 @@ public extension FirestoreDocument.Value {
         case .booleanValue(let value):
             return value
         case .integerValue(let value):
-            return value
+            // Firebase returns integer values as String. Don't ask me why.
+            return Int(value) ?? value
         case .doubleValue(let value):
             return value
         case .timestampValue(let value):
-            return value
+            // Unwrapped should be used for JSON deserialization using JSONDecoder.
+            // Date time is serialized as Double by JSONCoder. That's why the
+            // attempt to convert to Date to later get the interval value.
+            //
+            // First we use the Firestore declared time format. If that fails
+            // it might be because firebase omits the miliseconds with dates
+            // that have the time set to 00:00:00.
+            let formatter = DateFormatter()
+            formatter.dateFormat = FirestoreDocument.dateFormat
+            if let date = formatter.date(from: value) {
+                return date.timeIntervalSinceReferenceDate
+            } else {
+                formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                if let date = formatter.date(from: value) {
+                    return date.timeIntervalSinceReferenceDate
+                } else {
+                    if FirestoreDocument.printSerializationDebugLog {
+                        print("WARN - FirestoreDocument.unwrapped - Unable to unwrap timestamp value '\(value)'")
+                    }
+                    return value
+                }
+            }
         case .stringValue(let value):
             return value
         case .bytesValue(let value):
@@ -570,9 +636,9 @@ public extension FirestoreDocument.Value {
         case .geoPointValue(let value):
             return ["latitude" : value.latitude, "longitude": value.longitude]
         case .arrayValue(let value):
-            return value.map { $0.unwrapped }
+            return value.values?.map { $0.unwrapped } ?? []
         case .mapValue(let value):
-            return value.fields.mapValues { $0.unwrapped }
+            return value.fields?.mapValues { $0.unwrapped } ?? [:]
         }
     }
     

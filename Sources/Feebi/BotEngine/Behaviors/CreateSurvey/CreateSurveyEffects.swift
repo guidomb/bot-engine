@@ -105,7 +105,7 @@ fileprivate extension CreateSurveyBehavior.EffectPerformer {
     
     func saveActiveSurvey(_ survey: ActiveSurvey) -> CreateSurveyBehavior.Effect.EffectOutputProducer {
         return repository.save(object: survey)
-            .flatMap(.concat) { successfulResponse(.surveyCreated($0)) }
+            .flatMap(.concat) { successfulResponse(.surveyCreated($0), job: monitorSurvey($0)) }
             .flatMapError { failureResponse(.repositoryError($0)) }
     }
     
@@ -126,4 +126,16 @@ fileprivate func successfulResponse(_ response: CreateSurveyBehavior.Effect.Resp
 
 fileprivate func failureResponse(_ error: CreateSurveyBehavior.Effect.Error) -> CreateSurveyBehavior.Effect.EffectOutputProducer {
     return .init(value: (.failure(error), .none))
+}
+
+fileprivate func monitorSurvey(_ activeSurvey: ActiveSurvey) -> SchedulableJob<CreateSurveyBehavior.JobMessage> {
+    guard let surveyId = activeSurvey.id else {
+        fatalError("ERROR - Cannot monitor survey that is not persisted ")
+    }
+    let timeZone = CreateSurveyBehavior.surveyMonitorIntervalTimeZoneIdentifier
+    guard let dayTime = DayTime.at("11:30", in: timeZone) else {
+        fatalError("ERROR - Cannot create active survey monitor interval day time.")
+    }
+    
+    return SchedulableJob(interval: .everyDay(at: dayTime), message: .monitorSurvey(surveyId: surveyId))
 }

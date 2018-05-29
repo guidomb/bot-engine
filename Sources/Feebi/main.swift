@@ -5,6 +5,7 @@ import Result
 
 GoogleAPI.shared.printDebugCurlCommand = true
 GoogleAPI.shared.printRequest = true
+FirestoreDocument.printSerializationDebugLog = true
 
 guard let googleToken = try? GoogleAuth().login() else {
     fatalError("Unable to login using Google OAuth")

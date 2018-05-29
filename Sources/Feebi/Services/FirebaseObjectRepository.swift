@@ -153,6 +153,9 @@ fileprivate extension FirestoreDocument {
         if let id = self.id {
             jsonObject["id"] = id
         }
+        if FirestoreDocument.printSerializationDebugLog {
+            print("DEBUG - FirestoreDocument.deserialize - \(jsonObject)")
+        }
         let data = try JSONSerialization.data(withJSONObject: jsonObject, options: [])
         return try JSONDecoder().decode(ObjectType.self, from: data)
     }
@@ -184,4 +187,6 @@ fileprivate extension FirestoreDocumentList {
 // TODO autogenerate this protocol conformances
 // for all persistable object and its properties recursively
 extension CreateSurveyBehavior.JobMessage: JSONRepresentable {}
-
+extension Survey.Destinatary: JSONRepresentable {}
+extension SchedulableJob.Interval: JSONRepresentable {}
+extension DayTime: JSONRepresentable {}
