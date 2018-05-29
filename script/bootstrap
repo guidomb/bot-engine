@@ -21,5 +21,5 @@ bundle_install if File.exist?("Gemfile")
 
 puts ""
 puts " → You are ready to rock!!!"
-puts "\tExecute 'open Feebi.xcodeproj' and start hacking!"
+puts "\tExecute 'open BotEngine.xcodeproj' and start hacking!"
 puts ""
