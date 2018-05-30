@@ -19,6 +19,11 @@ public final class FixtureManager {
         return try Data(contentsOf: fixtureUrl(for: fixturePath))
     }
     
+    public func loadJSONFixture(in fixturePath: String) throws -> [String : Any] {
+        let data = try loadFixture(in: fixturePath)
+        return (try JSONSerialization.jsonObject(with: data, options: [])) as! [String : Any]
+    }
+    
     public func fixtureUrl(for fixturePath: String) -> URL {
         return fixturesDirectory.appendingPathComponent(fixturePath)
     }

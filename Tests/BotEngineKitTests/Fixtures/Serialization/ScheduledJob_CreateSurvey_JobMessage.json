@@ -1,0 +1,61 @@
+{
+  "fields": {
+    "job": {
+      "mapValue": {
+        "fields": {
+          "message": {
+            "mapValue": {
+              "fields": {
+                "monitorSurvey": {
+                  "mapValue": {
+                    "fields": {
+                      "surveyId": {
+                        "stringValue": "xwu9KTMoKOFBc9xmF6kR"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "interval": {
+            "mapValue": {
+              "fields": {
+                "everyDay": {
+                  "mapValue": {
+                    "fields": {
+                      "at": {
+                        "mapValue": {
+                          "fields": {
+                            "minutes": {
+                              "integerValue": "30"
+                            },
+                            "timeZone": {
+                              "mapValue": {
+                                "fields": {
+                                  "identifier": {
+                                    "stringValue": "America/Argentina/Buenos_Aires"
+                                  }
+                                }
+                              }
+                            },
+                            "hours": {
+                              "integerValue": "10"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "isCancelable": {
+      "booleanValue": true
+    }
+  }
+}

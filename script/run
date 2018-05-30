@@ -3,4 +3,4 @@
 set -e
 
 swift build
-./.build/x86_64-apple-macosx10.10/debug/Feebi
+./.build/x86_64-apple-macosx10.10/debug/BotEngine

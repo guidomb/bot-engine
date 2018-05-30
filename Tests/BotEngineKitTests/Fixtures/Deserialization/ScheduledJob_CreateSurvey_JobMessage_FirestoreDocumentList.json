@@ -1,0 +1,68 @@
+{
+  "documents": [
+    {
+      "name": "projects/feedi-dev/databases/(default)/documents/botenginekit_scheduledjob_botenginekit_createsurveybehavior_jobmessage/mtc0YrhYRbQbzDjySAwh",
+      "fields": {
+        "isCancelable": {
+          "booleanValue": true
+        },
+        "job": {
+          "mapValue": {
+            "fields": {
+              "message": {
+                "mapValue": {
+                  "fields": {
+                    "monitorSurvey": {
+                      "mapValue": {
+                        "fields": {
+                          "surveyId": {
+                            "stringValue": "xwu9KTMoKOFBc9xmF6kR"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "interval": {
+                "mapValue": {
+                  "fields": {
+                    "everyDay": {
+                      "mapValue": {
+                        "fields": {
+                          "at": {
+                            "mapValue": {
+                              "fields": {
+                                "minutes": {
+                                  "integerValue": "30"
+                                },
+                                "timeZone": {
+                                  "mapValue": {
+                                    "fields": {
+                                      "identifier": {
+                                        "stringValue": "America/Argentina/Buenos_Aires"
+                                      }
+                                    }
+                                  }
+                                },
+                                "hours": {
+                                  "integerValue": "11"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "createTime": "2018-05-30T02:50:27.588151Z",
+      "updateTime": "2018-05-30T02:50:27.588151Z"
+    }
+  ]
+}

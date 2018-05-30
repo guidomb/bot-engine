@@ -7,6 +7,7 @@
 
 import Foundation
 
-protocol AutoDecodable: Decodable {}
-protocol AutoEncodable: Encodable {}
-protocol AutoCodable: AutoDecodable, AutoEncodable {}
+internal protocol AutoDecodable: Decodable {}
+internal protocol AutoEncodable: Encodable {}
+internal protocol AutoCodable: AutoDecodable, AutoEncodable {}
+internal protocol AutoEquatable { }

@@ -1,0 +1,73 @@
+{
+  "name": "projects/feedi-dev/databases/(default)/documents/botenginekit_activesurvey/xwu9KTMoKOFBc9xmF6kR",
+  "fields": {
+    "survey": {
+      "mapValue": {
+        "fields": {
+          "destinataries": {
+            "arrayValue": {
+              "values": [
+                {
+                  "mapValue": {
+                    "fields": {
+                      "id": {
+                        "stringValue": "U02FQLM2P"
+                      },
+                      "destinataryType": {
+                        "stringValue": "slackUser"
+                      },
+                      "info": {
+                        "mapValue": {
+                          "fields": {
+                            "name": {
+                              "stringValue": "anita"
+                            },
+                            "email": {
+                              "stringValue": "anita.romero@wolox.com.ar"
+                            },
+                            "firstName": {
+                              "stringValue": "Anita"
+                            },
+                            "id": {
+                              "stringValue": "U02FQLM2P"
+                            },
+                            "lastName": {
+                              "stringValue": ""
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "creatorId": {
+            "stringValue": "U02F7KUJM"
+          },
+          "formId": {
+            "stringValue": "1mlteVfq46HlO4VPR4LQjUKAqGS8f8fE7AtqWapqoM3w"
+          },
+          "deadline": {
+            "timestampValue": "2018-10-10T00:00:00Z"
+          }
+        }
+      }
+    },
+    "responders": {
+      "arrayValue": {}
+    },
+    "destinataries": {
+      "arrayValue": {
+        "values": [
+          {
+            "stringValue": "U02FQLM2P"
+          }
+        ]
+      }
+    }
+  },
+  "createTime": "2018-05-30T02:50:26.813965Z",
+  "updateTime": "2018-05-30T02:50:26.813965Z"
+}

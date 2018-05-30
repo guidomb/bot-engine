@@ -75,6 +75,26 @@ public struct FirebaseObjectRepository: ObjectRepository {
     
 }
 
+public extension FirestoreDocument {
+    
+    var id: String? {
+        return name?.split(separator: "/").last.map(String.init)
+    }
+    
+    func deserialize<ObjectType: Persistable>() throws -> ObjectType {
+        var jsonObject = self.unwrapped
+        if let id = self.id {
+            jsonObject["id"] = id
+        }
+        if FirestoreDocument.printSerializationDebugLog {
+            print("DEBUG - FirestoreDocument.deserialize - \(jsonObject)")
+        }
+        let data = try JSONSerialization.data(withJSONObject: jsonObject, options: [])
+        return try JSONDecoder().decode(ObjectType.self, from: data)
+    }
+    
+}
+
 fileprivate extension FirebaseObjectRepository {
     
     func createDocument<ObjectType: Persistable>(for object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
@@ -138,26 +158,6 @@ fileprivate extension FirebaseObjectRepository {
                 return SignalProducer(error: Error.deserializationError(error).asAnyError)
             }
         }
-    }
-    
-}
-
-fileprivate extension FirestoreDocument {
-    
-    var id: String? {
-        return name?.split(separator: "/").last.map(String.init)
-    }
-    
-    func deserialize<ObjectType: Persistable>() throws -> ObjectType {
-        var jsonObject = self.unwrapped
-        if let id = self.id {
-            jsonObject["id"] = id
-        }
-        if FirestoreDocument.printSerializationDebugLog {
-            print("DEBUG - FirestoreDocument.deserialize - \(jsonObject)")
-        }
-        let data = try JSONSerialization.data(withJSONObject: jsonObject, options: [])
-        return try JSONDecoder().decode(ObjectType.self, from: data)
     }
     
 }

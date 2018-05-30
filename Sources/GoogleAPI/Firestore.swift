@@ -8,37 +8,37 @@
 import Foundation
 
 public protocol JSONRepresentable: Encodable {
-    
+
     func asJsonData() throws -> Data
-    
+
     func asJson() throws -> [String : Any]?
-    
+
 }
 
 extension JSONRepresentable {
-    
+
     public func asJsonData() throws -> Data {
         return try JSONEncoder().encode(self)
     }
-    
+
     public func asJson() throws -> [String : Any]? {
         return (try JSONSerialization.jsonObject(with: asJsonData(), options: .allowFragments)) as? [String : Any]
     }
-    
+
 }
 
 public extension GoogleAPI {
-    
+
     public struct Firestore {
-        
+
         public struct Documents {
-            
+
             private let basePath: String
-            
+
             fileprivate init(basePath: String) {
                 self.basePath = "\(basePath)/documents"
             }
-            
+
             // https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents/createDocument
             public func createDocument(
                 parent: String? = .none,
@@ -52,7 +52,7 @@ public extension GoogleAPI {
                     method: .post
                 )
             }
-            
+
             // https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents/list
             public func list(
                 parent: String? = .none,
@@ -64,7 +64,7 @@ public extension GoogleAPI {
                     method: .get
                 )
             }
-            
+
             // https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents/patch
             public func patch(
                 document: FirestoreDocument,
@@ -79,13 +79,13 @@ public extension GoogleAPI {
                     method: .patch
                 )
             }
-            
+
             public func patch(
                 document: FirestoreDocument,
                 updateMask: FirestoreDocumentMask) -> Resource<FirestoreDocument> {
                 return patch(document: document, options: FirestorePatchDocumentOptions(updateMask: updateMask))
             }
-            
+
             // https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents/get
             public func get(
                 documentName: String,
@@ -96,7 +96,7 @@ public extension GoogleAPI {
                     method: .get
                 )
             }
-            
+
             // https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents/delete
             public func delete(
                 documentName: String,
@@ -108,49 +108,49 @@ public extension GoogleAPI {
                 )
             }
         }
-        
+
         public var documents: Documents { return Documents(basePath: basePath) }
-        
+
         private let baseURL = "https://firestore.googleapis.com"
         private let version: String
-        
+
         private var basePath: String
-        
+
         fileprivate init(version: String = "v1beta1", projectId: String, databaseId: String) {
             self.version = version
             self.basePath = "\(baseURL)/\(version)/projects/\(projectId)/databases/\(databaseId)"
         }
-        
+
     }
-    
+
     public static func firestore(projectId: String, databaseId: String) -> Firestore {
         return Firestore(projectId: projectId, databaseId: databaseId)
     }
-    
+
 }
 
 // MARK :- Data models
 
 public struct FirestoreDocumentMask: Encodable {
-    
+
     public static func allFieldKeys(of document: FirestoreDocument) -> FirestoreDocumentMask {
         return FirestoreDocumentMask(fieldPaths: document.flattenFieldKeys)
     }
-    
+
     public let fieldPaths: [String]
-    
+
 }
 
 extension FirestoreDocumentMask: QueryStringConvertible {
-    
+
     public var asQueryString: String {
         return "mask=\(asJsonString())"
     }
-    
+
 }
 
 fileprivate extension FirestoreDocumentMask {
-    
+
     func asJsonString() -> String {
         let jsonData = try? JSONEncoder().encode(self)
         guard let jsonString = jsonData.flatMap({ String(data: $0, encoding: .ascii) }) else {
@@ -158,14 +158,14 @@ fileprivate extension FirestoreDocumentMask {
         }
         return jsonString
     }
-    
+
 }
 
 public struct FirestoreCreateDocumentOptions: QueryStringConvertible {
-    
+
     public var documentId: String?
     public var mask: FirestoreDocumentMask?
-    
+
     public var asQueryString: String {
         var queryString = ""
         if let documentId = self.documentId {
@@ -177,19 +177,19 @@ public struct FirestoreCreateDocumentOptions: QueryStringConvertible {
         }
         return queryString
     }
-    
+
     public init() {}
-    
+
 }
 
 public struct FirestoreListDocumentsOptions: QueryStringConvertible {
-    
+
     public var pageSize: UInt?
     public var pageToken: String?
     public var orderBy: String?
     public var mask: FirestoreDocumentMask?
     public var showMissing: Bool = false
-    
+
     public var asQueryString: String {
         var queryString = ""
         if let pageSize = self.pageSize {
@@ -208,15 +208,15 @@ public struct FirestoreListDocumentsOptions: QueryStringConvertible {
         queryString += (queryString.isEmpty ? "" : "&") + "showMissing=\(showMissing)"
         return queryString
     }
-    
+
     public init() {}
 }
 
 public enum FirestoreDocumentPrecondition: QueryStringConvertible {
-    
+
     case exists(Bool)
     case updateTime(Date)
-    
+
     public var asQueryString: String {
         switch self {
         case .exists(let exists):
@@ -227,15 +227,15 @@ public enum FirestoreDocumentPrecondition: QueryStringConvertible {
             return "updateTime=\(formatter.string(from: updateTime))"
         }
     }
-    
+
 }
 
 public struct FirestorePatchDocumentOptions: QueryStringConvertible {
-    
+
     public var updateMask: FirestoreDocumentMask
     public var mask: FirestoreDocumentMask?
     public var currentDocument: FirestoreDocumentPrecondition?
-    
+
     public var asQueryString: String {
         var queryString = ""
         if let mask = self.mask {
@@ -247,30 +247,30 @@ public struct FirestorePatchDocumentOptions: QueryStringConvertible {
         queryString += (queryString.isEmpty ? "" : "&") + updateMask.asJsonString()
         return queryString
     }
-    
+
     public init(updateMask: FirestoreDocumentMask) {
         self.updateMask = updateMask
     }
-    
+
 }
 
 public struct FirestoreDocumentList: Decodable {
-    
+
     public let documents: [FirestoreDocument]?
     public let nextPageToken: String?
-    
+
     public init(documents: [FirestoreDocument], nextPageToken: String? = .none) {
         self.documents = documents
         self.nextPageToken = nextPageToken
     }
 }
 
-public struct FirestoreDocument: Codable {
-    
-    public indirect enum Value: Codable {
-        
+public struct FirestoreDocument: Codable, AutoEquatable {
+
+    public indirect enum Value: Codable, AutoEquatable {
+
         enum CodingKeys: CodingKey {
-            
+
             case nullValue
             case booleanValue
             case integerValue
@@ -282,9 +282,9 @@ public struct FirestoreDocument: Codable {
             case geoPointValue
             case arrayValue
             case mapValue
-            
+
         }
-        
+
         case nullValue
         case booleanValue(Bool)
         case integerValue(String)
@@ -296,7 +296,7 @@ public struct FirestoreDocument: Codable {
         case geoPointValue(LatLng)
         case arrayValue(ArrayValue)
         case mapValue(MapValue)
-        
+
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             if let _ = try container.decodeIfPresent(String?.self, forKey: .nullValue) {
@@ -325,7 +325,7 @@ public struct FirestoreDocument: Codable {
                 throw DecodeError.unsupportedValueType
             }
         }
-        
+
         public func encode(to encoder: Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             switch self {
@@ -353,43 +353,43 @@ public struct FirestoreDocument: Codable {
                 try container.encode(value, forKey: .mapValue)
             }
         }
-        
+
     }
-    
-    public struct LatLng: Codable {
-        
+
+    public struct LatLng: Codable, AutoEquatable {
+
         public let latitude: Double
         public let longitude: Double
-        
+
         public init(latitude: Double, longitude: Double) {
             self.latitude = latitude
             self.longitude = longitude
         }
-        
+
     }
-    
-    public struct ArrayValue: Codable {
-        
+
+    public struct ArrayValue: Codable, AutoEquatable {
+
         public let values: [Value]?
-        
+
         init(_ values: [Value]) {
             self.values = values
         }
-        
+
         init<SequenceType: Sequence>(_ values: SequenceType) where SequenceType.Element == Value {
             self.values = Array(values)
         }
-        
+
     }
-    
-    public struct MapValue: Codable {
-        
+
+    public struct MapValue: Codable, AutoEquatable {
+
         public let fields: [String : Value]?
-        
+
         public init(fields: [String : Value]) {
             self.fields = fields
         }
-        
+
         func flattenFieldKeys(prefix: String = "") -> [String] {
             return fields?.flatMap { pair -> [String] in
                 if case .mapValue(let map) = pair.value {
@@ -399,21 +399,21 @@ public struct FirestoreDocument: Codable {
                 }
             } ?? []
         }
-        
+
     }
-    
+
     public let name: String?
     public let fields: [String : Value]
     public let createTime: Date
     public let updateTime: Date
-    
+
     public init(name: String? = .none, fields: [String : Value]) {
         self.name = name
         self.fields = fields
         self.createTime = Date()
         self.updateTime = Date()
     }
-    
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.name = try container.decode(String.self, forKey: .name)
@@ -421,7 +421,7 @@ public struct FirestoreDocument: Codable {
         self.createTime = try FirestoreDocument.decodeDate(forKey: .createTime, container: container)
         self.updateTime = try FirestoreDocument.decodeDate(forKey: .updateTime, container: container)
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         if let name = self.name {
@@ -429,20 +429,20 @@ public struct FirestoreDocument: Codable {
         }
         try container.encode(fields, forKey: .fields)
     }
-    
+
 }
 
 public extension FirestoreDocument {
-    
+
     static var printSerializationDebugLog = false
-    
+
     static func serialize(object: Any, skipFields: [String] = []) -> FirestoreDocument? {
         if printSerializationDebugLog {
             print("DEBUG - FirestoreDocument.serialize() - skipFields: \(skipFields), object: \(object)")
         }
         return serializeFields(object: object, skipFields: Set(skipFields)).map { FirestoreDocument(fields: $0) }
     }
-    
+
     static func serializeFields(object: Any, skipFields: Set<String> = Set()) -> [String : FirestoreDocument.Value]? {
         let mirror = Mirror(reflecting: object)
         guard mirror.displayStyle == .struct || mirror.displayStyle == .class || mirror.displayStyle == .dictionary else {
@@ -454,7 +454,7 @@ public extension FirestoreDocument {
                 return .none
             }
         }
-        
+
         let children: [Mirror.Child]
         if mirror.displayStyle == .dictionary {
             children = mirror.children.map { child in
@@ -484,7 +484,7 @@ public extension FirestoreDocument {
                 fields[label] = serializedValue
             } else if let displayStyle = childMirror.displayStyle {
                 switch displayStyle {
-                    
+
                 case .collection, .set:
                     let values = childMirror.children.lazy
                         .map { (label, value) -> FirestoreDocument.Value? in
@@ -499,7 +499,7 @@ public extension FirestoreDocument {
                         .filter { $0 != nil }
                         .map { $0! }
                     fields[label] = .arrayValue(ArrayValue(values))
-                    
+
                 case .dictionary,.`struct`, .`class`:
                     let innerSkipFields = filterSkipFields(skipFields, property: label)
                     if let mapValue = serializeFields(object: value, skipFields: innerSkipFields) {
@@ -507,7 +507,7 @@ public extension FirestoreDocument {
                     } else {
                         print("WARN - Unable to serialize property '\(label)' with value '\(value)' into FirestoreDocument.MapValue")
                     }
-                    
+
                 case .optional:
                     if case .some((.some("some"), let childValue)) = childMirror.children.first {
                         let innerSkipFields = filterSkipFields(skipFields, property: label)
@@ -521,7 +521,7 @@ public extension FirestoreDocument {
                     } else {
                         fields[label] = .nullValue
                     }
-                    
+
                 default:
                     let innerSkipFields = filterSkipFields(skipFields, property: label)
                     if  let jsonRepresentable = value as? JSONRepresentable,
@@ -537,10 +537,10 @@ public extension FirestoreDocument {
                 print("WARN - Unable to serialize property '\(label)' with value '\(value)' into FirestoreDocument.Value")
             }
         }
-        
+
         return fields
     }
-    
+
     static func canBeCastToSimpleValue(_ value: Any) -> Bool {
         return  value as? Bool != nil   ||
                 value as? Int != nil    ||
@@ -548,7 +548,7 @@ public extension FirestoreDocument {
                 value as? Date != nil   ||
                 value as? String != nil
     }
-    
+
     static func serializeSimpleValue(_ value: Any, skipFields: Set<String> = Set()) -> FirestoreDocument.Value? {
         if let booleanValue = value as? Bool {
             return .booleanValue(booleanValue)
@@ -570,7 +570,7 @@ public extension FirestoreDocument {
             return .none
         }
     }
-    
+
     var unwrapped: [String : Any] {
         var unwrappedFields = fields.mapValues { $0.unwrapped }
         let formatter = DateFormatter()
@@ -579,7 +579,7 @@ public extension FirestoreDocument {
         unwrappedFields["updateTime"] = formatter.string(from: updateTime)
         return unwrappedFields
     }
-    
+
     var flattenFieldKeys: [String] {
         return fields.flatMap { pair -> [String] in
             if case .mapValue(let map) = pair.value {
@@ -592,7 +592,7 @@ public extension FirestoreDocument {
 }
 
 public extension FirestoreDocument.Value {
-    
+
     var unwrapped: Any {
         switch self {
         case .nullValue:
@@ -641,13 +641,13 @@ public extension FirestoreDocument.Value {
             return value.fields?.mapValues { $0.unwrapped } ?? [:]
         }
     }
-    
+
 }
 
 fileprivate extension FirestoreDocument {
-    
+
     static let dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-    
+
     static func decodeDate(forKey key: CodingKeys, container: KeyedDecodingContainer<CodingKeys>) throws -> Date {
         let formatter = DateFormatter()
         formatter.dateFormat = dateFormat
@@ -657,26 +657,25 @@ fileprivate extension FirestoreDocument {
         }
         return date
     }
-    
+
     static func filterSkipFields(_ skipFields: Set<String>, property: String) -> Set<String> {
         return Set(skipFields.filter { !$0.starts(with: "\(property).") }
             .map { String($0.dropFirst("\(property).".count)) })
     }
-    
+
     enum CodingKeys: CodingKey {
-        
+
         case name
         case fields
         case createTime
         case updateTime
-        
+
     }
-    
+
     enum DecodeError: Error {
-        
+
         case invalidDate(date: String, format: String, key: CodingKeys)
         case unsupportedValueType
-        
+
     }
 }
-

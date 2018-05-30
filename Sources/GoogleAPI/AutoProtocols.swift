@@ -1,13 +1,13 @@
 //
 //  AutoProtocols.swift
-//  AuthPackageDescription
+//  GoogleAPI
 //
-//  Created by Guido Marucci Blas on 4/15/18.
+//  Created by Guido Marucci Blas on 5/30/18.
 //
+
+import Foundation
 
 internal protocol AutoDecodable: Decodable {}
 internal protocol AutoEncodable: Encodable {}
 internal protocol AutoCodable: AutoDecodable, AutoEncodable {}
 internal protocol AutoEquatable { }
-internal protocol AutoInstanceVariableCounter { }
-internal protocol AutoInstanceVariableEnumerator { }

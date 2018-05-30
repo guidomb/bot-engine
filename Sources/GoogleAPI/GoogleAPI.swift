@@ -168,6 +168,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
     
     public var printDebugCurlCommand = false
     public var printRequest = false
+    public var responseDumpDirectoryPath: String? = .none
     
     public func execute<T>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
                     session: URLSession = .shared, deserializer: @escaping ResourceDeserializer<T>) -> ResourceProducer<T> {
@@ -177,6 +178,17 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
             .flatMap(.concat) { data, response -> ResourceProducer<T> in
                 guard let httpResponse = response as? HTTPURLResponse else {
                     return ResourceProducer(error: .unexpectedResponseObjectType(response))
+                }
+                
+                if let responseDumpDirectory = self.responseDumpDirectoryPath.map({ URL(fileURLWithPath: $0) }) {
+                    let fileName = "\(String(describing: T.self)).\(UUID().uuidString).json"
+                    let fileURL = responseDumpDirectory.appendingPathComponent(fileName)
+                    do {
+                        print("DEBUG - Dumping response to request '\(resource.path)' to '\(fileURL.absoluteString)'")
+                        try data.write(to: fileURL)
+                    } catch let error {
+                        print("ERROR - Response could not be dump: \(error)")
+                    }
                 }
                 
                 switch httpResponse.statusCode {
