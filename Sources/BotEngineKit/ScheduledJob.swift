@@ -83,16 +83,43 @@ public struct DayTime: Codable {
     }
     
     public func intervalSinceNow() -> TimeInterval? {
-        guard let interval = toDate()?.timeIntervalSinceNow else {
+        return intervalSince(dayDate: Date())
+    }
+    
+    public func intervalSince(dayDate: Date) -> TimeInterval? {
+        guard let interval = toDate(in: dayDate)?.timeIntervalSince(dayDate) else {
             return .none
         }
         
         // If interval is negative it means that `self`
-        // (today's day time) has already passed.
-        // In which case we need to calculate the interval
-        // for the same day time but for the following day
-        return interval > 0 ? interval : ((24 * 60 * 60) + interval)
+        // is earlier that `dayDate` day time. In which case we need
+        // to return the absolute number.
+        //
+        // Otherwise, it means that `self` is later than `dayDate`'s day time.
+        // Which means that we need to calculate the time difference
+        // between `self` and `dayDate`'s day time for the following date
+        //
+        // Example
+        //
+        //  let a = DayTime("10:30")
+        //  let b = DayTime("10:40")
+        //  a.intervalSince(dayTime: b) -> 600 = 10 minutes
+        //  b.intervalSince(dayTime: a) -> 85800 = 23 hours and 50 minutes = 24 hours - 10 minutes
+        return interval <= 0 ? abs(interval) : ((24 * 60 * 60) - interval)
     }
+    
+}
+
+extension DayTime: AutoEquatable {
+    
+}
+
+extension DayTime: Comparable {
+    
+    public static func < (lhs: DayTime, rhs: DayTime) -> Bool {
+        return (lhs.hours < rhs.hours) || (lhs.hours == rhs.hours && lhs.minutes < rhs.minutes)
+    }
+    
     
 }
 

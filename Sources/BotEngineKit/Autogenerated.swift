@@ -100,5 +100,13 @@ fileprivate func compareArrays<T>(lhs: [T], rhs: [T], compare: (_ lhs: T, _ rhs:
 
 
 // MARK: - AutoEquatable for classes, protocols, structs
+// MARK: - DayTime AutoEquatable
+extension DayTime: Equatable {}
+public func == (lhs: DayTime, rhs: DayTime) -> Bool {
+    guard lhs.hours == rhs.hours else { return false }
+    guard lhs.minutes == rhs.minutes else { return false }
+    guard lhs.timeZone == rhs.timeZone else { return false }
+    return true
+}
 
 // MARK: - AutoEquatable for Enums

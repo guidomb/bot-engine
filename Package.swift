@@ -15,9 +15,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/google/auth-library-swift", from: "0.3.6"),
         .package(url: "https://github.com/ReactiveCocoa/ReactiveSwift", from: "3.1.0"),
-        .package(url: "https://github.com/Quick/Nimble.git", from: "7.1.1"),
-        .package(url: "https://github.com/Quick/Quick.git", from: "1.3.0"),
-    		.package(url: "https://github.com/SlackKit/SlackKit.git", .upToNextMinor(from: "4.1.0"))
+    		.package(url: "https://github.com/SlackKit/SlackKit.git", .upToNextMinor(from: "4.1.0")),
+        .package(url: "https://github.com/typelift/SwiftCheck.git", from: "0.8.1")
     ],
     targets: [
         .target(
@@ -59,7 +58,8 @@ let package = Package(
             name: "BotEngineKitTests",
             dependencies: [
               "BotEngineKit",
-              "TestKit"
+              "TestKit",
+              "SwiftCheck"
             ]
         ),
         .testTarget(

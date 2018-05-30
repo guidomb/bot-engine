@@ -33,8 +33,17 @@
         "repositoryURL": "https://github.com/krzyzanowskim/CryptoSwift.git",
         "state": {
           "branch": null,
-          "revision": "526d5e91569b30857d8def9ea22ad7265b70d238",
-          "version": "0.9.0"
+          "revision": "ea8c0769151d7d9587e1768094a517890114391e",
+          "version": "0.10.0"
+        }
+      },
+      {
+        "package": "FileCheck",
+        "repositoryURL": "https://github.com/llvm-swift/FileCheck.git",
+        "state": {
+          "branch": null,
+          "revision": "e5871587ddf85c0bcf84f773925655f2f83ef336",
+          "version": "0.0.7"
         }
       },
       {
@@ -152,6 +161,15 @@
           "branch": null,
           "revision": "114e5df9b6251970a069e8f1c0cbb5802759f0a9",
           "version": "3.0.5"
+        }
+      },
+      {
+        "package": "SwiftCheck",
+        "repositoryURL": "https://github.com/typelift/SwiftCheck.git",
+        "state": {
+          "branch": null,
+          "revision": "43ffe7ab48366c36a697c54bcdd257876edd6fc6",
+          "version": "0.10.0"
         }
       },
       {
