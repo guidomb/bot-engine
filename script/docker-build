@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source "script/lib/docker_script_utils"
+
+docker run -v $PWD:/botengine -w /botengine -t "$docker_image" ./script/build release

@@ -6,7 +6,6 @@ import Result
 
 GoogleAPI.shared.printDebugCurlCommand = true
 GoogleAPI.shared.printRequest = true
-GoogleAPI.shared.responseDumpDirectoryPath = "./dumps"
 FirestoreDocument.printSerializationDebugLog = true
 
 guard let googleToken = try? GoogleAuth().login() else {

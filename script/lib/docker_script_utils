@@ -1,0 +1,20 @@
+docker_image=""
+if [ "$1" == "latest" ]
+then
+  docker_image="botengine-build-latest"
+  docker_file="Dockerfile-build-latest"
+else
+  docker_image="botengine-build"
+  docker_file="Dockerfile-build"
+fi
+echo "Using docker image: $docker_image"
+
+# Check if docker image was built
+docker image inspect "$docker_image" &> /dev/null
+RESULT=$?
+if [ $RESULT -ne 0 ]
+then
+  echo "Docker image '$docker_image' was not built."
+  echo "Building docker image from '$docker_file' ..."
+  docker build -t "$docker_image" -f "$docker_file" .
+fi

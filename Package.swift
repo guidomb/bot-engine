@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/google/auth-library-swift", from: "0.3.6"),
         .package(url: "https://github.com/ReactiveCocoa/ReactiveSwift", from: "3.1.0"),
-    		.package(url: "https://github.com/SlackKit/SlackKit.git", .upToNextMinor(from: "4.1.0")),
+    		.package(url: "https://github.com/guidomb/SlackKit.git", .branch("linux")),
         .package(url: "https://github.com/typelift/SwiftCheck.git", from: "0.8.1")
     ],
     targets: [
@@ -29,8 +29,8 @@ let package = Package(
             name: "BotEngineKit",
             dependencies: [
               "GoogleAPI",
-              "OAuth2",
               "ReactiveSwift",
+              "OAuth2",
               "SlackKit"
             ]
         ),

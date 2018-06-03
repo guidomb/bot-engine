@@ -16,8 +16,12 @@ pip_install "proselint" if running_on_ci?
 bundle_install if File.exist?("Gemfile")
 
 # Install dependencies and build
+# TODO check if docker is avaiable
+# build docker images
+#   docker build -t botengine-build -f Dockerfile-build 
+#   docker build -t botengine .
 `swift build`
-`swift package generate-xcodeproj`
+`swift package generate-xcodeproj` # TODO only do this if running on macOS
 
 puts ""
 puts " → You are ready to rock!!!"

@@ -24,12 +24,9 @@ public final class MockGoogleAPIResourceExecutor: GoogleAPIResourceExecutor {
         deserializer: @escaping GoogleAPI.ResourceDeserializer<T>) -> GoogleAPI.ResourceProducer<T> {
         if let data = self.response {
             let url = URL(string: resource.urlPath)!
-            let response = HTTPURLResponse(
-                url: url,
-                mimeType: "application/json",
-                expectedContentLength: data.count,
-                textEncodingName: String.Encoding.utf8.description
-            )
+            guard let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "1.1", headerFields: [:]) else {
+                fatalError("ERROR - Cannot create HTTURLResponse object")
+            }
             let result = deserializer(data, response).mapError(GoogleAPI.RequestError.deserializationError)
             return GoogleAPI.ResourceProducer(result: result)
         } else {

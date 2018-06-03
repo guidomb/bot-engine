@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+
+build_flags=""
+if [ `uname` == "Darwin" ]
+then
+  build_path="./.build/x86_64-apple-macosx10.10"
+else
+  build_path="./.build-ubuntu/x86_64-unknown-linux"
+  build_flags="$build_flags --build-path ./.build-ubuntu"
+fi
+
+if [ "$1" == "release" ]
+then
+  build_flags="$build_flags -c release"
+  build_path="$build_path/release"
+else
+  build_path="$build_path/debug"
+fi
+
+echo "Swift version: `swift --version`"
+echo "Build path: $build_path"
+echo "Build flags: $build_flags"
+bash -c "swift build $build_flags"
+echo $build_path/BotEngine

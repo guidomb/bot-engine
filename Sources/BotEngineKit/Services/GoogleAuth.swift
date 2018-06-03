@@ -31,24 +31,24 @@ public struct GoogleAuth {
         guard let tokenProvider = BrowserTokenProvider(credentials: credentialsFilename, token: tokenFilename) else {
             fatalError("Unable to create token provider")
         }
-        
+
         if tokenProvider.token == nil {
             try tokenProvider.signIn(scopes: scopes)
             try tokenProvider.saveToken(tokenFilename)
         }
-        
+
         return tokenProvider.token!.asGoogleToken!
     }
     
 }
 
 fileprivate extension Token {
-    
+
     var asGoogleToken: GoogleAPI.Token? {
         guard let tokenType = self.TokenType, let tokenValue = self.AccessToken else {
             return nil
         }
         return GoogleAPI.Token(type: tokenType, value: tokenValue)
     }
-    
+
 }

@@ -2,5 +2,5 @@
 
 set -e
 
-swift build
-./.build/x86_64-apple-macosx10.10/debug/BotEngine
+bin_path=`script/build $@`
+ls -l $bin_path

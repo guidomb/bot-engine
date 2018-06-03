@@ -129,11 +129,11 @@
       },
       {
         "package": "SKServer",
-        "repositoryURL": "https://github.com/SlackKit/SKServer",
+        "repositoryURL": "https://github.com/guidomb/SKServer",
         "state": {
-          "branch": null,
-          "revision": "20eb55cef890bee253402865aad15318185696b7",
-          "version": "4.1.0"
+          "branch": "linux",
+          "revision": "e2ee13d4ffcf634d250acbdbf123865a25a65496",
+          "version": null
         }
       },
       {
@@ -147,11 +147,11 @@
       },
       {
         "package": "SlackKit",
-        "repositoryURL": "https://github.com/SlackKit/SlackKit.git",
+        "repositoryURL": "https://github.com/guidomb/SlackKit.git",
         "state": {
-          "branch": null,
-          "revision": "c2f3731a69df85f852d089839edd14b6ed461b02",
-          "version": "4.1.0"
+          "branch": "linux",
+          "revision": "c89f5852b2748d3bc3a30a92202fcc7f3bef61a1",
+          "version": null
         }
       },
       {
@@ -174,11 +174,11 @@
       },
       {
         "package": "Swifter",
-        "repositoryURL": "https://github.com/httpswift/swifter.git",
+        "repositoryURL": "https://github.com/guidomb/swifter.git",
         "state": {
-          "branch": null,
-          "revision": "eafa10b5ce4389c497ab7fde0a747661d99e0a4b",
-          "version": "1.4.1"
+          "branch": "linux",
+          "revision": "cc406a4c03d808fd0ee9873e0cef36f894cfadb9",
+          "version": null
         }
       },
       {
