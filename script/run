@@ -3,4 +3,4 @@
 set -e
 
 bin_path=`script/build $@`
-ls -l $bin_path
+$bin_path

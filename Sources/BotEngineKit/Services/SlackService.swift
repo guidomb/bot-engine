@@ -7,9 +7,11 @@
 
 import Foundation
 import ReactiveSwift
-import SlackKit
 import Result
+import SKClient
 import SKCore
+import SKRTMAPI
+import SKWebAPI
 
 public enum SlackServiceError: Swift.Error {
     
@@ -18,6 +20,7 @@ public enum SlackServiceError: Swift.Error {
     case sendMessageFailure(SlackError)
     case fetchUserInfoFailure(SlackError)
     case directMessageChannelNotAvailable
+    case connectionFailure(Error)
     
 }
 
@@ -54,51 +57,40 @@ public protocol ButtonMessage {
 
 public final class SlackService: SlackServiceProtocol {
     
-    private let token: String
     private let middleware: SlackServiceActionMiddleware
-    private var slackKit: SlackKit?
+    private let webAPI: WebAPI
+    private let rtm: SKRTMAPI
+    private let client = Client()
+    
+    private var observer: Signal<Event, SlackServiceError>.Observer?
     
     init(token: String, verificationToken: String) {
-        self.token = token
+        self.webAPI = WebAPI(token: token)
+        self.rtm = SKRTMAPI(withAPIToken: token, options: RTMOptions(), rtm: nil)
         self.middleware = SlackServiceActionMiddleware(verificationToken: verificationToken)
+        self.rtm.adapter = self
+    }
+    
+    public func registerActionHandler(with httpServer: BotEngine.HTTPServer) {
+        httpServer.registerHandler(forPath: "/slackActions", handler: middleware.handleAction)
     }
     
     public func start() -> SignalProducer<Event, SlackServiceError> {
-        guard self.slackKit == nil else {
+        guard observer == nil else {
             return SignalProducer(error: .connectionAlreadyEstablished)
         }
         return SignalProducer { observer, lifetime in
-            let slackKit = self.createSlackClient()
-            let actions = RequestRoute(path: "/actions", middleware: self.middleware)
-            let responder = SlackKitResponder(routes: [actions])
-            slackKit.addServer(responder: responder)
-            slackKit.notificationForEvent(.message) { event, _ in
-                guard event.message?.user != nil else {
-                    // We ignore messages from non-authenticated users
-                    // to avoid something that looks like a SlackKit bug.
-                    //
-                    // It seems that every message we send back to the users
-                    // gets sent to this closure which means that we receive
-                    // the messages that we send to the user which generates
-                    // an infinite loop of messages.
-                    return
-                }
-                // TODO Only responde to mentions in group channels and start a direct conversation
-                observer.send(value: event)
-            }
+            self.observer = observer
             lifetime.observeEnded {
-                self.slackKit = nil
                 self.middleware.stopActionHandlerCleaner()
             }
             self.middleware.startActionHandlerCleaner()
+            self.rtm.connect()
         }
     }
     
     public func sendMessage(channel: String, text: String) -> SignalProducer<(), SlackServiceError> {
-        guard let webAPI = self.slackKit?.webAPI else {
-            return SignalProducer(error: .webAPINotAvailable)
-        }
-        return SignalProducer { observer, _ in
+        return SignalProducer { [webAPI = self.webAPI] observer, _ in
             webAPI.sendMessage(
                 channel: channel,
                 text: text,
@@ -113,10 +105,6 @@ public final class SlackService: SlackServiceProtocol {
         text: String,
         buttonsSectionTitle: String,
         buttons: [ButtonType]) -> SignalProducer<ButtonType, SlackServiceError> {
-        guard let webAPI = self.slackKit?.webAPI else {
-            return SignalProducer(error: .webAPINotAvailable)
-        }
-        
         let callbackID = "\(channel)-\(UUID().uuidString)"
         let actions = buttons.map {
             SKCore.Action(name: String(describing: ButtonType.self), text: $0.text, value: $0.text)
@@ -125,13 +113,13 @@ public final class SlackService: SlackServiceProtocol {
             buttons.enumerated().map { "\t\($0) - \($1.text)" }.joined(separator: "\n")
         let attachment = Attachment(fallback: fallbacks, title: buttonsSectionTitle, callbackID: callbackID, actions: actions)
         
-        return SignalProducer { [middleware = self.middleware] observer, _ in
+        return SignalProducer { [middleware = self.middleware, webAPI = self.webAPI] observer, _ in
             middleware.registerObserver(observer, for: callbackID)
             webAPI.sendMessage(
                 channel: channel,
                 text: text,
                 attachments: [attachment],
-                success: { _ in print("Message with buttons sent. CallbackId: \(callbackID)") },
+                success: { _ in print("DEBUG - Message with buttons sent. CallbackId: \(callbackID)") },
                 failure: { observer.send(error: .sendMessageFailure($0)) }
             )
         }
@@ -142,10 +130,7 @@ public final class SlackService: SlackServiceProtocol {
     }
     
     public func fetchUserInfo(userId: String) -> SignalProducer<SKCore.User, SlackServiceError> {
-        guard let webAPI = self.slackKit?.webAPI else {
-            return SignalProducer(error: .webAPINotAvailable)
-        }
-        return SignalProducer { observer, _ in
+        return SignalProducer { [webAPI = self.webAPI] observer, _ in
             webAPI.userInfo(
                 id: userId,
                 success: { user in
@@ -162,10 +147,7 @@ public final class SlackService: SlackServiceProtocol {
     }
     
     public func openDirectMessageChannel(withUser userId: String) -> SignalProducer<String, SlackServiceError> {
-        guard let webAPI = self.slackKit?.webAPI else {
-            return SignalProducer(error: .webAPINotAvailable)
-        }
-        return SignalProducer { observer, _ in
+        return SignalProducer { [webAPI = self.webAPI] observer, _ in
             webAPI.openIM(
                 userID: userId,
                 success: { response in
@@ -179,6 +161,43 @@ public final class SlackService: SlackServiceProtocol {
                 failure: { observer.send(error: .fetchUserInfoFailure($0)) })
         }
     }
+}
+
+extension SlackService: RTMAdapter {
+    
+    public func initialSetup(json: [String : Any], instance: SKRTMAPI) {
+        client.initialSetup(JSON: json)
+    }
+    
+    public func notificationForEvent(_ event: Event, type: EventType, instance: SKRTMAPI) {
+        guard let observer = self.observer else {
+            print("WARN - Slack event received but there is no active observer")
+            return
+        }
+        
+        client.notificationForEvent(event, type: type)
+        guard event.message?.user != nil else {
+            // We ignore messages from non-authenticated users
+            // to avoid something that looks like a SlackKit bug.
+            //
+            // It seems that every message we send back to the users
+            // gets sent to this closure which means that we receive
+            // the messages that we send to the user which generates
+            // an infinite loop of messages.
+            return
+        }
+        // TODO Only responde to mentions in group channels and start a direct conversation
+        observer.send(value: event)
+    }
+    
+    public func connectionClosed(with error: Error, instance: SKRTMAPI) {
+        guard let observer = self.observer else {
+            print("WARN - Slack connection closed but there is no active observer")
+            return
+        }
+        observer.send(error: .connectionFailure(error))
+    }
+    
 }
 
 public struct SlackOutputRenderer: BehaviorOutputRenderer {
@@ -236,6 +255,7 @@ public struct SlackOutputRenderer: BehaviorOutputRenderer {
 public extension BotEngine {
     
     static func slackBotEngine(
+        server: BotEngine.HTTPServer,
         repository: ObjectRepository,
         context: [String : Any] = [:],
         environment: [String : String] = ProcessInfo.processInfo.environment) -> BotEngine {
@@ -248,6 +268,8 @@ public extension BotEngine {
         }
         
         let slackService = SlackService(token: token, verificationToken: verificationToken)
+        slackService.registerActionHandler(with: server)
+        
         let outputRenderer = SlackOutputRenderer(slackService: slackService)
         let messageProducer: BotEngine.InputProducer = slackService.start()
             .flatMapError { _ in .empty }
@@ -316,18 +338,83 @@ fileprivate extension UserEntityInfo {
     
 }
 
-fileprivate extension SlackService {
+fileprivate final class SlackServiceActionMiddleware {
     
-    func createSlackClient() -> SlackKit {
-        slackKit = SlackKit()
-        slackKit?.addRTMBotWithAPIToken(token)
-        slackKit?.addWebAPIAccessWithToken(token)
-        return slackKit!
+    struct InteractiveMessage: Decodable {
+        
+        struct SelectAction: Decodable {
+            
+            let value: String
+            
+        }
+        
+        enum Action: Decodable {
+            
+            enum CodingKeys: CodingKey {
+                
+                case type
+                case name
+                case value
+                case selectedOptions
+                
+            }
+            
+            enum ActionType: String, Decodable {
+                
+                case button
+                case select
+                
+            }
+            
+            case button(name: String, value: String)
+            case select(name: String, selectedOptions: [SelectAction])
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                let name = try container.decode(String.self, forKey: .name)
+                switch try container.decode(ActionType.self, forKey: .type) {
+                case .button:
+                    let value = try container.decode(String.self, forKey: .value)
+                    self = .button(name: name, value: value)
+                case .select:
+                    let selectedOptions = try container.decode([SelectAction].self, forKey: .selectedOptions)
+                    self = .select(name: name, selectedOptions: selectedOptions)
+                }
+            }
+            
+        }
+        
+        let type: String
+        let token: String
+        let callbackId: String
+        let actions: [Action]
+        
     }
     
-}
-
-fileprivate final class SlackServiceActionMiddleware: Middleware {
+    struct Response: Codable {
+        
+        enum ResponseType: String, Codable {
+            
+            case inChannel = "in_channel"
+            case ephemeral = "ephemeral"
+            
+        }
+        
+        let text: String
+        let responseType: ResponseType
+        let replaceOriginal: Bool
+        
+        var responseContent: BotEngine.HTTPServer.ResponseContent {
+            return .init(self, keyEncodingStrategy: .convertToSnakeCase)
+        }
+        
+        init(text: String, responseType: ResponseType = .inChannel, replaceOriginal: Bool = true) {
+            self.text = text
+            self.responseType = responseType
+            self.replaceOriginal = replaceOriginal
+        }
+        
+    }
     
     struct ActionHandler {
         
@@ -359,27 +446,49 @@ fileprivate final class SlackServiceActionMiddleware: Middleware {
         self.verificationToken = verificationToken
     }
     
-    func respond(to request: (RequestType, ResponseType)) -> (RequestType, ResponseType) {
-        if let form = request.0.formURLEncodedBody.first(where: {$0.name == "ssl_check"}), form.value == "1" {
-            return (request.0, Response(200))
+    func handleAction(request: BotEngine.HTTPServer.Request) -> SignalProducer<BotEngine.HTTPServer.Response, AnyError> {
+        guard let payloadData = request.formURLEncodedBody?["payload"]?.data(using: .utf8) else {
+            print("WARN - Received slack action request does not contain payload")
+            return .init(value: .badRequest)
         }
-        guard   let actionRequest = MessageActionRequest(request: request.0),
-                let callbackId = actionRequest.callbackID,
-                let requestToken = actionRequest.token,
-                requestToken == verificationToken,
-                let actionValue = actionRequest.action?.value,
-                let observer = actionResponseObservers[callbackId] else {
-            print("WARN - Slack action request could not be handled.")
-            return (request.0, Response(400))
+        
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        guard let message = try? decoder.decode(InteractiveMessage.self, from: payloadData) else {
+            print("WARN - Received slack action request payload cannot be deserialized")
+            return .init(value: .badRequest)
+        }
+        guard message.type == "interactive_message" else {
+            print("WARN - Unsupported slack action payload type '\(message.type)'")
+            return .init(value: .badRequest)
+        }
+        guard message.token == verificationToken else {
+            print("WARN - Slack action payload token is not valid")
+            return .init(value: .badRequest)
+        }
+        guard message.actions.count == 1 else {
+            print("WARN - Slack action payload has more than one action")
+            return .init(value: .badRequest)
+        }
+        guard case .button(_, let actionValue) = message.actions[0] else {
+            print("WARN - Unsupported Slack action \(message.actions[0])")
+            return .init(value: .badRequest)
+        }
+        guard let observer = actionResponseObservers[message.callbackId] else {
+            print("WARN - There is no registered observer for Slack action with callback ID '\(message.callbackId)'")
+            return .init(value: .internalError)
         }
         guard let response = observer.handle(action: actionValue) else {
             print("WARN - Slack action request could not be handled. Observer could not return a response text.")
-            return (request.0, Response(400))
+            return .init(value: .badRequest)
         }
-        actionResponseObservers.removeValue(forKey: callbackId)
-        return (request.0, Response(response: SKResponse(text: response)))
+        
+        print("DEBUG - Handling Slack action request with callback ID '\(message.callbackId)' and value '\(actionValue)'. Responding '\(response)'")
+        actionResponseObservers.removeValue(forKey: message.callbackId)
+        return .init(value: .success(Response(text: response).responseContent))
     }
     
+
     func registerObserver<ButtonType: ButtonMessage>(_ observer: Signal<ButtonType, SlackServiceError>.Observer,
                                                      for callbackID: String) {
         actionResponseObservers[callbackID] = ActionHandler { response in

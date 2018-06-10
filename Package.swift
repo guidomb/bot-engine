@@ -8,14 +8,23 @@ let package = Package(
     products: [
         .executable(name: "BotEngine", targets: ["BotEngine"]),
         .library(name: "BotEngineKit", targets: ["BotEngineKit"]),
-        .library(name: "WoloxKit", targets: ["WoloxKit"]),
         .library(name: "GoogleAPI", targets: ["GoogleAPI"]),
-        .library(name: "TestKit", targets: ["TestKit"])
+        .library(name: "GoogleOAuth", targets: ["GoogleOAuth"]),
+        .library(name: "TestKit", targets: ["TestKit"]),
+        .library(name: "WoloxKit", targets: ["WoloxKit"])
     ],
     dependencies: [
-        .package(url: "https://github.com/google/auth-library-swift", from: "0.3.6"),
+        // Dependencies
         .package(url: "https://github.com/ReactiveCocoa/ReactiveSwift", from: "3.1.0"),
-    		.package(url: "https://github.com/guidomb/SlackKit.git", .branch("linux")),
+        .package(url: "https://github.com/vapor/http.git", from: "3.0.0"),
+        .package(url: "https://github.com/SlackKit/SKCore", .upToNextMinor(from: "4.1.0")),
+        .package(url: "https://github.com/SlackKit/SKClient", .upToNextMinor(from: "4.1.0")),
+        .package(url: "https://github.com/SlackKit/SKRTMAPI", .upToNextMinor(from: "4.1.0")),
+        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "0.8.0"),
+        .package(url: "https://github.com/attaswift/BigInt", from: "3.0.0"),
+        .package(url: "https://github.com/timburks/SwiftyBase64", from: "1.2.0"),
+
+        // Test dependencies
         .package(url: "https://github.com/typelift/SwiftCheck.git", from: "0.8.1")
     ],
     targets: [
@@ -30,9 +39,32 @@ let package = Package(
             dependencies: [
               "GoogleAPI",
               "ReactiveSwift",
-              "OAuth2",
-              "SlackKit"
+              "GoogleOAuth",
+              "SKCore",
+              "SKClient",
+              "SKRTMAPI",
+              "HTTP"
             ]
+        ),
+        .target(
+          name: "GoogleAPI",
+          dependencies: [
+            "ReactiveSwift"
+          ]
+        ),
+        .target(
+          name: "GoogleOAuth",
+          dependencies: [
+            "CryptoSwift",
+            "BigInt",
+            "SwiftyBase64"
+          ]
+        ),
+        .target(
+          name: "TestKit",
+          dependencies: [
+            "GoogleAPI"
+          ]
         ),
         .target(
             name: "WoloxKit",
@@ -41,19 +73,8 @@ let package = Package(
               "ReactiveSwift"
             ]
         ),
-        .target(
-            name: "GoogleAPI",
-            dependencies: [
-              "ReactiveSwift"
-            ]
-        ),
-        .target(
-            name: "TestKit",
-            dependencies: [
-              "GoogleAPI"
-            ]
-        ),
 
+        // Test targets
         .testTarget(
             name: "BotEngineKitTests",
             dependencies: [

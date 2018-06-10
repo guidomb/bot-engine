@@ -6,10 +6,12 @@
 //
 
 import Foundation
-import OAuth2
+import GoogleOAuth
 import GoogleAPI
+import ReactiveSwift
+import Result
 
-public struct GoogleAuth {
+public final class GoogleAuth {
     
     let credentialsFilename = "feebi.json"
     let scopes = [
@@ -23,17 +25,35 @@ public struct GoogleAuth {
 
     private let tokenFilename = ".feebi-token"
     
-    public init() {
-        
-    }
+    public init() { }
     
-    public func login() throws -> GoogleAPI.Token {
-        guard let tokenProvider = BrowserTokenProvider(credentials: credentialsFilename, token: tokenFilename) else {
+    public func login(with server: BotEngine.HTTPServer) throws -> GoogleAPI.Token {
+        guard let tokenProvider = BrowserTokenProvider(
+            credentials: credentialsFilename,
+            token: tokenFilename,
+            oauthCallbackBaseURL: server.host) else {
             fatalError("Unable to create token provider")
         }
 
         if tokenProvider.token == nil {
+            let sem = DispatchSemaphore(value: 0)
+            server.registerTemporaryHandler(forPath: tokenProvider.callbackPath) { request in
+                defer {
+                    sem.signal()
+                }
+                guard let urlComponents = request.urlComponents else {
+                    print("WARN - URL components could not be created for URL '\(request.url.absoluteString)'")
+                    return .init(value: .badRequest)
+                }
+                do {
+                    try tokenProvider.exchange(code: Code(urlComponents: urlComponents))
+                    return .init(value: .success("Success! Token received.\n"))
+                } catch let error {
+                    return .init(error: AnyError(error))
+                }
+            }
             try tokenProvider.signIn(scopes: scopes)
+            _ = sem.wait(timeout: DispatchTime.distantFuture)
             try tokenProvider.saveToken(tokenFilename)
         }
 

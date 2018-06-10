@@ -2,15 +2,6 @@
   "object": {
     "pins": [
       {
-        "package": "Auth",
-        "repositoryURL": "https://github.com/google/auth-library-swift",
-        "state": {
-          "branch": null,
-          "revision": "c5f11b696cec34dbd5691c2a4b4aaea087fb5125",
-          "version": "0.3.6"
-        }
-      },
-      {
         "package": "BigInt",
         "repositoryURL": "https://github.com/attaswift/BigInt",
         "state": {
@@ -26,6 +17,15 @@
           "branch": null,
           "revision": "2eb3aff0fb57f92f5722fac5d6d20bf64669ca66",
           "version": "1.1.0"
+        }
+      },
+      {
+        "package": "Core",
+        "repositoryURL": "https://github.com/vapor/core.git",
+        "state": {
+          "branch": null,
+          "revision": "174f909bc048a6aff27d6cb4c31810971f912cca",
+          "version": "3.2.2"
         }
       },
       {
@@ -47,12 +47,12 @@
         }
       },
       {
-        "package": "SwiftServerHttp",
-        "repositoryURL": "https://github.com/swift-server/http",
+        "package": "HTTP",
+        "repositoryURL": "https://github.com/vapor/http.git",
         "state": {
           "branch": null,
-          "revision": "f8516cc7252cc1e4a9f31ac5fa35175acdd2f47d",
-          "version": "0.1.0"
+          "revision": "8123ea00e9858b369cd168d0303d33e7d3804d19",
+          "version": "3.0.7"
         }
       },
       {
@@ -128,30 +128,12 @@
         }
       },
       {
-        "package": "SKServer",
-        "repositoryURL": "https://github.com/guidomb/SKServer",
-        "state": {
-          "branch": "linux",
-          "revision": "e2ee13d4ffcf634d250acbdbf123865a25a65496",
-          "version": null
-        }
-      },
-      {
         "package": "SKWebAPI",
         "repositoryURL": "https://github.com/SlackKit/SKWebAPI",
         "state": {
           "branch": null,
           "revision": "b5b303c7e5cdecd587499061a81128ef4d7ed3f1",
           "version": "4.1.3"
-        }
-      },
-      {
-        "package": "SlackKit",
-        "repositoryURL": "https://github.com/guidomb/SlackKit.git",
-        "state": {
-          "branch": "linux",
-          "revision": "c89f5852b2748d3bc3a30a92202fcc7f3bef61a1",
-          "version": null
         }
       },
       {
@@ -164,21 +146,48 @@
         }
       },
       {
+        "package": "swift-nio",
+        "repositoryURL": "https://github.com/apple/swift-nio.git",
+        "state": {
+          "branch": null,
+          "revision": "695afc5205aaa49fca092b94b479ff71c43d9d3c",
+          "version": "1.8.0"
+        }
+      },
+      {
+        "package": "swift-nio-ssl",
+        "repositoryURL": "https://github.com/apple/swift-nio-ssl.git",
+        "state": {
+          "branch": null,
+          "revision": "0adc938bc8de3d3829b842f9767d81c7480b8403",
+          "version": "1.1.1"
+        }
+      },
+      {
+        "package": "swift-nio-ssl-support",
+        "repositoryURL": "https://github.com/apple/swift-nio-ssl-support.git",
+        "state": {
+          "branch": null,
+          "revision": "c02eec4e0e6d351cd092938cf44195a8e669f555",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "package": "swift-nio-zlib-support",
+        "repositoryURL": "https://github.com/apple/swift-nio-zlib-support.git",
+        "state": {
+          "branch": null,
+          "revision": "37760e9a52030bb9011972c5213c3350fa9d41fd",
+          "version": "1.0.0"
+        }
+      },
+      {
         "package": "SwiftCheck",
         "repositoryURL": "https://github.com/typelift/SwiftCheck.git",
         "state": {
           "branch": null,
           "revision": "43ffe7ab48366c36a697c54bcdd257876edd6fc6",
           "version": "0.10.0"
-        }
-      },
-      {
-        "package": "Swifter",
-        "repositoryURL": "https://github.com/guidomb/swifter.git",
-        "state": {
-          "branch": "linux",
-          "revision": "cc406a4c03d808fd0ee9873e0cef36f894cfadb9",
-          "version": null
         }
       },
       {
