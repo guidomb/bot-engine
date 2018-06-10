@@ -47,7 +47,7 @@ extension BehaviorProtocol {
 
 public protocol ActiveBehavior {
     
-    var isInFinalState: Bool { get }
+    var isInFinalState: Property<Bool> { get }
     
     var descriptionForCancellation: String { get }
     

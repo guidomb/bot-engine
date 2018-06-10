@@ -171,7 +171,7 @@ fileprivate extension BotEngine {
         }
         
         if let activeBehavior = activeBehaviors[channel] {
-            handle(input: .message(message: message, context: context), with: activeBehavior)
+            activeBehavior.handle(input: .message(message: message, context: context))
         } else if let activeBehavior = findBehavior(for: (message, context)) {
             mount(behavior: activeBehavior, for: channel)
         } else {
@@ -185,16 +185,7 @@ fileprivate extension BotEngine {
             return
         }
         
-        handle(input: .interactiveMessageAnswer(answer: answer, channel: channel, senderId: senderId), with: activeBehavior)
-    }
-    
-    func handle(input: Input, with behavior: ActiveBehavior) {
-        behavior.handle(input: input)
-        if behavior.isInFinalState {
-            activeBehaviors.removeValue(forKey: input.channel)
-        }
-        // TODO handle error state
-        // if activeBehavior.isInErrorState
+        activeBehavior.handle(input: .interactiveMessageAnswer(answer: answer, channel: channel, senderId: senderId))
     }
     
     func mount(behavior: ActiveBehavior, for channel: ChannelId) {
@@ -203,8 +194,15 @@ fileprivate extension BotEngine {
             with: outputObserver,
             for: channel
         )
-        if !behavior.isInFinalState {
+        if !behavior.isInFinalState.value {
             activeBehaviors[channel] = behavior
+            behavior.isInFinalState.signal
+                .filter { $0 }
+                .observeValues { [weak self] _ in self?.removeActiveBehavior(for: channel) }
+            // TODO handle error state
+            // We should observe if active behavior transitions to an error state, handle the error
+            // by reporting it to the client and maybe creating an issue and the removing the
+            // active behavior.
         }
         // TODO handle error state
         // if activeBehavior.isInErrorState
@@ -221,11 +219,15 @@ fileprivate extension BotEngine {
     
     func cancelActiveBehavior(for channel: ChannelId) {
         if let activeBehavior = activeBehaviors[channel] {
-            activeBehaviors.removeValue(forKey: channel)
+            removeActiveBehavior(for: channel)
             send(reply: .cancelConfirmation(description: activeBehavior.descriptionForCancellation), for: channel)
         } else {
             send(reply: .nothingToCancel, for: channel)
         }
+    }
+    
+    func removeActiveBehavior(for channel: ChannelId) {
+        activeBehaviors.removeValue(forKey: channel)
     }
     
     func render(output: ChanneledBehaviorOutput) {

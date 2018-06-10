@@ -19,8 +19,8 @@ extension Behavior {
         
         let state: Property<StateType?>
         
-        var isInFinalState: Bool {
-            return state.value?.isFinalState ?? false
+        var isInFinalState: Property<Bool> {
+            return state.map { $0?.isFinalState ?? false }
         }
         
         var descriptionForCancellation: String {
