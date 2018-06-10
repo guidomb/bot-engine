@@ -8,3 +8,4 @@ bin/
 TODO.txt
 *.gs
 dumps/
+google-service-account-credentials*.json

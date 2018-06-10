@@ -27,12 +27,34 @@ public final class GoogleAuth {
     
     public init() { }
     
+    public func login(serviceAccountCredentials credentials: URL) -> SignalProducer<GoogleAPI.Token, AnyError> {
+        guard let tokenProvider = ServiceAccountTokenProvider(credentialsURL: credentials, scopes: scopes) else {
+            fatalError("ERROR - Unable to create token provider")
+        }
+        return SignalProducer { observer, _ in
+            do {
+                try tokenProvider.withToken { maybeToken, maybeError in
+                    if let error = maybeError {
+                        observer.send(error: AnyError(error))
+                    } else if let token = maybeToken?.asGoogleToken {
+                        observer.send(value: token)
+                        observer.sendCompleted()
+                    } else {
+                        fatalError("ERROR - Unable to create token")
+                    }
+                }
+            } catch let error {
+                observer.send(error: AnyError(error))
+            }
+        }
+    }
+    
     public func login(with server: BotEngine.HTTPServer) throws -> GoogleAPI.Token {
         guard let tokenProvider = BrowserTokenProvider(
             credentials: credentialsFilename,
             token: tokenFilename,
             oauthCallbackBaseURL: server.host) else {
-            fatalError("Unable to create token provider")
+            fatalError("ERROR - Unable to create token provider")
         }
 
         if tokenProvider.token == nil {
