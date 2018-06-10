@@ -1,0 +1,3 @@
+test:
+  script:
+    - script/docker-test
