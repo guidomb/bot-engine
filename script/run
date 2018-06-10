@@ -2,5 +2,11 @@
 
 set -e
 
-bin_path=`script/build $@`
+echo "Building project ..."
+build_output_file="/tmp/botengine-build-output.txt"
+script/build $@ | tee $build_output_file
+bin_path=`tail -n 1 $build_output_file`
+
+echo ""
+echo "Running '$bin_path' ..."
 $bin_path
