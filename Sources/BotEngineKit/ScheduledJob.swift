@@ -76,10 +76,33 @@ public struct DayTime: Codable {
         self.timeZone = timeZone
     }
     
-    public func toDate(in day: Date = Date()) -> Date? {
+    public func toDate(in dayDate: Date = Date()) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
+        
         var calendar = Calendar.current
         calendar.timeZone = timeZone
-        return calendar.date(bySettingHour: hours, minute: minutes, second: 0, of: day)
+        
+        // Ideally the following calendar method should do the work. But this method
+        // when using Swift's open source Foundation dependends on a method that
+        // is not implemented yet.
+        // https://github.com/apple/swift-corelibs-foundation/blob/da6a830f7e461062c8ba82961f644c4a197890be/Foundation/NSCalendar.swift#L1109
+        // return calendar.date(bySettingHour: hours, minute: minutes, second: 0, of: day)
+
+        let day = String(format: "%02d", calendar.component(.day, from: dayDate))
+        let month = String(format: "%02d", calendar.component(.month, from: dayDate))
+        let year = calendar.component(.year, from: dayDate)
+        
+        var time = String(format: "%02d", hours)
+        time += ":" + String(format: "%02d", minutes) + ":00"
+        
+        let secondsFromGMT = timeZone.secondsFromGMT()
+        let timeZoneHours = String(format: "%02d", abs(secondsFromGMT / 60 / 60))
+        let timeZoneMinutes = String(format: "%02d", abs((secondsFromGMT % (60 * 60)) / 60))
+        var timeZoneComponent = secondsFromGMT > 0 ? "+" : "-"
+        timeZoneComponent += "\(timeZoneHours):\(timeZoneMinutes)"
+        let dayString = "\(year)-\(month)-\(day)T\(time)\(timeZoneComponent)"
+        return formatter.date(from: dayString)
     }
     
     public func intervalSinceNow() -> TimeInterval? {
@@ -120,6 +143,14 @@ extension DayTime: Comparable {
         return (lhs.hours < rhs.hours) || (lhs.hours == rhs.hours && lhs.minutes < rhs.minutes)
     }
     
+    
+}
+
+extension DayTime: CustomStringConvertible {
+    
+    public var description: String {
+        return "DayTime(hours: \(hours), minutes: \(minutes), timeZone: \(timeZone))"
+    }
     
 }
 
