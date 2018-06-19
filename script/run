@@ -7,6 +7,11 @@ build_output_file="/tmp/botengine-build-output.txt"
 script/build $@ | tee $build_output_file
 bin_path=`tail -n 1 $build_output_file`
 
+if [ -f .env ]
+then
+  source .env
+fi
+
 echo ""
 echo "Running '$bin_path' ..."
-$bin_path
+$bin_path -C ./google-service-account-credentials-dev.json
