@@ -350,12 +350,12 @@ fileprivate final class SlackServiceActionMiddleware {
         
         enum Action: Decodable {
             
-            enum CodingKeys: CodingKey {
+            enum CodingKeys: String, CodingKey {
                 
-                case type
-                case name
-                case value
-                case selectedOptions
+                case type = "type"
+                case name = "name"
+                case value = "value"
+                case selectedOptions  = "selected_options"
                 
             }
             
@@ -393,6 +393,14 @@ fileprivate final class SlackServiceActionMiddleware {
     
     struct Response: Codable {
         
+        enum CodingKeys: String, CodingKey {
+            
+            case text = "text"
+            case responseType = "response_type"
+            case replaceOriginal = "replace_original"
+            
+        }
+        
         enum ResponseType: String, Codable {
             
             case inChannel = "in_channel"
@@ -405,13 +413,20 @@ fileprivate final class SlackServiceActionMiddleware {
         let replaceOriginal: Bool
         
         var responseContent: BotEngine.HTTPServer.ResponseContent {
-            return .init(self, keyEncodingStrategy: .convertToSnakeCase)
+            return .init(self)
         }
         
         init(text: String, responseType: ResponseType = .inChannel, replaceOriginal: Bool = true) {
             self.text = text
             self.responseType = responseType
             self.replaceOriginal = replaceOriginal
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(text, forKey: .text)
+            try container.encode(responseType, forKey: .responseType)
+            try container.encode(replaceOriginal, forKey: .replaceOriginal)
         }
         
     }
@@ -453,7 +468,6 @@ fileprivate final class SlackServiceActionMiddleware {
         }
         
         let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
         guard let message = try? decoder.decode(InteractiveMessage.self, from: payloadData) else {
             print("WARN - Received slack action request payload cannot be deserialized")
             return .init(value: .badRequest)

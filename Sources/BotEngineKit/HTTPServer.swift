@@ -56,13 +56,20 @@ extension BotEngine {
                 self.init(contentType: "text/plain; charset=utf-8", content: value.data(using: .utf8))
             }
             
+            public init<CodableType: Codable>(_ codable: CodableType) {
+                let enconder = JSONEncoder()
+                self.init(contentType: "application/json", content: try? enconder.encode(codable))
+            }
+            
+            #if os(macOS)
             public init<CodableType: Codable>(
                 _ codable: CodableType,
-                keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy = .useDefaultKeys) {
+                keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy) {
                 let enconder = JSONEncoder()
                 enconder.keyEncodingStrategy = keyEncodingStrategy
                 self.init(contentType: "application/json", content: try? enconder.encode(codable))
             }
+            #endif
             
         }
         
