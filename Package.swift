@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "BotEngineKit", targets: ["BotEngineKit"]),
         .library(name: "GoogleAPI", targets: ["GoogleAPI"]),
         .library(name: "GoogleOAuth", targets: ["GoogleOAuth"]),
+        .library(name: "SKRTMAPI", targets: ["SKRTMAPI"]),
         .library(name: "TestKit", targets: ["TestKit"]),
         .library(name: "WoloxKit", targets: ["WoloxKit"])
     ],
@@ -17,9 +18,10 @@ let package = Package(
         // Dependencies
         .package(url: "https://github.com/ReactiveCocoa/ReactiveSwift", from: "3.1.0"),
         .package(url: "https://github.com/vapor/http.git", from: "3.0.0"),
+        .package(url: "https://github.com/vapor/websocket.git", from: "1.0.0"),
         .package(url: "https://github.com/SlackKit/SKCore", .upToNextMinor(from: "4.1.0")),
         .package(url: "https://github.com/SlackKit/SKClient", .upToNextMinor(from: "4.1.0")),
-        .package(url: "https://github.com/SlackKit/SKRTMAPI", .upToNextMinor(from: "4.1.0")),
+        .package(url: "https://github.com/SlackKit/SKWebAPI", .upToNextMajor(from: "4.1.0")),
         .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "0.8.0"),
         .package(url: "https://github.com/attaswift/BigInt", from: "3.0.0"),
         .package(url: "https://github.com/timburks/SwiftyBase64", from: "1.2.0"),
@@ -43,6 +45,7 @@ let package = Package(
               "SKCore",
               "SKClient",
               "SKRTMAPI",
+              "SKWebAPI",
               "HTTP"
             ]
         ),
@@ -58,6 +61,14 @@ let package = Package(
             "CryptoSwift",
             "BigInt",
             "SwiftyBase64"
+          ]
+        ),
+        .target(
+          name: "SKRTMAPI",
+          dependencies: [
+            "HTTP",
+            "WebSocket",
+            "SKClient"
           ]
         ),
         .target(
