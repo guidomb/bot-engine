@@ -2,16 +2,34 @@
 
 set -e
 
-echo "Building project ..."
-build_output_file="/tmp/botengine-build-output.txt"
-script/build $@ | tee $build_output_file
-bin_path=`tail -n 1 $build_output_file`
+if echo "$@" | grep -q -e "--skip-build"
+then
+  skip_build=true
+  # Remove --skip-build from argument list
+  for arg do
+    shift
+    [ "$arg" = "--skip-build" ] && continue
+    set -- "$@" "$arg"
+  done
+else
+  skip_build=false
+fi
+
+bin_path=`script/build --print-bin-path`
+if [ ! -f $bin_path ] || [ $skip_build == false ]
+then
+  echo "Building project ..."
+  script/build $@
+  echo ""
+else
+  echo "Skipping build ..."
+fi
 
 if [ -f .env ]
 then
+  echo "Loading environmental variables from './.env' ..."
   source .env
 fi
 
-echo ""
 echo "Running '$bin_path' ..."
 $bin_path -C ./google-service-account-credentials-dev.json
