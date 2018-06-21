@@ -152,7 +152,7 @@ extension BotEngine {
             
         }
         
-        public static func build(hostname: String = "localhost", port: Int = 8080)
+        public static func build(hostname: String = "0.0.0.0", port: Int = 8080)
             -> SignalProducer<BotEngine.HTTPServer, AnyError> {
             return SignalProducer { (observer, lifetime) in
                 let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
@@ -183,6 +183,8 @@ extension BotEngine {
             self.server = server
             self.responder = responder
             self.group = group
+            
+            registerHandler(forPath: "/ping") { _ in .init(value: .success("pong")) }
         }
         
         public func registerHandler(forPath path: String, handler: @escaping Handler) {
