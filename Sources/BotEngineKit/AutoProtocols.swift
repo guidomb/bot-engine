@@ -11,3 +11,4 @@ internal protocol AutoDecodable: Decodable {}
 internal protocol AutoEncodable: Encodable {}
 internal protocol AutoCodable: AutoDecodable, AutoEncodable {}
 internal protocol AutoEquatable { }
+internal protocol AutoSnakeCaseCodingKey { }

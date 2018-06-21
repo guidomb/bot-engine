@@ -292,6 +292,57 @@ public extension BotEngine {
     
 }
 
+struct SlackInteractiveMessage: Decodable, AutoSnakeCaseCodingKey {
+    
+    struct SelectAction: Decodable {
+        
+        let value: String
+        
+    }
+    
+    enum Action: Decodable {
+        
+        enum CodingKeys: String, CodingKey {
+            
+            case type = "type"
+            case name = "name"
+            case value = "value"
+            case selectedOptions  = "selected_options"
+            
+        }
+        
+        enum ActionType: String, Decodable {
+            
+            case button
+            case select
+            
+        }
+        
+        case button(name: String, value: String)
+        case select(name: String, selectedOptions: [SelectAction])
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let name = try container.decode(String.self, forKey: .name)
+            switch try container.decode(ActionType.self, forKey: .type) {
+            case .button:
+                let value = try container.decode(String.self, forKey: .value)
+                self = .button(name: name, value: value)
+            case .select:
+                let selectedOptions = try container.decode([SelectAction].self, forKey: .selectedOptions)
+                self = .select(name: name, selectedOptions: selectedOptions)
+            }
+        }
+        
+    }
+    
+    let type: String
+    let token: String
+    let callbackId: String
+    let actions: [Action]
+    
+}
+
 fileprivate enum ConfirmationButton: String, ButtonMessage {
     
     static let options: [ConfirmationButton] = [.yes, .no]
@@ -339,57 +390,6 @@ fileprivate extension UserEntityInfo {
 }
 
 fileprivate final class SlackServiceActionMiddleware {
-    
-    struct InteractiveMessage: Decodable {
-        
-        struct SelectAction: Decodable {
-            
-            let value: String
-            
-        }
-        
-        enum Action: Decodable {
-            
-            enum CodingKeys: String, CodingKey {
-                
-                case type = "type"
-                case name = "name"
-                case value = "value"
-                case selectedOptions  = "selected_options"
-                
-            }
-            
-            enum ActionType: String, Decodable {
-                
-                case button
-                case select
-                
-            }
-            
-            case button(name: String, value: String)
-            case select(name: String, selectedOptions: [SelectAction])
-
-            init(from decoder: Decoder) throws {
-                let container = try decoder.container(keyedBy: CodingKeys.self)
-                let name = try container.decode(String.self, forKey: .name)
-                switch try container.decode(ActionType.self, forKey: .type) {
-                case .button:
-                    let value = try container.decode(String.self, forKey: .value)
-                    self = .button(name: name, value: value)
-                case .select:
-                    let selectedOptions = try container.decode([SelectAction].self, forKey: .selectedOptions)
-                    self = .select(name: name, selectedOptions: selectedOptions)
-                }
-            }
-            
-        }
-        
-        let type: String
-        let token: String
-        let callbackId: String
-        let actions: [Action]
-        
-    }
     
     struct Response: Codable {
         
@@ -468,7 +468,7 @@ fileprivate final class SlackServiceActionMiddleware {
         }
         
         let decoder = JSONDecoder()
-        guard let message = try? decoder.decode(InteractiveMessage.self, from: payloadData) else {
+        guard let message = try? decoder.decode(SlackInteractiveMessage.self, from: payloadData) else {
             print("WARN - Received slack action request payload cannot be deserialized")
             return .init(value: .badRequest)
         }

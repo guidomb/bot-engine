@@ -1,0 +1,12 @@
+{% for type in types.implementing.AutoSnakeCaseCodingKey %}
+
+extension {{ type.name }} {
+
+  enum CodingKeys: String, CodingKey {
+  {% for instanceVariable in type.instanceVariables %}
+    case {{ instanceVariable.name }} = "{{ instanceVariable.name|camelToSnakeCase }}"
+  {% endfor %}
+  }
+
+}
+{% endfor %}

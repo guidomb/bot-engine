@@ -110,3 +110,16 @@ public func == (lhs: DayTime, rhs: DayTime) -> Bool {
 }
 
 // MARK: - AutoEquatable for Enums
+
+
+
+extension SlackInteractiveMessage {
+
+  enum CodingKeys: String, CodingKey {
+    case type = "type"
+    case token = "token"
+    case callbackId = "callback_id"
+    case actions = "actions"
+  }
+
+}
