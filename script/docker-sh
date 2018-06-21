@@ -2,4 +2,4 @@
 
 source "script/lib/docker_script_utils"
 
-docker run -v $PWD:/botengine -w /botengine -ti "$docker_image" bash -sh
+docker run -p 8080:8080 -v $PWD:/botengine -w /botengine -ti "$docker_image" bash -sh
