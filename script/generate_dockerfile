@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+
+require 'erb'
+require 'open3'
+
+unless ARGV.count >= 3
+  puts "ERROR: Missing parameters"
+  puts ""
+  puts "Usage:"
+  puts "\t#{$0} UBUNTU_VERSION SWIFT_BRANCH SNAPSHOT_VERSION [--skip-build | --push]"
+  puts ""
+  puts "Example:"
+  puts "\t#{$0} 16.04 4.2 2018-06-21 --push"
+  puts ""
+  exit 1
+end
+
+DOCKER_IMAGE="botengine-build-latest"
+DOCKER_FILE="Dockerfile-build-latest"
+DOCKER_HUB_REPOSITORY="guidomb/swift-snapshots"
+
+def run_cmd(cmd)
+  Open3.popen2e(cmd) do |stdin, stdout_err, wait_thr|
+    while line = stdout_err.gets
+      puts line
+    end
+
+    exit_status = wait_thr.value
+    unless exit_status.success?
+      abort "FAILED !!! #{cmd}"
+    end
+  end
+end
+
+ubuntu_version = ARGV[0]
+swift_branch = ARGV[1]
+snapshot_version = ARGV[2]
+
+unless ARGV.include?("--skip-build")
+  template = ERB.new(File.read("./script/lib/swift_snapshot_dockerfile.erb"))
+  dockerfile = template.result(binding)
+  File.write(DOCKER_FILE, dockerfile)
+
+  image_exist = system("docker image inspect #{DOCKER_IMAGE} &> /dev/null")
+  if image_exist
+    puts "Removing old '#{DOCKER_IMAGE}' image ..."
+    run_cmd "docker rmi -f #{DOCKER_IMAGE}"
+    puts ""
+  end
+
+  puts "Building docker image '#{DOCKER_IMAGE}' ..."
+  run_cmd "docker build -t #{DOCKER_IMAGE} -f #{DOCKER_FILE} ."
+  puts ""
+end
+
+if ARGV.include?("--push")
+  docker_tag = "#{ubuntu_version}-#{swift_branch}-#{snapshot_version}"
+  puts "Tagging docker image '#{DOCKER_IMAGE}' with tag '#{docker_tag}' ..."
+  run_cmd "docker tag #{DOCKER_IMAGE} #{DOCKER_HUB_REPOSITORY}:#{docker_tag}"
+  puts ""
+
+  puts "Pushing image '#{DOCKER_HUB_REPOSITORY}:#{docker_tag}' ..."
+  run_cmd "docker push #{DOCKER_HUB_REPOSITORY}:#{docker_tag}"
+  puts ""
+end
