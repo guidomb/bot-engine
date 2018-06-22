@@ -1,6 +1,6 @@
 FROM ubuntu:16.04
-LABEL maintainer="Haris Amin <aminharis7@gmail.com>"
-LABEL Description="Docker Container for the Apple's Swift programming language"
+LABEL maintainer="Guido Marucci Blas <guidomb@gmail.com>"
+LABEL Description="Docker Container for the Apple's Swift programming language (snapshot version)"
 
 EXPOSE 8080
 
@@ -27,7 +27,7 @@ RUN apt-get -q update && \
 # Everything up to here should cache nicely between Swift versions, assuming dev dependencies change little
 ARG SWIFT_PLATFORM=ubuntu16.04
 ARG SWIFT_BRANCH=swift-4.2-branch
-ARG SWIFT_VERSION=swift-4.2-DEVELOPMENT-SNAPSHOT-2018-06-09-a
+ARG SWIFT_VERSION=swift-4.2-DEVELOPMENT-SNAPSHOT-2018-06-21-a
 
 ENV SWIFT_PLATFORM=$SWIFT_PLATFORM \
     SWIFT_BRANCH=$SWIFT_BRANCH \
