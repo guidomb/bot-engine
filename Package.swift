@@ -23,8 +23,8 @@ let package = Package(
         .package(url: "https://github.com/SlackKit/SKClient", .upToNextMinor(from: "4.1.0")),
         .package(url: "https://github.com/SlackKit/SKWebAPI", .upToNextMajor(from: "4.1.0")),
         .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "0.8.0"),
-        .package(url: "https://github.com/attaswift/BigInt", from: "3.0.0"),
-        .package(url: "https://github.com/timburks/SwiftyBase64", from: "1.2.0"),
+        .package(url: "https://github.com/guidomb/BigInt", .branch("master")),
+        .package(url: "https://github.com/guidomb/SwiftyBase64", .branch("master")),
 
         // Test dependencies
         .package(url: "https://github.com/typelift/SwiftCheck.git", from: "0.8.1")

@@ -3,11 +3,11 @@
     "pins": [
       {
         "package": "BigInt",
-        "repositoryURL": "https://github.com/attaswift/BigInt",
+        "repositoryURL": "https://github.com/guidomb/BigInt",
         "state": {
-          "branch": null,
-          "revision": "018a5925f60f9e0523edd261de394a0898fe95b7",
-          "version": "3.1.0"
+          "branch": "master",
+          "revision": "3c7866d06207c7df39d9c96b72228ef114a61953",
+          "version": null
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/vapor/core.git",
         "state": {
           "branch": null,
-          "revision": "174f909bc048a6aff27d6cb4c31810971f912cca",
-          "version": "3.2.2"
+          "revision": "7f56a09995bf3c8df562be456bdcda405d9d0678",
+          "version": "3.4.1"
         }
       },
       {
@@ -93,11 +93,11 @@
       },
       {
         "package": "SipHash",
-        "repositoryURL": "https://github.com/attaswift/SipHash",
+        "repositoryURL": "https://github.com/guidomb/SipHash",
         "state": {
-          "branch": null,
-          "revision": "e325083424688055363bbfcb7f1a440d7d7a1bae",
-          "version": "1.2.2"
+          "branch": "master",
+          "revision": "b3718534dd5f162f2ee4552af1651cd9ea1d7681",
+          "version": null
         }
       },
       {
@@ -174,11 +174,11 @@
       },
       {
         "package": "SwiftyBase64",
-        "repositoryURL": "https://github.com/timburks/SwiftyBase64",
+        "repositoryURL": "https://github.com/guidomb/SwiftyBase64",
         "state": {
-          "branch": null,
-          "revision": "01f2f5c4886d0b8d7cb8c0e96b2aefccd1c7ccd8",
-          "version": "1.2.0"
+          "branch": "master",
+          "revision": "5cfad332e302fc569744fdd571c37d8645f7b447",
+          "version": null
         }
       },
       {
