@@ -10,3 +10,4 @@ TODO.txt
 dumps/
 google-service-account-credentials*.json
 .env
+env.list
