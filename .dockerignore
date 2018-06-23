@@ -2,3 +2,4 @@ docs/
 .git/
 .build/
 .build-ubuntu/
+!.build-ubuntu/x86_64-unknown-linux/release/BotEngine
