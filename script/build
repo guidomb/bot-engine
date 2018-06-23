@@ -15,7 +15,7 @@ fi
 if [ "$1" == "release" ]
 then
   shift
-  build_flags="$build_flags -c release"
+  build_flags="$build_flags -c release --static-swift-stdlib"
   build_path="$build_path/release"
 else
   build_path="$build_path/debug"
