@@ -20,7 +20,6 @@ unless `git --no-pager log --format=format:%H origin/master..master `.empty?
     exit 1
 end
 
-version = `git rev-parse --short HEAD`
 unless ARGV.include?("--skip-app-build")
   puts "Building application ..."
   run_cmd "script/docker-build latest"
@@ -30,13 +29,13 @@ end
 unless ARGV.include?("--skip-image-build")
   puts "Building Docker image ..."
   run_cmd "docker build -t botengine ."
-  run_cmd "docker tag botengine #{DOCKER_REPOSITORY}:#{version}"
+  run_cmd "docker tag botengine #{DOCKER_REPOSITORY}"
   puts ""
 end
 
 unless ARGV.include?("--skip-image-upload")
   puts "Uploading image to '#{DOCKER_REPOSITORY}' ..."
-  run_cmd "docker push #{DOCKER_REPOSITORY}:#{version}"
+  run_cmd "docker push #{DOCKER_REPOSITORY}"
   puts ""
 end
 
