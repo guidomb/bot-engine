@@ -9,6 +9,7 @@ GoogleAPI.shared.printRequest = true
 FirestoreDocument.printSerializationDebugLog = true
 
 let port = ProcessInfo.processInfo.environment["PORT"].flatMap(Int.init) ?? 8080
+print("Starting HTTP server at port '\(port)'")
 guard case .some(.success(let httpServer)) = BotEngine.HTTPServer.build(port: port).first() else {
     fatalError("ERROR - Unable to start HTTP server")
 }
