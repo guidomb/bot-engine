@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+
+require_relative 'lib/run_cmd'
+
+HEROKU_APP="woloxbot-production"
+DOCKER_REPOSITORY="registry.heroku.com/#{HEROKU_APP}/web"
+
+unless `git status --porcelain`.empty?
+    puts "ERROR: Working directory is dirty. All changes must be commited and pushed."
+    exit 1
+end
+
+unless `git branch`.match(/^\*\s(.*)$/)[1] == "master"
+    puts "ERROR: You can only make a release from the master branch."
+    exit 1
+end
+
+unless `git --no-pager log --format=format:%H origin/master..master `.empty?
+    puts "ERROR: All changes must be pushed to the origin remote."
+    exit 1
+end
+
+version = `git rev-parse --short HEAD`
+unless ARGV.include?("--skip-app-build")
+  puts "Building application ..."
+  run_cmd "script/docker-build latest"
+  puts ""
+end
+
+unless ARGV.include?("--skip-image-build")
+  puts "Building Docker image ..."
+  run_cmd "docker build -t botengine ."
+  run_cmd "docker tag botengine #{DOCKER_REPOSITORY}:#{version}"
+  puts ""
+end
+
+unless ARGV.include?("--skip-image-upload")
+  puts "Uploading image to '#{DOCKER_REPOSITORY}' ..."
+  run_cmd "docker push #{DOCKER_REPOSITORY}:#{version}"
+  puts ""
+end
+
+puts "Deploying application to Heroku ..."
+run_cmd "heroku container:release web --app=#{HEROKU_APP}"
+puts ""
+puts "Check endpoint:"
+puts ""
+puts "\thttps://#{HEROKU_APP}.herokuapp.com/ping"
