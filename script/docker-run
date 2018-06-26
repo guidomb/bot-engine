@@ -1,5 +1,2 @@
 #!/bin/bash
-docker run -it --rm                                       \
-  -e SLACK_API_TOKEN="$SLACK_API_TOKEN"                   \
-  -e SLACK_VERIFICATION_TOKEN="$SLACK_VERIFICATION_TOKEN" \
-  -p 8080:8080 botengine
+docker run -it --env-file env.list -p 8080:8080 botengine
