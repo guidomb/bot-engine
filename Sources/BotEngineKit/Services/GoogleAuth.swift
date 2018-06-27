@@ -27,13 +27,13 @@ public final class GoogleAuth {
     
     public init() { }
     
-    public func login(serviceAccountCredentials credentials: URL) -> SignalProducer<GoogleAPI.Token, AnyError> {
+    public func login(serviceAccountCredentials credentials: URL, delegatedAccount: String? = .none) -> SignalProducer<GoogleAPI.Token, AnyError> {
         guard let tokenProvider = ServiceAccountTokenProvider(credentialsURL: credentials, scopes: scopes) else {
             fatalError("ERROR - Unable to create token provider")
         }
         return SignalProducer { observer, _ in
             do {
-                try tokenProvider.withToken { maybeToken, maybeError in
+                try tokenProvider.withToken(delegatedAccount: delegatedAccount) { maybeToken, maybeError in
                     if let error = maybeError {
                         observer.send(error: AnyError(error))
                     } else if let token = maybeToken?.asGoogleToken {
