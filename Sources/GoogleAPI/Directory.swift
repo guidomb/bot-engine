@@ -158,9 +158,17 @@ public struct MemberList: Decodable {
 
 }
 
-public struct Member: Codable {
+public struct Member: Codable, Equatable, Hashable {
     
-    public enum Role: String, Codable {
+    public static func ==(lhs: Member, rhs: Member) -> Bool {
+        return lhs.email == rhs.email
+    }
+    
+    public var hashValue: Int {
+        return email.hashValue
+    }
+    
+    public enum Role: String, Codable, Hashable {
         
         case owner   = "OWNER"
         case manager = "MANAGER"
@@ -168,7 +176,7 @@ public struct Member: Codable {
         
     }
     
-    public enum Status: String, Codable {
+    public enum Status: String, Codable, Hashable {
         
         case active     = "ACTIVE"
         case suspended  = "SUSPENDED"
@@ -176,7 +184,7 @@ public struct Member: Codable {
         
     }
     
-    public enum MemberType: String, Codable {
+    public enum MemberType: String, Codable, Hashable {
         
         case customer   = "CUSTOMER"
         case external   = "EXTERNAL"
