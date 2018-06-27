@@ -69,14 +69,20 @@ public class ServiceAccountTokenProvider : TokenProvider {
     self.init(credentialsData:credentialsData, scopes:scopes)
   }
   
-  public func withToken(_ callback:@escaping (Token?, Error?) -> Void) throws {
+    public func withToken(_ callback:@escaping (Token?, Error?) -> Void) throws {
+        return try withToken(delegatedAccount: .none, callback)
+    }
+    
+    
+  public func withToken(delegatedAccount: String?, _ callback:@escaping (Token?, Error?) -> Void) throws {
     let iat = Date()
     let exp = iat.addingTimeInterval(3600)
-    let jwtClaimSet = JWTClaimSet(Issuer:credentials.ClientEmail,
-                                  Audience:credentials.TokenURI,
-                                  Scope:  scopes.joined(separator: " "),
-                                  IssuedAt: Int(iat.timeIntervalSince1970),
-                                  Expiration: Int(exp.timeIntervalSince1970))
+    let jwtClaimSet = JWTClaimSet(issuer:credentials.ClientEmail,
+                                  audience:credentials.TokenURI,
+                                  scope:  scopes.joined(separator: " "),
+                                  issuedAt: Int(iat.timeIntervalSince1970),
+                                  expiration: Int(exp.timeIntervalSince1970),
+                                  delegatedAccount: delegatedAccount)
     let jwtHeader = JWTHeader(Algorithm: "RS256",
                               Format: "JWT")
     let msg = try JWT.encodeWithRS256(jwtHeader:jwtHeader,

@@ -26,18 +26,34 @@ struct JWTHeader : Codable {
 }
 
 struct JWTClaimSet : Codable {
-  let Issuer : String
-  let Audience : String
-  let Scope : String
-  let IssuedAt : Int
-  let Expiration : Int
-  enum CodingKeys: String, CodingKey {
-    case Issuer = "iss"
-    case Audience = "aud"
-    case Scope = "scope"
-    case IssuedAt = "iat"
-    case Expiration = "exp"
-  }
+    
+    let issuer : String
+    let audience : String
+    let scope : String
+    let issuedAt : Int
+    let expiration : Int
+    let delegatedAccount: String?
+
+    init(issuer: String, audience: String, scope: String, issuedAt: Int, expiration: Int, delegatedAccount: String? = .none) {
+        self.issuer = issuer
+        self.audience = audience
+        self.scope = scope
+        self.issuedAt = issuedAt
+        self.expiration = expiration
+        self.delegatedAccount = delegatedAccount
+    }
+  
+    enum CodingKeys: String, CodingKey {
+    
+        case issuer = "iss"
+        case audience = "aud"
+        case scope = "scope"
+        case issuedAt = "iat"
+        case expiration = "exp"
+        case delegatedAccount = "sub"
+        
+    }
+
 }
 
 struct JWT {
