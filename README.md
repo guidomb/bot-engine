@@ -28,3 +28,9 @@ When using Slack's interactive messages, you need to configure a callback URL fo
 
  ![ngrok](./docs/resources/ngrok.png)
  ![slack interactive request url page](./docs/resources/slack-interactive-request-url.png)
+
+## Reference
+
+ * [Using OAuth 2.0 for Server to Server Applications](https://developers.google.com/identity/protocols/OAuth2ServiceAccount#delegatingauthority)
+ * [Service account: Client ID](https://console.developers.google.com/apis/credentials/oauthclient/108418285863129611010?project=feedi-dev&folder&organizationId=22904326237)
+ * [ManageOAuthClients](https://admin.google.com/AdminHome?chromeless=1#OGX:ManageOauthClients)
