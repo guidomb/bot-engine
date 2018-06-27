@@ -19,14 +19,22 @@ let googleAuth = GoogleAuth()
 let credentialsOptionName = "--google-service-account-credentials-file"
 let credentialsOptionShortName = "-C"
 let arguments = ProcessInfo.processInfo.arguments
+
 if let credentialsArgIndex = arguments.index(where: { $0 == credentialsOptionName || $0 == credentialsOptionShortName })
     .map({ $0 + 1 }) {
+    let delegatedAccount = arguments.index(of: "--delegated-account").map { index -> String in
+        let valueIndex = index + 1
+        guard valueIndex < arguments.count else {
+            fatalError("ERROR - Option '--delegated-account' requires a delegated account's emaill address value.")
+        }
+        return arguments[valueIndex]
+    }
     guard credentialsArgIndex < arguments.count else {
         fatalError("ERROR - Option \(credentialsOptionName) requires a file URL.")
     }
     let credentialsFileUrl = URL(fileURLWithPath: arguments[credentialsArgIndex])
     print("INFO - Using google service account credentials file: '\(credentialsFileUrl.absoluteString)'")
-    guard case .some(.success(let token)) = googleAuth.login(serviceAccountCredentials: credentialsFileUrl).first() else {
+    guard case .some(.success(let token)) = googleAuth.login(serviceAccountCredentials: credentialsFileUrl, delegatedAccount: delegatedAccount).first() else {
         fatalError("ERROR - Unable to login using Google OAuth")
     }
     googleToken = token
