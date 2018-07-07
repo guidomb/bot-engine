@@ -62,4 +62,8 @@ let engine = BotEngine.slackBotEngine(
 engine.registerBehavior(CreateSurveyBehavior())
 engine.registerBehavior(RandomMathQuestionBehavior())
 engine.start()
-RunLoop.main.run()
+
+while true {
+    fflush(stdout)
+    usleep(10)
+}
