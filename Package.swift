@@ -18,7 +18,7 @@ let package = Package(
         // Dependencies
         .package(url: "https://github.com/ReactiveCocoa/ReactiveSwift", from: "3.1.0"),
         .package(url: "https://github.com/vapor/http.git", from: "3.0.0"),
-        .package(url: "https://github.com/vapor/websocket.git", from: "1.0.0"),
+        .package(url: "https://github.com/guidomb/websocket.git", .branch("master")),
         .package(url: "https://github.com/SlackKit/SKCore", .upToNextMinor(from: "4.1.0")),
         .package(url: "https://github.com/SlackKit/SKClient", .upToNextMinor(from: "4.1.0")),
         .package(url: "https://github.com/SlackKit/SKWebAPI", .upToNextMajor(from: "4.1.0")),
