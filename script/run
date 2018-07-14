@@ -32,4 +32,4 @@ then
 fi
 
 echo "Running '$bin_path' ..."
-$bin_path -C ./google-service-account-credentials-dev.json
+$bin_path --gcloud-credentials-file ./google-service-account-credentials-dev.json --verbose

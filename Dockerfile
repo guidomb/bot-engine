@@ -9,8 +9,7 @@ EXPOSE 8080
 WORKDIR /botengine
 
 # Bundle application source & binaries
-COPY .build-ubuntu/x86_64-unknown-linux/release/BotEngine BotEngine
-COPY google-service-account-credentials-prod.json google-service-account-credentials-prod.json
+COPY .build-ubuntu/x86_64-unknown-linux/release/BotEngine botengine
 
 # Command to start Swift application
-CMD [ "./BotEngine", "-C", "google-service-account-credentials-prod.json" ]
+CMD ./botengine --gcloud-encoded-credentials $GCLOUD_ENCODED_CREDENTIALS --gcloud-delegated-account $GCLOUD_DELEGATED_ACCOUNT

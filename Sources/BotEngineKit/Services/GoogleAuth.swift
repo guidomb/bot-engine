@@ -31,22 +31,14 @@ public final class GoogleAuth {
         guard let tokenProvider = ServiceAccountTokenProvider(credentialsURL: credentials, scopes: scopes) else {
             fatalError("ERROR - Unable to create token provider")
         }
-        return SignalProducer { observer, _ in
-            do {
-                try tokenProvider.withToken(delegatedAccount: delegatedAccount) { maybeToken, maybeError in
-                    if let error = maybeError {
-                        observer.send(error: AnyError(error))
-                    } else if let token = maybeToken?.asGoogleToken {
-                        observer.send(value: token)
-                        observer.sendCompleted()
-                    } else {
-                        fatalError("ERROR - Unable to create token")
-                    }
-                }
-            } catch let error {
-                observer.send(error: AnyError(error))
-            }
+        return login(using: tokenProvider, delegatedAccount: delegatedAccount)
+    }
+    
+    public func login(serviceAccountCredentials credentials: Data, delegatedAccount: String? = .none) -> SignalProducer<GoogleAPI.Token, AnyError> {
+        guard let tokenProvider = ServiceAccountTokenProvider(credentialsData: credentials, scopes: scopes) else {
+            fatalError("ERROR - Unable to create token provider")
         }
+        return login(using: tokenProvider, delegatedAccount: delegatedAccount)
     }
     
     public func login(with server: BotEngine.HTTPServer) throws -> GoogleAPI.Token {
@@ -80,6 +72,29 @@ public final class GoogleAuth {
         }
 
         return tokenProvider.token!.asGoogleToken!
+    }
+    
+}
+
+fileprivate extension GoogleAuth {
+    
+    func login(using tokenProvider: ServiceAccountTokenProvider, delegatedAccount: String? = .none) -> SignalProducer<GoogleAPI.Token, AnyError> {
+        return SignalProducer { observer, _ in
+            do {
+                try tokenProvider.withToken(delegatedAccount: delegatedAccount) { maybeToken, maybeError in
+                    if let error = maybeError {
+                        observer.send(error: AnyError(error))
+                    } else if let token = maybeToken?.asGoogleToken {
+                        observer.send(value: token)
+                        observer.sendCompleted()
+                    } else {
+                        fatalError("ERROR - Unable to create token")
+                    }
+                }
+            } catch let error {
+                observer.send(error: AnyError(error))
+            }
+        }
     }
     
 }

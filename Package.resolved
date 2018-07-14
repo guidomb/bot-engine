@@ -11,6 +11,15 @@
         }
       },
       {
+        "package": "Commandant",
+        "repositoryURL": "https://github.com/Carthage/Commandant",
+        "state": {
+          "branch": null,
+          "revision": "066bf9a79c37cf24fe4746ab7a1793b0359d1fe5",
+          "version": "0.14.0"
+        }
+      },
+      {
         "package": "Core",
         "repositoryURL": "https://github.com/vapor/core.git",
         "state": {
