@@ -235,6 +235,11 @@ fileprivate extension StartCommand {
                     .mapError { _ in .cannotObtainGoogleAPIAccessToken }
             }
             return tokenProducer.map { Context(httpServer: httpServer, googleToken: $0, options: options) }
+                .on(starting: {
+                    if let delegatedAccount = options.delegatedAccount {
+                        print("INFO - Delegating GCloud service account to '\(delegatedAccount)'")
+                    }
+                })
         }
     }
     
