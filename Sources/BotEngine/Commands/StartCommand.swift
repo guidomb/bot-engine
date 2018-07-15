@@ -261,6 +261,10 @@ fileprivate extension StartCommand {
             interval: .everyDay(at: .at("14:00", in: argentinaTimezone)!),
             job: SyncArgentinaMailingLists()
         )
+        engine.enqueueJob(
+            interval: .everyDay(at: .at("14:05", in: argentinaTimezone)!),
+            job: SyncMailChimpMailingList()
+        )
         
         engine.start()
         

@@ -14,12 +14,18 @@ public struct MailGroupService {
     
     public enum EveryOne: String {
         
+        case all
         case guemes
         case azurduy
         case buenosAires = "buenosaires"
         
         var email: String {
-            return "everyone-\(self.rawValue)@wolox.com.ar"
+            if case .all = self {
+                return "everyone@wolox.com.ar"
+            } else {
+                return "everyone-\(self.rawValue)@wolox.com.ar"
+                
+            }
         }
         
     }

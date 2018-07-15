@@ -149,6 +149,38 @@ fileprivate func hashDictionary<T: Hashable, U: Hashable>(_ dictionary: [T: U]?)
 
 
 
+extension MailChimp.Lists.Member {
+
+  enum CodingKeys: String, CodingKey {
+    case emailAddress = "email_address"
+    case status = "status"
+    case mergeFields = "merge_fields"
+  }
+
+}
+
+extension MailChimp.Lists.UpdateMembersRequestParameters {
+
+  enum CodingKeys: String, CodingKey {
+    case members = "members"
+    case updateExisting = "update_existing"
+  }
+
+}
+
+extension MailChimp.Lists.UpdateMembersResponse {
+
+  enum CodingKeys: String, CodingKey {
+    case newMembers = "new_members"
+    case updatedMembers = "updated_members"
+    case errors = "errors"
+    case totalCreated = "total_created"
+    case totalUpdated = "total_updated"
+    case errorCount = "error_count"
+  }
+
+}
+
 
 
 extension UniversalAbilityGroupMapper {
