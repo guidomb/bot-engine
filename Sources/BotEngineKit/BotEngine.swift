@@ -342,7 +342,10 @@ fileprivate extension BotEngine {
     }
     
     func listBoundActions(for channel: ChannelId) {
-        let message = boundActions.keys.map { "  - *\($0)*" }.joined(separator: "\n")
+        let message = boundActions.keys
+            .sorted()
+            .map { "- *\($0)*" }
+            .joined(separator: "\n")
         send(message: message, for: channel)
     }
     
