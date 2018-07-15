@@ -276,7 +276,7 @@ fileprivate extension BotEngine {
     
     func handle(action boundAction: BoundAction, channel: ChannelId, senderId: String) {
         guard boundAction.canBeExecuted(by: senderId) else {
-            send(message: "Sorry, your not allowed to execute such action", for: channel)
+            send(message: "Sorry, you are not allowed to execute such action", for: channel)
             return
         }
         boundAction.action.execute(using: self.services)
