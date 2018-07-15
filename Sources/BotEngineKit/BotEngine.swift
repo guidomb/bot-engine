@@ -128,6 +128,7 @@ public final class BotEngine {
     private var activeBehaviors: [ChannelId : ActiveBehavior] = [:]
     private var behaviorFactories: [BehaviorFactory] = []
     private var disposable = CompositeDisposable()
+    private var boundActions: [String : BotEngineAction] = [:]
     
     fileprivate var repository: ObjectRepository {
         return services.repository
@@ -167,6 +168,10 @@ public final class BotEngine {
     
     public func enqueueAction(interval: SchedulerInterval, action: BotEngineAction) {
         jobScheduler.enqueueAction(interval: interval, action: action)
+    }
+    
+    public func bindAction(_ action: BotEngineAction, to command: String) {
+        boundActions[command] = action
     }
     
 }
@@ -230,13 +235,35 @@ fileprivate extension BotEngine {
             cancelActiveBehavior(for: channel)
             return
         }
+        guard !message.isListActionsMessage else {
+            listBoundActions(for: channel)
+            return
+        }
         
-        if let activeBehavior = activeBehaviors[channel] {
+        if let action = boundActions[message.text] {
+            handle(action: action, channel: channel)
+        }else if let activeBehavior = activeBehaviors[channel] {
             activeBehavior.handle(input: .message(message: message, context: context))
         } else if let activeBehavior = findBehavior(for: (message, context)) {
             mount(behavior: activeBehavior, for: channel)
         } else {
             send(reply: .dontUnderstandMessage, for: channel)
+        }
+    }
+    
+    func handle(action: BotEngineAction, channel: ChannelId) {
+        action.execute(using: self.services)
+            .on(starting: { self.send(message: action.startingMessage, for: channel) })
+            .startWithResult { result in
+                switch result {
+                case .success(let output):
+                    self.send(message: output.message, for: channel)
+                    if let outputChannel = output.channel {
+                        self.send(message: output.message, for: outputChannel)
+                    }
+                case .failure(let error):
+                    self.send(message: "Action failed with error: \(error)", for: channel)
+                }
         }
     }
     
@@ -285,6 +312,11 @@ fileprivate extension BotEngine {
         } else {
             send(reply: .nothingToCancel, for: channel)
         }
+    }
+    
+    func listBoundActions(for channel: ChannelId) {
+        let message = boundActions.keys.map { "  - *\($0)*" }.joined(separator: "\n")
+        send(message: message, for: channel)
     }
     
     func removeActiveBehavior(for channel: ChannelId) {

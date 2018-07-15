@@ -57,6 +57,10 @@ public struct BehaviorMessage {
         return text == "cancel"
     }
     
+    public var isListActionsMessage: Bool {
+        return text == "list actions"
+    }
+    
     public init(channel: ChannelId, senderId: String, text: String) {
         self.channel = channel
         self.senderId = senderId
