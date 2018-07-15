@@ -36,8 +36,8 @@ fileprivate func printMembers(using services: BotEngine.Services) -> ((inserted:
             return .init(value: "There are no members from azurduy, guemes and buenos-aires mailing lists to be synced")
         }
         
-        let insertedList = members.inserted.map { "    - \($0.email)" }
-        let deletedList = members.deleted.map { "    - \($0.email)" }
+        let insertedList = members.inserted.map { "    - \($0.email)" }.joined(separator: "\n")
+        let deletedList = members.deleted.map { "    - \($0.email)" }.joined(separator: "\n")
         let message = """
         Mailing lists azurduy, guemes and buenos-aires have been synced.
         
