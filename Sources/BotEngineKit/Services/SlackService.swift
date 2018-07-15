@@ -9,7 +9,7 @@ import Foundation
 import ReactiveSwift
 import Result
 import SKClient
-import SKCore
+@_exported import SKCore
 import SKRTMAPI
 import SKWebAPI
 

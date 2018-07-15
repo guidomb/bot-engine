@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension String {
+public extension String {
     
     func matches(regex: NSRegularExpression) -> [NSTextCheckingResult] {
         let inputRange = NSRange(location: 0, length: self.count)
@@ -20,7 +20,7 @@ extension String {
     
 }
 
-extension NSTextCheckingResult {
+public extension NSTextCheckingResult {
     
     func substring(from string: String, at index: Int) -> String? {
         guard index < self.numberOfRanges else {

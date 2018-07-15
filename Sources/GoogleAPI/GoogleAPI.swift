@@ -134,6 +134,29 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         case networkingError(Error)
         case resourceError(ResourceError)
         
+        public var localizedDescription: String {
+            switch self {
+            case .missingContentTypeHeader:
+                return "Missing 'Content-Type' HTTP header"
+            case .unexpectedContentType(let contentType):
+                return "Unexpected value in 'Content-Type' HTTP header '\(contentType)'"
+            case .unexpectedErrorContentType(let contentType, let statusCode):
+                return "Unexpected value in 'Conten-Type' HTTP header '\(contentType)' for error response with status code '\(statusCode)'"
+            case .errorDataDeserializationError(let error, let statusCode):
+                return "Deserialization error while deserialinzing error response with status code '\(statusCode)': \(error.localizedDescription)"
+            case .unexpectedResponseStatusCode(let statusCode):
+                return "Unexpected response status code '\(statusCode)'"
+            case .deserializationError(let error):
+                return "Deserialization error \(error.localizedDescription)"
+            case .networkingError(let error):
+                return "Networking error \(error.localizedDescription)"
+            case .resourceError(let error):
+                return "Resource error '\(error.localizedDescription)'"
+            case .unexpectedResponseObjectType(let response):
+                return "Unexpected response object type: \(response)"
+            }
+        }
+        
     }
     
     public struct ResourceError: Error, Decodable {
@@ -160,6 +183,10 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         }
         
         public let error: ErrorInfo
+        
+        public var localizedDescription: String {
+            return error.message
+        }
         
         public init(code: UInt, message: String, status: String? = .none, errors: [ExtendedError]? = .none) {
             self.error = ErrorInfo(code: code, message: message, status: status, errors: errors)

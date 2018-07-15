@@ -14,7 +14,7 @@ import GoogleAPI
 
 struct SyncArgentinaMailingLists: BotEngineAction {
     
-    let startingMessage = "Syncing argentinean mailing lists ..."
+    let startingMessage: String? = "Syncing argentinean mailing lists ..."
     
     func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer {
         guard let googleToken = services.googleToken else {

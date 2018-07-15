@@ -16,7 +16,7 @@ private let mailingListId = "9a5831b9a2"
 
 struct SyncMailChimpMailingList: BotEngineAction {
     
-    let startingMessage = "Syncing MailChimp mailing list ..."
+    let startingMessage: String? = "Syncing MailChimp mailing list ..."
     
     func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer {
         guard let apiKey = ProcessInfo.processInfo.environment["MAILCHIMP_API_KEY"] else {

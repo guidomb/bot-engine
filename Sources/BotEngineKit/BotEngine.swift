@@ -11,23 +11,36 @@ import ReactiveSwift
 
 public protocol BotEngineAction {
     
-    var startingMessage: String { get }
+    var startingMessage: String? { get }
     
     func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer
     
 }
 
-extension BotEngineAction {
+public extension BotEngineAction {
     
-    var startingMessage: String {
-        return "Executing job '\(Self.self)' ..."
+    var startingMessage: String? {
+        return .none
     }
     
 }
 
-public final class BotEngine {
+public protocol BotEngineCommand {
     
-    public typealias ActionOutputProducer = SignalProducer<BotEngine.ActionOutputMessage, BotEngine.ErrorMessage>
+    associatedtype ParametersType
+    
+    var commandUsage: String { get }
+    
+    var permission: BotEngine.ExecutionPermission { get }
+    
+    func parseInput(_ input: String) -> ParametersType?
+    
+    func execute(using services: BotEngine.Services, parameters: ParametersType, senderId: String)
+        -> SignalProducer<String, BotEngine.ErrorMessage>
+    
+}
+
+public final class BotEngine {
     
     public struct Services {
         
@@ -49,7 +62,7 @@ public final class BotEngine {
         
     }
     
-    public enum ActionExecutionPermission {
+    public enum ExecutionPermission {
         
         case all
         case only([String])
@@ -118,11 +131,11 @@ public final class BotEngine {
         
     }
     
+    public typealias ActionOutputProducer = SignalProducer<BotEngine.ActionOutputMessage, BotEngine.ErrorMessage>
     public typealias InputProducer = SignalProducer<Input, NoError>
     public typealias MessageWithContext = (message: BehaviorMessage, context: BehaviorMessage.Context)
     public typealias BehaviorFactory = (MessageWithContext) -> ActiveBehavior?
     public typealias OutputSignal = Signal<ChanneledBehaviorOutput, NoError>
-    
     
     private let inputProducer: InputProducer
     private let outputRenderer: BehaviorOutputRenderer
@@ -136,6 +149,7 @@ public final class BotEngine {
     private var behaviorFactories: [BehaviorFactory] = []
     private var disposable = CompositeDisposable()
     private var boundActions: [String : BoundAction] = [:]
+    private var commands: [RegisteredCommand] = []
     
     fileprivate var repository: ObjectRepository {
         return services.repository
@@ -173,11 +187,15 @@ public final class BotEngine {
         scheduleJobs(from: behavior)
     }
     
+    public func registerCommand<CommandType: BotEngineCommand>(_ command: CommandType) {
+        commands.append(RegisteredCommand(command))
+    }
+    
     public func enqueueAction(interval: SchedulerInterval, action: BotEngineAction) {
         jobScheduler.enqueueAction(interval: interval, action: action)
     }
     
-    public func bindAction(_ action: BotEngineAction, to command: String, allow permission: ActionExecutionPermission = .all) {
+    public func bindAction(_ action: BotEngineAction, to command: String, allow permission: ExecutionPermission = .all) {
         boundActions[command] = BoundAction(action: action, permission: permission)
     }
     
@@ -188,7 +206,7 @@ fileprivate extension BotEngine {
     struct BoundAction {
         
         let action: BotEngineAction
-        let permission: ActionExecutionPermission
+        let permission: ExecutionPermission
         
         func canBeExecuted(by senderId: String) -> Bool {
             switch permission {
@@ -258,19 +276,32 @@ fileprivate extension BotEngine {
             cancelActiveBehavior(for: channel)
             return
         }
-        guard !message.isListActionsMessage else {
-            listBoundActions(for: channel)
+        guard !message.isListCommandsMessage else {
+            listCommands(for: channel)
             return
         }
         
-        if let action = boundActions[message.text] {
-            handle(action: action, channel: channel, senderId: message.senderId)
-        }else if let activeBehavior = activeBehaviors[channel] {
+        if let activeBehavior = activeBehaviors[channel] {
             activeBehavior.handle(input: .message(message: message, context: context))
+        } else if let command = findCommand(for: message) {
+            handle(command: command, with: message)
+        } else if let action = boundActions[message.text] {
+            handle(action: action, channel: channel, senderId: message.senderId)
         } else if let activeBehavior = findBehavior(for: (message, context)) {
             mount(behavior: activeBehavior, for: channel)
         } else {
             send(reply: .dontUnderstandMessage, for: channel)
+        }
+    }
+    
+    func handle(command: RegisteredCommand.BoundHandler, with message: BehaviorMessage) {
+        command(message.senderId, services).startWithResult { result in
+            switch result {
+            case .success(let output):
+                self.send(message: output, for: message.senderId)
+            case .failure(let error):
+                self.send(message: error.message, for: message.senderId)
+            }
         }
     }
     
@@ -279,8 +310,15 @@ fileprivate extension BotEngine {
             send(message: "Sorry, you are not allowed to execute such action", for: channel)
             return
         }
+        
+        func sendStartingMessage() {
+            if let startingMessage = boundAction.action.startingMessage {
+                send(message: startingMessage, for: channel)
+            }
+        }
+        
         boundAction.action.execute(using: self.services)
-            .on(starting: { self.send(message: boundAction.action.startingMessage, for: channel) })
+            .on(starting: sendStartingMessage)
             .startWithResult { result in
                 switch result {
                 case .success(let output):
@@ -323,6 +361,15 @@ fileprivate extension BotEngine {
         // if activeBehavior.isInErrorState
     }
     
+    func findCommand(for message: BehaviorMessage) -> RegisteredCommand.BoundHandler? {
+        for command in commands {
+            if let handler = command.handle(input: message.text) {
+                return handler
+            }
+        }
+        return .none
+    }
+    
     func findBehavior(for message: MessageWithContext) -> ActiveBehavior? {
         for behaviorFactory in behaviorFactories {
             if let activeBehavior = behaviorFactory(message) {
@@ -341,11 +388,14 @@ fileprivate extension BotEngine {
         }
     }
     
-    func listBoundActions(for channel: ChannelId) {
-        let message = boundActions.keys
-            .sorted()
-            .map { "- *\($0)*" }
-            .joined(separator: "\n")
+    func listCommands(for channel: ChannelId) {
+        let commandsList = self.commands.map { "- *\($0.commandUsage)*" }
+        let actionsList = boundActions.keys.map { "- *\($0)*" }
+        let commands = (commandsList + actionsList).sorted().joined(separator: "\n")
+        let message = """
+        Commands:
+        \(commands)
+        """
         send(message: message, for: channel)
     }
     
@@ -498,9 +548,16 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
         guard let intervalSinceNow = interval.intervalSinceNow() else {
             fatalError("ERROR - Unable to get job interval since now.")
         }
+        
+        func renderStartingMessage() {
+            if let startingMessage = action.startingMessage {
+                render(output: .init(message: startingMessage))
+            }
+        }
+        
         queue.asyncAfter(deadline: .now() + intervalSinceNow) {
             action.execute(using: self.services)
-                .on(starting: { self.render(output: .init(message: action.startingMessage)) })
+                .on(starting: renderStartingMessage)
                 .startWithResult { result in
                     switch result {
                     case .success(let output):
@@ -567,6 +624,28 @@ fileprivate extension BehaviorProtocol {
         return create(message: message, context: context).map { transition in
             Behavior.Runner<Self.BehaviorJobExecutorType>(initialTransition: transition, behavior: AnyBehavior(self))
         }
+    }
+    
+}
+
+fileprivate struct RegisteredCommand {
+    
+    typealias BoundHandler = (String, BotEngine.Services) -> SignalProducer<String, BotEngine.ErrorMessage>
+    
+    let commandUsage: String
+    private let _handle: (String) -> BoundHandler?
+    
+    init<CommandType: BotEngineCommand>(_ command: CommandType) {
+        self.commandUsage = command.commandUsage
+        self._handle = { input in
+            return command.parseInput(input).map { parameters in
+                { senderId, services in command.execute(using: services, parameters: parameters, senderId: senderId) }
+            }
+        }
+    }
+    
+    func handle(input: String) -> BoundHandler? {
+        return _handle(input)
     }
     
 }

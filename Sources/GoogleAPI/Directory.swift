@@ -199,6 +199,14 @@ public struct Member: Codable, Equatable, Hashable {
     public let type: MemberType?
     public let status: Status?
     
+    public init(email: String, role: Role) {
+        self.email = email
+        self.role = role
+        self.id = .none
+        self.type = .none
+        self.status = .none
+    }
+    
 }
 
 public struct User: Decodable {

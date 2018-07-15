@@ -255,6 +255,9 @@ fileprivate extension StartCommand {
         engine.registerBehavior(CreateSurveyBehavior())
         engine.registerBehavior(RandomMathQuestionBehavior())
         
+        // Register commands
+        engine.registerCommand(SubscribeToMailGroup())
+        
         // Enqueue actions
         let argentinaTimezone = "America/Argentina/Buenos_Aires"
         engine.enqueueAction(

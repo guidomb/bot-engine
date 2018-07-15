@@ -14,12 +14,23 @@ public struct MailGroupService {
     
     public enum EveryOne: String {
         
+        public static let subscribables: [EveryOne] = [
+            .guemes,
+            .azurduy,
+            .chile,
+            .mexico,
+            .us
+        ]
+        
         case all
         case guemes
         case azurduy
         case buenosAires = "buenosaires"
+        case chile
+        case mexico
+        case us
         
-        var email: String {
+        public var email: String {
             if case .all = self {
                 return "everyone@wolox.com.ar"
             } else {
@@ -97,5 +108,12 @@ public struct MailGroupService {
         
         return fetchMembersPage()
 
+    }
+    
+    public func subscribeMember(_ member: Member, to group: EveryOne) -> SignalProducer<Member, GoogleAPI.RequestError> {
+        return GoogleAPI.directory
+            .members(for: group.email)
+            .insert(member: member)
+            .execute(using: token)
     }
 }
