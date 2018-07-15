@@ -49,6 +49,13 @@ public final class BotEngine {
         
     }
     
+    public enum ActionExecutionPermission {
+        
+        case all
+        case only([String])
+        
+    }
+    
     public struct ActionOutputMessage: ExpressibleByStringLiteral {
         
         public let message: String
@@ -128,7 +135,7 @@ public final class BotEngine {
     private var activeBehaviors: [ChannelId : ActiveBehavior] = [:]
     private var behaviorFactories: [BehaviorFactory] = []
     private var disposable = CompositeDisposable()
-    private var boundActions: [String : BotEngineAction] = [:]
+    private var boundActions: [String : BoundAction] = [:]
     
     fileprivate var repository: ObjectRepository {
         return services.repository
@@ -170,13 +177,29 @@ public final class BotEngine {
         jobScheduler.enqueueAction(interval: interval, action: action)
     }
     
-    public func bindAction(_ action: BotEngineAction, to command: String) {
-        boundActions[command] = action
+    public func bindAction(_ action: BotEngineAction, to command: String, allow permission: ActionExecutionPermission = .all) {
+        boundActions[command] = BoundAction(action: action, permission: permission)
     }
     
 }
 
 fileprivate extension BotEngine {
+    
+    struct BoundAction {
+        
+        let action: BotEngineAction
+        let permission: ActionExecutionPermission
+        
+        func canBeExecuted(by senderId: String) -> Bool {
+            switch permission {
+            case .all:
+                return true
+            case .only(let allowedSenders):
+                return allowedSenders.contains(senderId)
+            }
+        }
+        
+    }
     
     enum DefaultReply {
         
@@ -241,7 +264,7 @@ fileprivate extension BotEngine {
         }
         
         if let action = boundActions[message.text] {
-            handle(action: action, channel: channel)
+            handle(action: action, channel: channel, senderId: message.senderId)
         }else if let activeBehavior = activeBehaviors[channel] {
             activeBehavior.handle(input: .message(message: message, context: context))
         } else if let activeBehavior = findBehavior(for: (message, context)) {
@@ -251,9 +274,13 @@ fileprivate extension BotEngine {
         }
     }
     
-    func handle(action: BotEngineAction, channel: ChannelId) {
-        action.execute(using: self.services)
-            .on(starting: { self.send(message: action.startingMessage, for: channel) })
+    func handle(action boundAction: BoundAction, channel: ChannelId, senderId: String) {
+        guard boundAction.canBeExecuted(by: senderId) else {
+            send(message: "Sorry, your not allowed to execute such action", for: channel)
+            return
+        }
+        boundAction.action.execute(using: self.services)
+            .on(starting: { self.send(message: boundAction.action.startingMessage, for: channel) })
             .startWithResult { result in
                 switch result {
                 case .success(let output):

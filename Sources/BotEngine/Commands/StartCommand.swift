@@ -267,8 +267,16 @@ fileprivate extension StartCommand {
         )
         
         // Bind actions
-        engine.bindAction(SyncArgentinaMailingLists(), to: "sync argentinean mailing lists")
-        engine.bindAction(SyncMailChimpMailingList(), to: "sync mailchimp mailing list")
+        engine.bindAction(
+            SyncArgentinaMailingLists(),
+            to: "sync argentinean mailing lists",
+            allow: .only(["U02F7KUJM"])
+        )
+        engine.bindAction(
+            SyncMailChimpMailingList(),
+            to: "sync mailchimp mailing list",
+            allow: .only(["U02F7KUJM"])
+        )
         
         engine.start()
         
