@@ -52,21 +52,14 @@ struct StartCommand: CommandProtocol {
             defaultValue: .none,
             usage: "a valid gcloud email address to delegate access to when authenticating via a service account"
         )
-        private static let encodedCredentials = Option<String?>(
-            key: "\(prefix)-encoded-credentials",
-            defaultValue: .none,
-            usage: "A base64 encoded string with the content of the JSON crendetials file."
-        )
         
         let credentialsFile: String?
         let delegatedAccount: String?
-        let encodedCredentials: String?
         
         static func evaluate(_ mode: CommandMode) -> Result<GCloudOptions, CommandantError<CommandLineError>> {
             return curry(GCloudOptions.init)
                 <*> mode <| credentialsFile
                 <*> mode <| delegatedAccount
-                <*> mode <| encodedCredentials
         }
         
     }
@@ -200,8 +193,9 @@ fileprivate extension StartCommand {
     
     func fetchGoogleAPIToken(with options: Options) -> (BotEngine.HTTPServer) -> SignalProducer<Context, CommandLineError> {
         return { httpServer in
+            let env = ProcessInfo.processInfo.environment
             let tokenProducer: SignalProducer<GoogleAPI.Token, CommandLineError>
-            if let gcloudEncodedCredentials = options.encodedCredentials {
+            if let gcloudEncodedCredentials = env["GCLOUD_ENCODED_CREDENTIALS"].flatMap({ Data(base64Encoded: $0) }) {
                 tokenProducer = self.fetchGoogleAPIToken(
                     encodedCredentials: gcloudEncodedCredentials,
                     delegatedAccount: options.delegatedAccount
@@ -281,10 +275,6 @@ fileprivate extension StartCommand.Options {
     
     var credentialsFile: URL? {
         return self.gcloudOptions.credentialsFile.map(URL.init(fileURLWithPath:))
-    }
-    
-    var encodedCredentials: Data? {
-        return self.gcloudOptions.encodedCredentials.flatMap { Data(base64Encoded: $0) }
     }
     
     var delegatedAccount: String? {
