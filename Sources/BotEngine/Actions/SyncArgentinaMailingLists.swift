@@ -12,11 +12,11 @@ import ReactiveSwift
 import Result
 import GoogleAPI
 
-struct SyncArgentinaMailingLists: BotEngineJob {
+struct SyncArgentinaMailingLists: BotEngineAction {
     
     let startingMessage = "Syncing argentinean mailing lists ..."
     
-    func execute(using services: BotEngine.Services) -> BotEngine.JobOutputProducer {
+    func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer {
         guard let googleToken = services.googleToken else {
             fatalError("ERROR - Missing google token in context with key '\(ContextKey.googleToken.rawValue)'")
         }
@@ -30,7 +30,7 @@ struct SyncArgentinaMailingLists: BotEngineJob {
 }
 
 fileprivate func printMembers(using services: BotEngine.Services) -> ((inserted: [Member], deleted: [Member]))
-    -> BotEngine.JobOutputProducer {
+    -> BotEngine.ActionOutputProducer {
     return { members in
         guard !members.inserted.isEmpty && !members.deleted.isEmpty else {
             return .init(value: "There are no members from azurduy, guemes and buenos-aires mailing lists to be synced")

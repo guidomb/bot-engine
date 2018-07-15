@@ -9,15 +9,15 @@ import Foundation
 import Result
 import ReactiveSwift
 
-public protocol BotEngineJob {
+public protocol BotEngineAction {
     
     var startingMessage: String { get }
     
-    func execute(using services: BotEngine.Services) -> BotEngine.JobOutputProducer
+    func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer
     
 }
 
-extension BotEngineJob {
+extension BotEngineAction {
     
     var startingMessage: String {
         return "Executing job '\(Self.self)' ..."
@@ -27,7 +27,7 @@ extension BotEngineJob {
 
 public final class BotEngine {
     
-    public typealias JobOutputProducer = SignalProducer<BotEngine.JobOutputMessage, BotEngine.ErrorMessage>
+    public typealias ActionOutputProducer = SignalProducer<BotEngine.ActionOutputMessage, BotEngine.ErrorMessage>
     
     public struct Services {
         
@@ -49,7 +49,7 @@ public final class BotEngine {
         
     }
     
-    public struct JobOutputMessage: ExpressibleByStringLiteral {
+    public struct ActionOutputMessage: ExpressibleByStringLiteral {
         
         public let message: String
         public let channel: ChannelId?
@@ -165,8 +165,8 @@ public final class BotEngine {
         scheduleJobs(from: behavior)
     }
     
-    public func enqueueJob(interval: SchedulerInterval, job: BotEngineJob) {
-        jobScheduler.enqueueJob(interval: interval, job: job)
+    public func enqueueAction(interval: SchedulerInterval, action: BotEngineAction) {
+        jobScheduler.enqueueAction(interval: interval, action: action)
     }
     
 }
@@ -432,18 +432,18 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
         }
     }
     
-    func enqueueJob(interval: SchedulerInterval, job: BotEngineJob) {
+    func enqueueAction(interval: SchedulerInterval, action: BotEngineAction) {
         guard let intervalSinceNow = interval.intervalSinceNow() else {
             fatalError("ERROR - Unable to get job interval since now.")
         }
         queue.asyncAfter(deadline: .now() + intervalSinceNow) {
-            job.execute(using: self.services)
-                .on(starting: { self.render(output: .init(message: job.startingMessage)) })
+            action.execute(using: self.services)
+                .on(starting: { self.render(output: .init(message: action.startingMessage)) })
                 .startWithResult { result in
                     switch result {
                     case .success(let output):
                         self.render(output: output)
-                        self.enqueueJob(interval: interval, job: job)
+                        self.enqueueAction(interval: interval, action: action)
                     case .failure(let error):
                         let message = "Scheduled job failed with error: \(error)"
                         print("INFO - \(message)")
@@ -492,7 +492,7 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
         }
     }
     
-    func render(output: BotEngine.JobOutputMessage) {
+    func render(output: BotEngine.ActionOutputMessage) {
         outputRenderer.render(output: .textMessage(output.message), forChannel: output.channel ?? outputChannel)
     }
     

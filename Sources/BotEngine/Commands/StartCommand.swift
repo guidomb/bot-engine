@@ -255,15 +255,15 @@ fileprivate extension StartCommand {
         engine.registerBehavior(CreateSurveyBehavior())
         engine.registerBehavior(RandomMathQuestionBehavior())
         
-        // Register jobs
+        // Enqueue actions
         let argentinaTimezone = "America/Argentina/Buenos_Aires"
-        engine.enqueueJob(
+        engine.enqueueAction(
             interval: .everyDay(at: .at("14:00", in: argentinaTimezone)!),
-            job: SyncArgentinaMailingLists()
+            action: SyncArgentinaMailingLists()
         )
-        engine.enqueueJob(
+        engine.enqueueAction(
             interval: .everyDay(at: .at("14:05", in: argentinaTimezone)!),
-            job: SyncMailChimpMailingList()
+            action: SyncMailChimpMailingList()
         )
         
         engine.start()

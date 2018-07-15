@@ -14,11 +14,11 @@ import GoogleAPI
 
 private let mailingListId = "9a5831b9a2"
 
-struct SyncMailChimpMailingList: BotEngineJob {
+struct SyncMailChimpMailingList: BotEngineAction {
     
     let startingMessage = "Syncing MailChimp mailing list ..."
     
-    func execute(using services: BotEngine.Services) -> BotEngine.JobOutputProducer {
+    func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer {
         guard let apiKey = ProcessInfo.processInfo.environment["MAILCHIMP_API_KEY"] else {
             fatalError("ERROR - Missing MAILCHIMP_API_KEY environmental variable")
         }
@@ -34,7 +34,7 @@ struct SyncMailChimpMailingList: BotEngineJob {
     
 }
 
-fileprivate func addMembersToMailChimpList(apiKey: String) -> ([Member]) -> BotEngine.JobOutputProducer {
+fileprivate func addMembersToMailChimpList(apiKey: String) -> ([Member]) -> BotEngine.ActionOutputProducer {
     return { members in
         MailChimp(apiKey: apiKey).lists
             .update(list: mailingListId, members: members.map(asMailChimpMember))
@@ -47,7 +47,7 @@ fileprivate func asMailChimpMember(_ member: Member) -> MailChimp.Lists.Member {
     return .init(emailAddress: member.email, status: .subscribed)
 }
 
-fileprivate func printNewMembers(_ response: MailChimp.Lists.UpdateMembersResponse) -> BotEngine.JobOutputMessage {
+fileprivate func printNewMembers(_ response: MailChimp.Lists.UpdateMembersResponse) -> BotEngine.ActionOutputMessage {
     let addedMembers = response.newMembers
         .map { "    - \($0.emailAddress)" }
         .joined(separator: "\n")
