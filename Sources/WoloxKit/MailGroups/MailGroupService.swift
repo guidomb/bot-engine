@@ -30,7 +30,7 @@ public struct MailGroupService {
         self.token = token
     }
     
-    public func syncBuenosAires() -> SignalProducer<([Member], [Member]), GoogleAPI.RequestError> {
+    public func syncBuenosAires(executeChanges: Bool = true) -> SignalProducer<([Member], [Member]), GoogleAPI.RequestError> {
         
         func insertInBuenosAires(member: Member) -> SignalProducer<Member, GoogleAPI.RequestError> {
             return GoogleAPI.directory
@@ -55,15 +55,19 @@ public struct MailGroupService {
             .flatMap(.concat) { groups -> SignalProducer<([Member], [Member]), GoogleAPI.RequestError> in
                 let (buenosAires, azurduy, guemes) = groups
                 
-                let insertedMembers = azurduy.subtracting(buenosAires).map(insertInBuenosAires) +
-                    guemes.subtracting(buenosAires).map(insertInBuenosAires)
+                let onlyInAzurduy = azurduy.subtracting(buenosAires)
+                let onlyInGuemes = guemes.subtracting(buenosAires)
+                let membersToInsert = onlyInAzurduy.union(onlyInGuemes)
+                let membersToDelete = buenosAires.filter { !azurduy.contains($0) && !guemes.contains($0) }
                 
-                let deletedMembers = buenosAires.filter { !azurduy.contains($0) && !guemes.contains($0) }
-                    .map(deleteFromBuenosAires)
+                if executeChanges {
+                    return  SignalProducer.merge(membersToInsert.map(insertInBuenosAires)).collect()
+                            .zip(with:
+                            SignalProducer.merge(membersToDelete.map(deleteFromBuenosAires)).collect())
+                } else {
+                    return .init(value: (Array(membersToInsert), Array(membersToDelete)))
+                }
                 
-                return  SignalProducer.merge(insertedMembers).collect()
-                        .zip(with:
-                        SignalProducer.merge(deletedMembers).collect())
             }
     }
  

@@ -143,7 +143,7 @@ public final class SlackService: SlackServiceProtocol {
     }
     
     public func fetchUsersInChannel(_ channelId: String) -> SignalProducer<[SKCore.User], SlackServiceError> {
-        return .empty
+        fatalError("Not implemented")
     }
     
     public func openDirectMessageChannel(withUser userId: String) -> SignalProducer<String, SlackServiceError> {
@@ -161,6 +161,7 @@ public final class SlackService: SlackServiceProtocol {
                 failure: { observer.send(error: .fetchUserInfoFailure($0)) })
         }
     }
+    
 }
 
 extension SlackService: RTMAdapter {
@@ -257,6 +258,7 @@ public extension BotEngine {
     static func slackBotEngine(
         server: BotEngine.HTTPServer,
         repository: ObjectRepository,
+        outputChannel: ChannelId,
         context: [String : Any] = [:],
         environment: [String : String] = ProcessInfo.processInfo.environment) -> BotEngine {
         
@@ -282,6 +284,7 @@ public extension BotEngine {
                 SignalProducer(outputRenderer.signal).map(BotEngine.Input.interactiveMessageAnswer)
                 ]),
             outputRenderer: outputRenderer,
+            outputChannel: outputChannel,
             services: BotEngine.Services(
                 repository: repository,
                 context: context,

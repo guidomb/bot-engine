@@ -26,6 +26,7 @@ let package = Package(
         .package(url: "https://github.com/guidomb/BigInt", .branch("master")),
         .package(url: "https://github.com/guidomb/SwiftyBase64", .branch("master")),
         .package(url: "https://github.com/Carthage/Commandant", from: "0.14.0"),
+        .package(url: "https://github.com/thoughtbot/curry", from: "4.0.1"),
 
         // Test dependencies
         .package(url: "https://github.com/typelift/SwiftCheck.git", from: "0.8.1")
@@ -35,7 +36,9 @@ let package = Package(
             name: "BotEngine",
             dependencies: [
               "BotEngineKit",
-              "Commandant"
+              "Commandant",
+              "WoloxKit",
+              "Curry"
             ]
         ),
         .target(

@@ -9,7 +9,25 @@ import Foundation
 import Result
 import ReactiveSwift
 
+public protocol BotEngineJob {
+    
+    var startingMessage: String { get }
+    
+    func execute(using services: BotEngine.Services) -> BotEngine.JobOutputProducer
+    
+}
+
+extension BotEngineJob {
+    
+    var startingMessage: String {
+        return "Executing job '\(Self.self)' ..."
+    }
+    
+}
+
 public final class BotEngine {
+    
+    public typealias JobOutputProducer = SignalProducer<BotEngine.JobOutputMessage, BotEngine.ErrorMessage>
     
     public struct Services {
         
@@ -29,6 +47,43 @@ public final class BotEngine {
             self.slackService = slackService
         }
         
+    }
+    
+    public struct JobOutputMessage: ExpressibleByStringLiteral {
+        
+        public let message: String
+        public let channel: ChannelId?
+        
+        public init(message: String, channel: ChannelId? = .none) {
+            self.channel = channel
+            self.message = message
+        }
+        
+        public init(stringLiteral value: String) {
+            self.init(message: value)
+        }
+        
+    }
+    
+    public struct ErrorMessage: Error, ExpressibleByStringLiteral {
+        
+        public let message: String
+        
+        public init(message: String) {
+            self.message = message
+        }
+        
+        public init(stringLiteral value: String) {
+            self.init(message: value)
+        }
+        
+        public init(error: Error) {
+            self.init(message: error.localizedDescription)
+        }
+        
+        public var localizedDescription: String {
+            return message
+        }
     }
     
     public enum Input {
@@ -80,6 +135,7 @@ public final class BotEngine {
     
     public init(inputProducer: InputProducer,
          outputRenderer: BehaviorOutputRenderer,
+         outputChannel: ChannelId,
          services: Services) {
         (output, outputObserver) =  OutputSignal.pipe()
         self.inputProducer = inputProducer
@@ -88,6 +144,7 @@ public final class BotEngine {
         self.jobScheduler = JobScheduler(
             services: services,
             outputRenderer: outputRenderer,
+            outputChannel: outputChannel,
             transformsRegistry: transformsRegistry
         )
     }
@@ -106,6 +163,10 @@ public final class BotEngine {
     public func registerBehavior<BehaviorType: BehaviorProtocol>(_ behavior: BehaviorType) {
         registerBehaviorFactory(behavior.parse)
         scheduleJobs(from: behavior)
+    }
+    
+    public func enqueueJob(interval: SchedulerInterval, job: BotEngineJob) {
+        jobScheduler.enqueueJob(interval: interval, job: job)
     }
     
 }
@@ -307,6 +368,7 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
     )
     private let services: BotEngine.Services
     private let outputRenderer: BehaviorOutputRenderer
+    private let outputChannel: ChannelId
     private let transformsRegistry: ResponseTransformRegistry
     
     private var repository: ObjectRepository {
@@ -316,9 +378,11 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
     init(
         services: BotEngine.Services,
         outputRenderer: BehaviorOutputRenderer,
+        outputChannel: ChannelId,
         transformsRegistry: ResponseTransformRegistry) {
         self.services = services
         self.outputRenderer = outputRenderer
+        self.outputChannel = outputChannel
         self.transformsRegistry = transformsRegistry
     }
     
@@ -368,6 +432,27 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
         }
     }
     
+    func enqueueJob(interval: SchedulerInterval, job: BotEngineJob) {
+        guard let intervalSinceNow = interval.intervalSinceNow() else {
+            fatalError("ERROR - Unable to get job interval since now.")
+        }
+        queue.asyncAfter(deadline: .now() + intervalSinceNow) {
+            job.execute(using: self.services)
+                .on(starting: { self.render(output: .init(message: job.startingMessage)) })
+                .startWithResult { result in
+                    switch result {
+                    case .success(let output):
+                        self.render(output: output)
+                        self.enqueueJob(interval: interval, job: job)
+                    case .failure(let error):
+                        let message = "Scheduled job failed with error: \(error)"
+                        print("INFO - \(message)")
+                        self.outputRenderer.render(output: .textMessage(message), forChannel: self.outputChannel)
+                    }
+            }
+        }
+    }
+    
     func executeJob<BehaviorJobExecutorType: BehaviorJobExecutor>(_ scheduledJob: ScheduledJob<BehaviorJobExecutorType.JobMessageType>, with executor: BehaviorJobExecutorType) {
         executor.executeJob(with: scheduledJob.job.message).startWithResult { result in
             switch result {
@@ -405,6 +490,10 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
             transformsRegistry.registerTransforms(channeledOutput.transforms, for: channeledOutput.channel)
             outputRenderer.render(output: channeledOutput.output, forChannel: channeledOutput.channel)
         }
+    }
+    
+    func render(output: BotEngine.JobOutputMessage) {
+        outputRenderer.render(output: .textMessage(output.message), forChannel: output.channel ?? outputChannel)
     }
     
 }

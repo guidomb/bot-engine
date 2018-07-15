@@ -12,6 +12,7 @@ import BotEngineKit
 import GoogleAPI
 import ReactiveSwift
 import GoogleOAuth
+import Curry
 
 enum CommandLineError: Error, CustomStringConvertible {
     
@@ -61,18 +62,8 @@ struct StartCommand: CommandProtocol {
         let delegatedAccount: String?
         let encodedCredentials: String?
         
-        static func create(_ credentialsFile: String?) -> (String?) -> (String?) -> GCloudOptions {
-            return { delegatedAccount in { encodedCredentials in
-                GCloudOptions(
-                    credentialsFile: credentialsFile,
-                    delegatedAccount: delegatedAccount,
-                    encodedCredentials: encodedCredentials
-                )
-            }}
-        }
-        
         static func evaluate(_ mode: CommandMode) -> Result<GCloudOptions, CommandantError<CommandLineError>> {
-            return create
+            return curry(GCloudOptions.init)
                 <*> mode <| credentialsFile
                 <*> mode <| delegatedAccount
                 <*> mode <| encodedCredentials
@@ -108,19 +99,8 @@ struct StartCommand: CommandProtocol {
         let googleApiPrintRequest: Bool
         let firestorePrintSerializationLog: Bool
         
-        static func create(_ verbose: Bool) -> (Bool) -> (Bool) -> (Bool) -> LoggerOptions {
-            return { googleApiPrintCurl in { googleApiPrintRequest in { firestorePrintSerializationLog in
-                LoggerOptions(
-                    verbose: verbose,
-                    googleApiPrintCurl: googleApiPrintCurl,
-                    googleApiPrintRequest: googleApiPrintRequest,
-                    firestorePrintSerializationLog: firestorePrintSerializationLog
-                )
-            } } }
-        }
-        
         static func evaluate(_ mode: CommandMode) -> Result<LoggerOptions, CommandantError<CommandLineError>> {
-            return create
+            return curry(LoggerOptions.init)
                 <*> mode <| verbose
                 <*> mode <| googleApiPrintCurl
                 <*> mode <| googleApiPrintRequest
@@ -143,22 +123,23 @@ struct StartCommand: CommandProtocol {
             defaultValue: 8080,
             usage: "sets the bot engine's HTTP server listening port"
         )
+        private static let outputChannel = Option<String>(
+            key: "output-channel",
+            defaultValue: "general",
+            usage: "sets the bot engine's logs output channel"
+        )
         
         let hostname: String
         let port: Int
+        let outputChannel: String
         let gcloudOptions: GCloudOptions
         let loggerOptions: LoggerOptions
         
-        static func create(_ hostname: String) -> (Int) -> (GCloudOptions) -> (LoggerOptions) -> Options {
-            return { port in { gcloudOptions in { loggerOptions in
-                Options(hostname: hostname, port: port, gcloudOptions: gcloudOptions, loggerOptions: loggerOptions)
-            } } }
-        }
-        
         static func evaluate(_ mode: CommandMode) -> Result<Options, CommandantError<CommandLineError>> {
-            return create
+            return curry(Options.init)
                 <*> mode <| hostname
                 <*> mode <| port
+                <*> mode <| outputChannel
                 <*> GCloudOptions.evaluate(mode)
                 <*> LoggerOptions.evaluate(mode)
         }
@@ -270,12 +251,23 @@ fileprivate extension StartCommand {
                 projectId: "feedi-dev",
                 databaseId: "(default)"
             ),
+            outputChannel: context.options.outputChannel,
             context: [
-                "GoogleToken" : context.googleToken
+                ContextKey.googleToken.rawValue : context.googleToken
             ]
         )
+        
+        // Register behaviors
         engine.registerBehavior(CreateSurveyBehavior())
         engine.registerBehavior(RandomMathQuestionBehavior())
+        
+        // Register jobs
+        let argentinaTimezone = "America/Argentina/Buenos_Aires"
+        engine.enqueueJob(
+            interval: .everyDay(at: .at("14:00", in: argentinaTimezone)!),
+            job: SyncArgentinaMailingLists()
+        )
+        
         engine.start()
         
         while true {

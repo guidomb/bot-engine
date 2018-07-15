@@ -47,6 +47,15 @@
         }
       },
       {
+        "package": "Curry",
+        "repositoryURL": "https://github.com/thoughtbot/curry",
+        "state": {
+          "branch": null,
+          "revision": "b6bf27ec9d711f607a8c7da9ca69ee9eaa201a22",
+          "version": "4.0.1"
+        }
+      },
+      {
         "package": "FileCheck",
         "repositoryURL": "https://github.com/llvm-swift/FileCheck.git",
         "state": {
@@ -78,8 +87,8 @@
         "repositoryURL": "https://github.com/Quick/Quick.git",
         "state": {
           "branch": null,
-          "revision": "3e3023569c8d4c4a0d000f58db765df53041117f",
-          "version": "1.3.0"
+          "revision": "b060679e70d13c3c7dcd124201b5b1b34ce6f340",
+          "version": "1.3.1"
         }
       },
       {

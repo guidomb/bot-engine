@@ -154,25 +154,25 @@ extension DayTime: CustomStringConvertible {
     
 }
 
-public struct SchedulableJob<JobMessageType: Codable>: Codable {
+public enum SchedulerInterval: AutoCodable {
     
-    public enum Interval: AutoCodable {
-        
-        case every(seconds: TimeInterval)
-        case everyDay(at: DayTime)
-        
-        public func intervalSinceNow() -> TimeInterval? {
-            switch self {
-            case .every(let seconds):
-                return seconds
-            case .everyDay(let dayTime):
-                return dayTime.intervalSinceNow()
-            }
+    case every(seconds: TimeInterval)
+    case everyDay(at: DayTime)
+    
+    public func intervalSinceNow() -> TimeInterval? {
+        switch self {
+        case .every(let seconds):
+            return seconds
+        case .everyDay(let dayTime):
+            return dayTime.intervalSinceNow()
         }
-        
     }
     
-    public let interval: Interval
+}
+
+public struct SchedulableJob<JobMessageType: Codable>: Codable {
+    
+    public let interval: SchedulerInterval
     public let message: JobMessageType
     
     func asLongLivedJob() -> ScheduledJob<JobMessageType> {

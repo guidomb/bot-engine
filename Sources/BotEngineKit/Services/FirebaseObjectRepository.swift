@@ -188,5 +188,5 @@ fileprivate extension FirestoreDocumentList {
 // for all persistable object and its properties recursively
 extension CreateSurveyBehavior.JobMessage: JSONRepresentable {}
 extension Survey.Destinatary: JSONRepresentable {}
-extension SchedulableJob.Interval: JSONRepresentable {}
+extension SchedulerInterval: JSONRepresentable {}
 extension DayTime: JSONRepresentable {}
