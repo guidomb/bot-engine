@@ -199,6 +199,10 @@ public final class BotEngine {
         boundActions[command] = BoundAction(action: action, permission: permission)
     }
     
+    public func executeAction(_ action: BotEngineAction) -> ActionOutputProducer {
+        return action.execute(using: services)
+    }
+    
 }
 
 fileprivate extension BotEngine {
