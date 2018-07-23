@@ -12,4 +12,4 @@ WORKDIR /botengine
 COPY .build-ubuntu/x86_64-unknown-linux/release/BotEngine botengine
 
 # Command to start Swift application
-CMD ./botengine --output-channel wot-logs --port $PORT --gcloud-delegated-account $GCLOUD_DELEGATED_ACCOUNT
+CMD ./botengine --output-channel wot-log --port $PORT --gcloud-delegated-account $GCLOUD_DELEGATED_ACCOUNT
