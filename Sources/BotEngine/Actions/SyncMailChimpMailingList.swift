@@ -12,7 +12,7 @@ import ReactiveSwift
 import Result
 import GoogleAPI
 
-private let mailingListId = "9a5831b9a2"
+private let mailingListId = "331f15e613"
 
 struct SyncMailChimpMailingList: BotEngineAction {
     
