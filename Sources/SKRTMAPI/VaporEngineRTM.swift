@@ -66,8 +66,13 @@ public class VaporEngineRTM: RTMWebSocket {
             delegate?.receivedMessage(text)
         }
 
-        websocket.onCloseCode { _ in
+        websocket.onCloseCode { code in
+            print("ERROR - VaporEngineRTM: Connection closed with code \(code)")
             delegate?.disconnected()
+        }
+        
+        websocket.onError { _, error in
+            print("ERROR - VaporEngineRTM: \(error.localizedDescription)")
         }
     }
 
