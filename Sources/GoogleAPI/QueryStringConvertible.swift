@@ -62,14 +62,6 @@ extension String {
     
 }
 
-fileprivate func isOptional(_ object: Any) -> Bool {
-    if case .some(.optional) = Mirror(reflecting: object).displayStyle {
-        return true
-    } else {
-        return false
-    }
-}
-
 fileprivate func isNone(_ object: Any) -> Bool {
     let mirror = Mirror(reflecting: object)
     if case .some(.optional) = mirror.displayStyle {
