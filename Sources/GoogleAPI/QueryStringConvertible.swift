@@ -22,9 +22,8 @@ public func toQueryString(object: Any) -> String? {
     switch displayStyle {
     case .class, .struct, .dictionary:
         return mirror.children.lazy
-            .filter { isOptional($0) }
-            .filter { $0 != nil || $1 is QueryStringConvertible }
-            .map { "\($0!)=\($1)".urlEncoded }
+            .filter { ($0 != nil || $1 is QueryStringConvertible) && !isNone($1) }
+            .map { "\($0!)=\(unwrapped($1))".urlEncoded }
             .joined(separator: "&")
     default:
         return .none
@@ -68,5 +67,23 @@ fileprivate func isOptional(_ object: Any) -> Bool {
         return true
     } else {
         return false
+    }
+}
+
+fileprivate func isNone(_ object: Any) -> Bool {
+    let mirror = Mirror(reflecting: object)
+    if case .some(.optional) = mirror.displayStyle {
+        return mirror.children.first?.label != "some"
+    } else {
+        return false
+    }
+}
+
+fileprivate func unwrapped(_ object: Any) -> Any {
+    let mirror = Mirror(reflecting: object)
+    if case .some(.optional) = mirror.displayStyle {
+        return mirror.children.first!.value
+    } else {
+        return object
     }
 }

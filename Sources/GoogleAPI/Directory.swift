@@ -168,28 +168,40 @@ public struct Member: Codable, Equatable, Hashable {
         return email.hashValue
     }
     
-    public enum Role: String, Codable, Hashable {
+    public enum Role: String, Codable, Hashable, CustomStringConvertible {
         
         case owner   = "OWNER"
         case manager = "MANAGER"
         case member  = "MEMBER"
         
+        public var description: String {
+            return rawValue
+        }
+        
     }
     
-    public enum Status: String, Codable, Hashable {
+    public enum Status: String, Codable, Hashable, CustomStringConvertible {
         
         case active     = "ACTIVE"
         case suspended  = "SUSPENDED"
         case unknown    = "UNKNOWN"
         
+        public var description: String {
+            return rawValue
+        }
+        
     }
     
-    public enum MemberType: String, Codable, Hashable {
+    public enum MemberType: String, Codable, Hashable, CustomStringConvertible {
         
         case customer   = "CUSTOMER"
         case external   = "EXTERNAL"
         case group      = "GROUP"
         case user       = "USER"
+        
+        public var description: String {
+            return rawValue
+        }
         
     }
     
