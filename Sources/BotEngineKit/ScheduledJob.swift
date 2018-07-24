@@ -149,15 +149,24 @@ extension DayTime: Comparable {
 extension DayTime: CustomStringConvertible {
     
     public var description: String {
-        return "DayTime(hours: \(hours), minutes: \(minutes), timeZone: \(timeZone))"
+        return "\(hours):\(minutes) \(timeZone) time zone"
     }
     
 }
 
-public enum SchedulerInterval: AutoCodable {
+public enum SchedulerInterval: AutoCodable, CustomStringConvertible {
     
     case every(seconds: TimeInterval)
     case everyDay(at: DayTime)
+    
+    public var description: String {
+        switch self {
+        case .every(let seconds):
+            return "every \(seconds) seconds"
+        case .everyDay(let dayTime):
+            return "every day at \(dayTime)"
+        }
+    }
     
     public func intervalSinceNow() -> TimeInterval? {
         switch self {

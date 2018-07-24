@@ -191,7 +191,8 @@ public final class BotEngine {
         commands.append(RegisteredCommand(command))
     }
     
-    public func enqueueAction(interval: SchedulerInterval, action: BotEngineAction) {
+    public func enqueueAction<ActionType: BotEngineAction>(interval: SchedulerInterval, action: ActionType) {
+        print("INFO - Enqueueing action \(ActionType.self) to be executed \(interval)")
         jobScheduler.enqueueAction(interval: interval, action: action)
     }
     
@@ -548,12 +549,13 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
         }
     }
     
-    func enqueueAction(interval: SchedulerInterval, action: BotEngineAction) {
+    func enqueueAction<ActionType: BotEngineAction>(interval: SchedulerInterval, action: ActionType) {
         guard let intervalSinceNow = interval.intervalSinceNow() else {
             fatalError("ERROR - Unable to get job interval since now.")
         }
         
         func renderStartingMessage() {
+            print("INFO - Executing action \(ActionType.self) ...")
             if let startingMessage = action.startingMessage {
                 render(output: .init(message: startingMessage))
             }
@@ -565,11 +567,13 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
                 .startWithResult { result in
                     switch result {
                     case .success(let output):
+                        print("INFO - \(ActionType.self) - Action successfully executed:")
+                        print(output.message.split(separator: "\n").map { "\t\($0)" }.joined(separator: "\n"))
                         self.render(output: output)
                         self.enqueueAction(interval: interval, action: action)
                     case .failure(let error):
                         let message = "Scheduled job failed with error: \(error)"
-                        print("INFO - \(message)")
+                        print("ERROR - \(ActionType.self) - \(message)")
                         self.outputRenderer.render(output: .textMessage(message), forChannel: self.outputChannel)
                     }
             }
