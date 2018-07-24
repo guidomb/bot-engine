@@ -149,7 +149,7 @@ extension DayTime: Comparable {
 extension DayTime: CustomStringConvertible {
     
     public var description: String {
-        return "\(hours):\(minutes) \(timeZone) time zone"
+        return "\(String(format: "%02d:%02d", hours, minutes)) \(timeZone) time zone"
     }
     
 }
