@@ -110,6 +110,7 @@ public struct DayTime: Codable {
     }
     
     public func intervalSince(dayDate: Date) -> TimeInterval? {
+        print("DEBUG - intervalSince(dayDate: '\(dayDate)' ---> toDate = \(toDate(in: dayDate)!)")
         guard let interval = toDate(in: dayDate)?.timeIntervalSince(dayDate) else {
             return .none
         }
