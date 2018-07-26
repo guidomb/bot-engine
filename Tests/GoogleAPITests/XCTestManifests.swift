@@ -1,5 +1,13 @@
 import XCTest
 
+extension QueryStringConvertibleTest {
+    static let __allTests = [
+        ("testAllParametersAvailable", testAllParametersAvailable),
+        ("testEmptyParamters", testEmptyParamters),
+        ("testOptionalParameterAvailable", testOptionalParameterAvailable),
+    ]
+}
+
 extension SpreadSheetRangeTest {
     static let __allTests = [
         ("testSpreadSheetRangeWithEmptySheetName", testSpreadSheetRangeWithEmptySheetName),
@@ -22,6 +30,7 @@ extension SpreadSheetsTest {
 #if !os(macOS)
 public func __allTests() -> [XCTestCaseEntry] {
     return [
+        testCase(QueryStringConvertibleTest.__allTests),
         testCase(SpreadSheetRangeTest.__allTests),
         testCase(SpreadSheetsTest.__allTests),
     ]

@@ -60,6 +60,14 @@ public struct DayTime: Codable {
         }
     }
     
+    public static func todaysDayTime(in timeZone: TimeZone = .current) -> DayTime {
+        let components = Calendar.current.dateComponents(in: timeZone, from: Date())
+        guard let hours = components.hour, let minutes = components.minute else {
+            fatalError("ERROR - Today's date componets are not available. This should not happen")
+        }
+        return DayTime(hours: hours, minutes: minutes)!
+    }
+    
     public let hours: Int
     public let minutes: Int
     public let timeZone: TimeZone
@@ -76,45 +84,11 @@ public struct DayTime: Codable {
         self.timeZone = timeZone
     }
     
-    public func toDate(in dayDate: Date = Date()) -> Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
-        
-        var calendar = Calendar.current
-        calendar.timeZone = timeZone
-        
-        // Ideally the following calendar method should do the work. But this method
-        // when using Swift's open source Foundation dependends on a method that
-        // is not implemented yet.
-        // https://github.com/apple/swift-corelibs-foundation/blob/da6a830f7e461062c8ba82961f644c4a197890be/Foundation/NSCalendar.swift#L1109
-        // return calendar.date(bySettingHour: hours, minute: minutes, second: 0, of: day)
-
-        let day = String(format: "%02d", calendar.component(.day, from: dayDate))
-        let month = String(format: "%02d", calendar.component(.month, from: dayDate))
-        let year = calendar.component(.year, from: dayDate)
-        
-        var time = String(format: "%02d", hours)
-        time += ":" + String(format: "%02d", minutes) + ":00"
-        
-        let secondsFromGMT = timeZone.secondsFromGMT()
-        let timeZoneHours = String(format: "%02d", abs(secondsFromGMT / 60 / 60))
-        let timeZoneMinutes = String(format: "%02d", abs((secondsFromGMT % (60 * 60)) / 60))
-        var timeZoneComponent = secondsFromGMT > 0 ? "+" : "-"
-        timeZoneComponent += "\(timeZoneHours):\(timeZoneMinutes)"
-        let dayString = "\(year)-\(month)-\(day)T\(time)\(timeZoneComponent)"
-        return formatter.date(from: dayString)
+    public func intervalSinceNow() -> TimeInterval {
+        return intervalSince(.todaysDayTime(in: self.timeZone))
     }
     
-    public func intervalSinceNow() -> TimeInterval? {
-        return intervalSince(dayDate: Date())
-    }
-    
-    public func intervalSince(dayDate: Date) -> TimeInterval? {
-        print("DEBUG - intervalSince(dayDate: '\(dayDate)' ---> toDate = \(toDate(in: dayDate)!)")
-        guard let interval = toDate(in: dayDate)?.timeIntervalSince(dayDate) else {
-            return .none
-        }
-        
+    public func intervalSince(_ dayTime: DayTime) -> TimeInterval {
         // If interval is negative it means that `self`
         // is earlier that `dayDate` day time. In which case we need
         // to return the absolute number.
@@ -129,7 +103,12 @@ public struct DayTime: Codable {
         //  let b = DayTime("10:40")
         //  a.intervalSince(dayTime: b) -> 600 = 10 minutes
         //  b.intervalSince(dayTime: a) -> 85800 = 23 hours and 50 minutes = 24 hours - 10 minutes
-        return interval <= 0 ? abs(interval) : ((24 * 60 * 60) - interval)
+        let interval = self.toSeconds() - dayTime.toSeconds()
+        return interval <= 0 ? (24 * 60 * 60) - abs(interval) : interval
+    }
+    
+    public func toSeconds() -> TimeInterval {
+        return TimeInterval(hours * 60 * 60 + minutes * 60)
     }
     
 }

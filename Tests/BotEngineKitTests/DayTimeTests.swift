@@ -131,15 +131,19 @@ class DayTimeTests: XCTestCase {
             return DayTime.at("10:30", in: identifier) != nil
         }
     }
-
-    func testIntervalSinceNow() {
-        property("It calculates the amount of seconds between any pair of day time") <- forAll { (dayTime: DayTime) in
-            return forAll { (otherDayTime: DayTime) in
-                let interval = dayTime.intervalSince(dayDate: otherDayTime.toDate()!)!
-                let secondsInDay = TimeInterval(24 * 60 * 60)
-                return interval >= 0 && interval < secondsInDay
-            }
-        }
+    
+    func testIntervalSinceWhenDayTimeIsInTheFuture() {
+        let a = DayTime.at("10:30")!
+        let b = DayTime.at("10:40")!
+        
+        XCTAssertEqual(a.intervalSince(b), (24 * 60 * 60) - (10 * 60))
+    }
+    
+    func testIntervalSinceWhenDayTimeIsInThePast() {
+        let a = DayTime.at("10:30")!
+        let b = DayTime.at("10:40")!
+        
+        XCTAssertEqual(b.intervalSince(a), 10 * 60)
     }
 
 }

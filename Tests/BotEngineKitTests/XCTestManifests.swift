@@ -9,7 +9,8 @@ extension DayTimeTests {
         ("testInitializerWithInvalidHours", testInitializerWithInvalidHours),
         ("testInitializerWithInvalidMinutes", testInitializerWithInvalidMinutes),
         ("testInitializerWithValidHoursAndMinutes", testInitializerWithValidHoursAndMinutes),
-        ("testIntervalSinceNow", testIntervalSinceNow),
+        ("testIntervalSinceWhenDayTimeIsInTheFuture", testIntervalSinceWhenDayTimeIsInTheFuture),
+        ("testIntervalSinceWhenDayTimeIsInThePast", testIntervalSinceWhenDayTimeIsInThePast),
     ]
 }
 
