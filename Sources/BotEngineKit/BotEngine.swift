@@ -561,6 +561,7 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
             }
         }
         
+        print("DEBUG - Current time \(Date()). Interval since now \(intervalSinceNow) seconds")
         queue.asyncAfter(deadline: .now() + intervalSinceNow) {
             action.execute(using: self.services)
                 .on(starting: renderStartingMessage)
