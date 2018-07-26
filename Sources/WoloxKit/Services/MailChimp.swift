@@ -12,22 +12,52 @@ public struct MailChimp {
     
     public typealias ResourceProducer<ResourceType> = SignalProducer<ResourceType, ResourceError>
 
-    public enum ResourceError: Error {
+    public enum ResourceError: Error, CustomStringConvertible {
         
         case serializationError(Error)
         case deserializationError(Error)
         case requestError(Error)
         case serviceError(ServiceError)
         
+        public var description: String {
+            switch self {
+            case .serializationError(let error):
+                return "Serialization error: \(error)"
+            case .deserializationError(let error):
+                return "Deserialization error: \(error)"
+            case .requestError(let error):
+                return "Request error: \(error)"
+            case .serviceError(let error):
+                return "Service error: \(error)"
+                
+            }
+        }
+        
+        public var localizedDescription: String {
+            return description
+        }
+        
     }
     
-    public struct ServiceError: Error, Codable {
+    public struct ServiceError: Error, Codable, CustomStringConvertible {
         
         let type: String
         let title: String
         let status: Int
         let detail: String
         let instance: String
+        
+        public var description: String {
+            return """
+            Mailchimp service \(type) error \(status). \(title)
+            \t\(detail)
+            \t\(instance)
+            """
+        }
+        
+        public var localizedDescription: String {
+            return description
+        }
         
     }
     
