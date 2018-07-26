@@ -79,6 +79,7 @@ public class VaporEngineRTM: RTMWebSocket {
     public func disconnect() {
         websocket?.close()
         websocket = nil
+        futureWebsocket = nil
     }
 
     public func sendMessage(_ message: String) throws {

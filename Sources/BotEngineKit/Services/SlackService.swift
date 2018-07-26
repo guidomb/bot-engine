@@ -61,7 +61,10 @@ public final class SlackService: SlackServiceProtocol {
     private let webAPI: WebAPI
     private let rtm: SKRTMAPI
     private let client = Client()
+    private let queue = DispatchQueue(label: "BotEngineKit.SlackServiceQueue")
+    private let keepAliveInterval: TimeInterval = 15 * 60 // 15 minutes
     
+    private var reconnecting = false
     private var observer: Signal<Event, SlackServiceError>.Observer?
     
     init(token: String, verificationToken: String) {
@@ -86,6 +89,7 @@ public final class SlackService: SlackServiceProtocol {
             }
             self.middleware.startActionHandlerCleaner()
             self.rtm.connect()
+            self.enqueueKeepAliveReconnection()
         }
     }
     
@@ -192,11 +196,24 @@ extension SlackService: RTMAdapter {
     }
     
     public func connectionClosed(with error: Error, instance: SKRTMAPI) {
+        guard !reconnecting else {
+            return
+        }
+        
         guard let observer = self.observer else {
             print("WARN - Slack connection closed but there is no active observer")
             return
         }
         observer.send(error: .connectionFailure(error))
+    }
+    
+    public func connectionEstablished() {
+        if reconnecting {
+            print("INFO - Reconnection with Slack RTM API established")
+        } else {
+            print("INFO - Connection with Slack RTM API established")
+        }
+        reconnecting = false
     }
     
 }
@@ -343,6 +360,31 @@ struct SlackInteractiveMessage: Decodable, AutoSnakeCaseCodingKey {
     let token: String
     let callbackId: String
     let actions: [Action]
+    
+}
+
+fileprivate extension SlackService {
+    
+    func reconnect() {
+        guard rtm.connected else {
+            print("WARN - Cannot recoonnect with Slack RTM API if it wasn't connected already.")
+            return
+        }
+        guard !reconnecting else {
+            print("WARN - Cannot reconnect with Slack RTM API if already reconnecting")
+            return
+        }
+        
+        print("INFO - Reconnecting with Slack RTM API.")
+        reconnecting = true
+        rtm.disconnect()
+        rtm.connect()
+        enqueueKeepAliveReconnection()
+    }
+    
+    func enqueueKeepAliveReconnection() {
+        queue.asyncAfter(deadline: .now() + keepAliveInterval) { [weak self] in self?.reconnect() }
+    }
     
 }
 

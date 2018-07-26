@@ -40,6 +40,7 @@ public protocol RTMAdapter: class {
     func initialSetup(json: [String: Any], instance: SKRTMAPI)
     func notificationForEvent(_ event: Event, type: EventType, instance: SKRTMAPI)
     func connectionClosed(with error: Error, instance: SKRTMAPI)
+    func connectionEstablished()
 }
 
 public protocol RTMDelegate: class {
@@ -208,6 +209,7 @@ public final class SKRTMAPI: RTMDelegate {
     // MARK: RTMDelegate
     public func didConnect() {
         connected = true
+        self.adapter?.connectionEstablished()
         pingRTMServer()
     }
 
