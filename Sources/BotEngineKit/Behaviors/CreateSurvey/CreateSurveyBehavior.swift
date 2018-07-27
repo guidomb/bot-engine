@@ -265,7 +265,7 @@ fileprivate extension Behavior.TransitionOutput where
     static func internalError(_ error: CreateSurveyBehavior.Effect.Error)  -> CreateSurveyBehavior.TransitionOutput {
         return .init(
             state: .internalError(error),
-            output: .textMessage("There was some unexpected internal error. You should better talk to the human that created me, and tell him about this issue. Here is the error description: \(error.localizedDescription)")
+            output: .textMessage("There was some unexpected internal error. You should better talk to the human that created me, and tell him about this issue. Here is the error description: \(error)")
         )
     }
 

@@ -95,7 +95,7 @@ fileprivate func subscriptionError(_ member: Member, _ mailGroup: MailGroupServi
         Couldn't subscribe you (\(member.email)) to '\(mailGroup.email)'. Google's API subscribe method failed.
         
         The returned error message was:
-        \(error.localizedDescription)
+        \(error)
         """
         return .init(message: message)
     }
@@ -107,7 +107,7 @@ fileprivate func fetchMembersError(_ member: Member, _ mailGroup: MailGroupServi
         Couldn't check if you (\(member.email)) are already subscribed to '\(mailGroup.email)'. Google's API members method failed.
         
         The returned error message was:
-        \(error.localizedDescription)
+        \(error)
         """
         return .init(message: message)
     }

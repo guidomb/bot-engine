@@ -72,7 +72,7 @@ public class VaporEngineRTM: RTMWebSocket {
         }
         
         websocket.onError { _, error in
-            print("ERROR - VaporEngineRTM: \(error.localizedDescription)")
+            print("ERROR - VaporEngineRTM: \(error)")
         }
     }
 

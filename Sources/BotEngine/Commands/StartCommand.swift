@@ -258,15 +258,10 @@ fileprivate extension StartCommand {
         // Register commands
         engine.registerCommand(SubscribeToMailGroup())
         
-        // Enqueue actions
-        let argentinaTimezone = "America/Argentina/Buenos_Aires"
-        engine.enqueueAction(
-            interval: .everyDay(at: .at("14:00", in: argentinaTimezone)!),
-            action: SyncArgentinaMailingLists()
-        )
-        engine.enqueueAction(
-            interval: .everyDay(at: .at("14:05", in: argentinaTimezone)!),
-            action: SyncMailChimpMailingList()
+        // Register schedulable actions
+        engine.registerActions(
+            SyncArgentinaMailingLists(),
+            SyncMailChimpMailingList()
         )
         
         // Bind actions

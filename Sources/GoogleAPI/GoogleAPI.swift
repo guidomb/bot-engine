@@ -122,7 +122,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         
     }
     
-    public enum RequestError: Error {
+    public enum RequestError: Error, CustomStringConvertible {
         
         case missingContentTypeHeader
         case unexpectedContentType(String)
@@ -135,6 +135,10 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         case resourceError(ResourceError)
         
         public var localizedDescription: String {
+            return description
+        }
+        
+        public var description: String {
             switch self {
             case .missingContentTypeHeader:
                 return "Missing 'Content-Type' HTTP header"

@@ -11,6 +11,8 @@ import ReactiveSwift
 
 public protocol BotEngineAction {
     
+    typealias Key = String
+    
     var startingMessage: String? { get }
     
     func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer
@@ -98,7 +100,7 @@ public final class BotEngine {
         }
         
         public init(error: Error) {
-            self.init(message: error.localizedDescription)
+            self.init(message: "\(error)")
         }
         
         public var localizedDescription: String {
@@ -141,6 +143,7 @@ public final class BotEngine {
     private let outputRenderer: BehaviorOutputRenderer
     private let output: OutputSignal
     private let outputObserver: OutputSignal.Observer
+    private let outputChannel: ChannelId
     private let services: Services
     private let jobScheduler: JobScheduler
     private let transformsRegistry = ResponseTransformRegistry()
@@ -150,6 +153,7 @@ public final class BotEngine {
     private var disposable = CompositeDisposable()
     private var boundActions: [String : BoundAction] = [:]
     private var commands: [RegisteredCommand] = []
+    private var actionRegistry: [String : BotEngineAction] = [:]
     
     fileprivate var repository: ObjectRepository {
         return services.repository
@@ -163,6 +167,7 @@ public final class BotEngine {
         self.inputProducer = inputProducer
         self.outputRenderer = outputRenderer
         self.services = services
+        self.outputChannel = outputChannel
         self.jobScheduler = JobScheduler(
             services: services,
             outputRenderer: outputRenderer,
@@ -176,6 +181,20 @@ public final class BotEngine {
         disposable = CompositeDisposable()
         disposable += inputProducer.startWithValues(handle(input:))
         output.observeValues { [unowned self] in self.render(output: $0) }
+        
+        if actionRegistry.isEmpty {
+            print("INFO - There are no registered schedulable actions.")
+        } else {
+            disposable += loadSchedulableActions().startWithResult { result in
+                switch result {
+                case .success(let actions):
+                    print("INFO - \(actions.count) schedulable actions have been loaded")
+                case .failure(let error):
+                    print("ERROR - Schedulable actions could not be loaded: \(error.message)")
+                    self.send(message: "Schedulable actions could not be loaded: \(error.message)")
+                }
+            }
+        }
     }
     
     public func registerBehaviorFactory(_ behaviorFactory: @escaping BehaviorFactory) {
@@ -191,9 +210,38 @@ public final class BotEngine {
         commands.append(RegisteredCommand(command))
     }
     
-    public func enqueueAction<ActionType: BotEngineAction>(interval: SchedulerInterval, action: ActionType) {
-        print("INFO - Enqueueing action \(ActionType.self) to be executed \(interval)")
-        jobScheduler.enqueueAction(interval: interval, action: action)
+    public func enqueueAction(_ action: BotEngineAction, interval: SchedulerInterval) {
+        print("INFO - Enqueueing action '\(action.key)' to be executed \(interval)")
+        jobScheduler.enqueueAction(action, interval: interval)
+    }
+    
+    public func saveAction(_ action: BotEngineAction, interval: SchedulerInterval)
+        -> SignalProducer<SchedulableBotEngineAction, ErrorMessage> {
+        return services.repository.save(object:
+            SchedulableBotEngineAction(
+                id: .none,
+                key: action.key,
+                interval: interval
+            )
+        )
+        .mapError(ErrorMessage.init(error:))
+    }
+    
+    public func registerAction(_ action: BotEngineAction) {
+        actionRegistry[action.key] = action
+    }
+    
+    public func registerActions(_ actions: BotEngineAction...) {
+        for action in actions {
+            actionRegistry[action.key] = action
+        }
+    }
+    
+    public func loadSchedulableActions() -> SignalProducer<[SchedulableBotEngineAction], ErrorMessage> {
+        return services.repository.fetchAll(SchedulableBotEngineAction.self)
+            .on(failed: { print($0) })
+            .mapError(ErrorMessage.init(error:))
+            .on(starting: { print("INFO - Fetching schedulable actions ...") }, value: enqueueActions)
     }
     
     public func bindAction(_ action: BotEngineAction, to command: String, allow permission: ExecutionPermission = .all) {
@@ -417,8 +465,12 @@ fileprivate extension BotEngine {
         send(message: reply.message, for: channel)
     }
     
-    func send(message: String, for channel: ChannelId) {
-        outputObserver.send(value: .init(output: .textMessage(message), channel: channel))
+    func send(error: ErrorMessage, for channel: ChannelId? = .none) {
+        send(message: error.message, for: channel ?? outputChannel)
+    }
+    
+    func send(message: String, for channel: ChannelId? = .none) {
+        outputObserver.send(value: .init(output: .textMessage(message), channel: channel ?? outputChannel))
     }
     
     func send(output: BehaviorOutput, for channel: ChannelId) {
@@ -433,6 +485,21 @@ fileprivate extension BotEngine {
         jobScheduler.startScheduledJobs(for: behavior, with: schedulable.executor)
         schedulable.jobs.forEach {
             jobScheduler.enqueueJob($0.asLongLivedJob(), with: schedulable.executor)
+        }
+    }
+    
+    func enqueueActions(_ actions: [SchedulableBotEngineAction]) {
+        guard !actions.isEmpty else {
+            print("INFO - There are no schedulable actions to be enqueued")
+            return
+        }
+        
+        for schedulableAction in actions {
+            guard let action = actionRegistry[schedulableAction.key] else {
+                print("WARN - Cannot enqueue action because there is no action registered for key '\(schedulableAction.key)'")
+                continue
+            }
+            enqueueAction(action, interval: schedulableAction.interval)
         }
     }
     
@@ -531,10 +598,10 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
                 switch result {
                 case .success(let jobIdentifier):
                     print("INFO - Job with identifier '\(jobIdentifier)' successfuly scheduled")
-                    break
                 case .failure(let error):
-                    // TODO report error
-                    break
+                    let message = "ERROR - Job could not be scheduled: \(error)"
+                    print(message)
+                    self.render(output: .init(message: message))
                 }
         }
     }
@@ -549,13 +616,13 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
         }
     }
     
-    func enqueueAction<ActionType: BotEngineAction>(interval: SchedulerInterval, action: ActionType) {
+    func enqueueAction(_ action: BotEngineAction, interval: SchedulerInterval) {
         guard let intervalSinceNow = interval.intervalSinceNow() else {
             fatalError("ERROR - Unable to get job interval since now.")
         }
         
         func renderStartingMessage() {
-            print("INFO - Executing action \(ActionType.self) ...")
+            print("INFO - Executing action \(action.key) ...")
             if let startingMessage = action.startingMessage {
                 render(output: .init(message: startingMessage))
             }
@@ -568,14 +635,14 @@ fileprivate final class JobScheduler: BehaviorJobScheduler {
                 .startWithResult { result in
                     switch result {
                     case .success(let output):
-                        print("INFO - \(ActionType.self) - Action successfully executed:")
+                        print("INFO - \(action.key) - Action successfully executed:")
                         print(output.message.split(separator: "\n").map { "\t\($0)" }.joined(separator: "\n"))
                         self.render(output: output)
-                        self.enqueueAction(interval: interval, action: action)
+                        self.enqueueAction(action, interval: interval)
                     case .failure(let error):
                         let message = "Scheduled job failed with error: \(error)"
-                        print("ERROR - \(ActionType.self) - \(message)")
-                        self.outputRenderer.render(output: .textMessage(message), forChannel: self.outputChannel)
+                        print("ERROR - \(action.key) - \(message)")
+                        self.render(output: .init(message: message))
                     }
             }
         }
@@ -656,5 +723,20 @@ fileprivate struct RegisteredCommand {
     func handle(input: String) -> BoundHandler? {
         return _handle(input)
     }
+    
+}
+
+fileprivate extension BotEngineAction {
+    
+    var key: BotEngineAction.Key {
+        return String(describing: Self.self)
+    }
+}
+
+public struct SchedulableBotEngineAction: Persistable {
+    
+    public var id: Identifier<SchedulableBotEngineAction>?
+    public let key: BotEngineAction.Key
+    public let interval: SchedulerInterval
     
 }
