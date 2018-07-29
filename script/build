@@ -23,11 +23,11 @@ fi
 
 if [ "$1" == "--print-bin-path" ]
 then
-  echo $build_path/BotEngine
+  echo $build_path/WotServer
 else
   echo "Swift version: `swift --version`"
   echo "Build path: $build_path"
   echo "Build flags: $build_flags"
   bash -c "swift build $build_flags"
-  echo $build_path/BotEngine
+  echo $build_path/WotServer
 fi

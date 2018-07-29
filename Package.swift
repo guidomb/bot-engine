@@ -6,7 +6,9 @@ import PackageDescription
 let package = Package(
     name: "BotEngine",
     products: [
-        .executable(name: "BotEngine", targets: ["BotEngine"]),
+        .executable(name: "WotServer", targets: ["WotServer"]),
+
+        .library(name: "BotEngineCLI", targets: ["BotEngineCLI"]),
         .library(name: "BotEngineKit", targets: ["BotEngineKit"]),
         .library(name: "GoogleAPI", targets: ["GoogleAPI"]),
         .library(name: "GoogleOAuth", targets: ["GoogleOAuth"]),
@@ -33,11 +35,10 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "BotEngine",
+            name: "BotEngineCLI",
             dependencies: [
               "BotEngineKit",
               "Commandant",
-              "WoloxKit",
               "Curry"
             ]
         ),
@@ -86,7 +87,15 @@ let package = Package(
             name: "WoloxKit",
             dependencies: [
               "GoogleAPI",
-              "ReactiveSwift"
+              "ReactiveSwift",
+              "BotEngineKit"
+            ]
+        ),
+        .target(
+            name: "WotServer",
+            dependencies: [
+                "BotEngineCLI",
+                "WoloxKit"
             ]
         ),
 

@@ -9,7 +9,7 @@ EXPOSE 8080
 WORKDIR /botengine
 
 # Bundle application source & binaries
-COPY .build-ubuntu/x86_64-unknown-linux/release/BotEngine botengine
+COPY .build-ubuntu/x86_64-unknown-linux/release/WotServer wotserver
 
 # Command to start Swift application
-CMD ./botengine --output-channel wot-log --port $PORT --gcloud-delegated-account $GCLOUD_DELEGATED_ACCOUNT
+CMD ./wotserver --output-channel wot-log --port $PORT --gcloud-delegated-account $GCLOUD_DELEGATED_ACCOUNT

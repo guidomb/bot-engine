@@ -132,8 +132,8 @@
         "repositoryURL": "https://github.com/SlackKit/SKCore",
         "state": {
           "branch": null,
-          "revision": "1ac0e21612d4390206adeb57eb5f8fcae66c0811",
-          "version": "4.1.1"
+          "revision": "ed77cb430586caa10b4dd9f2f70dd2207ba7d894",
+          "version": "4.1.2"
         }
       },
       {
@@ -159,8 +159,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio-ssl.git",
         "state": {
           "branch": null,
-          "revision": "0adc938bc8de3d3829b842f9767d81c7480b8403",
-          "version": "1.1.1"
+          "revision": "6617eb0d3afcb12170594968df01ca63afb58ac5",
+          "version": "1.2.0"
         }
       },
       {
