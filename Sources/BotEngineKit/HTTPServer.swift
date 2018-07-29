@@ -18,15 +18,15 @@ extension BotEngine {
             
             private let _request: HTTPRequest
             
-            var urlComponents: URLComponents? {
+            public var urlComponents: URLComponents? {
                 return URLComponents(string: _request.urlString)
             }
             
-            var url: URL {
+            public var url: URL {
                 return _request.url
             }
             
-            var formURLEncodedBody: [String : String]? {
+            public var formURLEncodedBody: [String : String]? {
                 return _request.body.data
                     .flatMap { String(data: $0, encoding: .utf8)?.removingPercentEncoding }
                     .map(decodeFormEncodedParamaters)

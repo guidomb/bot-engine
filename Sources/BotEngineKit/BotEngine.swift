@@ -6,8 +6,9 @@
 //
 
 import Foundation
-import Result
-import ReactiveSwift
+@_exported import Result
+@_exported import ReactiveSwift
+@_exported import GoogleAPI
 
 public protocol BotEngineAction {
     
@@ -46,19 +47,19 @@ public final class BotEngine {
     
     public struct Services {
         
-        public var environment: [String : String]
-        public var repository: ObjectRepository
-        public var context: [String : Any]
-        public var slackService: SlackServiceProtocol?
+        public let environment: [String : String]
+        public let repository: ObjectRepository
+        public let googleAPIResourceExecutor: GoogleAPIResourceExecutor
+        public let slackService: SlackServiceProtocol?
         
         public init(
             environment: [String : String] = ProcessInfo.processInfo.environment,
             repository: ObjectRepository,
-            context: [String : Any] = [:],
+            googleAPIResourceExecutor: GoogleAPIResourceExecutor,
             slackService: SlackServiceProtocol? = .none) {
             self.environment = environment
             self.repository = repository
-            self.context = context
+            self.googleAPIResourceExecutor = googleAPIResourceExecutor
             self.slackService = slackService
         }
         

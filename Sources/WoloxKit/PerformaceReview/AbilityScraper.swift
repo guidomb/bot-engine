@@ -45,24 +45,24 @@ public struct AbilityScraper {
     let mappers: [RangeMapper]
     let executor: GoogleAPIResourceExecutor
     
-    public init(abilityGroupMapper: AbilityGroupMapper, executor: GoogleAPIResourceExecutor = GoogleAPI.shared) {
+    public init(abilityGroupMapper: AbilityGroupMapper, executor: GoogleAPIResourceExecutor) {
         self.init(mappers: abilityGroupMapper.rangeMappers, executor: executor)
     }
     
-    public init(mapper: RangeMapper, executor: GoogleAPIResourceExecutor = GoogleAPI.shared) {
+    public init(mapper: RangeMapper, executor: GoogleAPIResourceExecutor) {
         self.init(mappers: [mapper], executor: executor)
     }
     
-    public init(mappers: [RangeMapper], executor: GoogleAPIResourceExecutor = GoogleAPI.shared) {
+    public init(mappers: [RangeMapper], executor: GoogleAPIResourceExecutor) {
         self.mappers = mappers
         self.executor = executor
     }
     
-    public func scrap(spreadSheetId: String, token: GoogleAPI.Token) -> AbilityProducer {
+    public func scrap(spreadSheetId: String) -> AbilityProducer {
         return GoogleAPI.spreadSheets
             .values(spreadSheetId: spreadSheetId)
             .batchGet(ranges: cellRanges, majorDimension: .rows)
-            .execute(using: token, with: executor)
+            .execute(with: executor)
             .mapError(ScraperError.requestError)
             .flatMap(.concat, abilityParser)
     }

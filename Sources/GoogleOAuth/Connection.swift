@@ -70,7 +70,7 @@ public class Connection {
     body: Data!,
     callback: @escaping (Data?, URLResponse?, Error?) -> Void) throws {
     
-    try provider.withToken {token, err in
+    try provider.withToken(delegatedAccount: .none) {token, err in
       guard let token = token else {
         return
       }

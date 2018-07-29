@@ -15,7 +15,6 @@ class AbilityScraperTests: XCTestCase {
 
     var resourceExecutor: MockGoogleAPIResourceExecutor!
     var fixtureManager: FixtureManager!
-    let token = GoogleAPI.Token(type: "Bearer", value: "somefaketoken123456")
     let spreadSheetId = "somespreadsheetid123456"
     
     override func setUp() {
@@ -30,7 +29,7 @@ class AbilityScraperTests: XCTestCase {
 
         let scraper = AbilityScraper(mapper: mapper, executor: resourceExecutor)
         
-        let result = scraper.scrap(spreadSheetId: spreadSheetId, token: token).first()!
+        let result = scraper.scrap(spreadSheetId: spreadSheetId).first()!
         XCTAssertEqual(result.value, [expectedAbility])
     }
     
@@ -41,7 +40,7 @@ class AbilityScraperTests: XCTestCase {
         
         let scraper = AbilityScraper(abilityGroupMapper: mapper, executor: resourceExecutor)
         
-        let result = scraper.scrap(spreadSheetId: spreadSheetId, token: token).first()!
+        let result = scraper.scrap(spreadSheetId: spreadSheetId).first()!
         XCTAssertEqual(result.value, expectedAbilities)
     }
     

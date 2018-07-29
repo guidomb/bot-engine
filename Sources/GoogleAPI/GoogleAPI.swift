@@ -9,36 +9,40 @@ import Foundation
 import ReactiveSwift
 import Result
 
+public protocol GoogleAPITokenProvider {
+    
+    func fetchToken() -> SignalProducer<GoogleAPI.Token, AnyError>
+    
+}
+
 public protocol GoogleAPIResourceExecutor {
 
-    func execute<T: Decodable>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
+    func execute<T: Decodable>(resource: GoogleAPI.Resource<T>,
                                session: URLSession) -> GoogleAPI.ResourceProducer<T>
     
-    func execute<T>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
+    func execute<T>(resource: GoogleAPI.Resource<T>,
         session: URLSession, deserializer: @escaping GoogleAPI.ResourceDeserializer<T>) -> GoogleAPI.ResourceProducer<T>
     
 }
 
 extension GoogleAPIResourceExecutor {
     
-    public func execute<T: Decodable>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
-                               session: URLSession = .shared) -> GoogleAPI.ResourceProducer<T> {
-        return execute(resource: resource, token: token, session: session) { data, _ in
+    public func execute<T: Decodable>(resource: GoogleAPI.Resource<T>, session: URLSession = .shared)
+        -> GoogleAPI.ResourceProducer<T> {
+        return execute(resource: resource, session: session) { data, _ in
             Result { try JSONDecoder().decode(T.self, from: data) }
         }
     }
     
-    public func execute(resource: GoogleAPI.Resource<Void>, token: GoogleAPI.Token,
-                               session: URLSession = .shared) -> GoogleAPI.ResourceProducer<Void> {
-        return execute(resource: resource, token: token, session: session) { data, _ in
+    public func execute(resource: GoogleAPI.Resource<Void>, session: URLSession = .shared)
+        -> GoogleAPI.ResourceProducer<Void> {
+        return execute(resource: resource, session: session) { data, _ in
             Result.success(())
         }
     }
 }
 
 public final class GoogleAPI: GoogleAPIResourceExecutor {
-    
-    public static let shared = GoogleAPI()
     
     public typealias ResourceProducer<T> = SignalProducer<T, RequestError>
     public typealias ResourceDeserializer<T> = (Data, HTTPURLResponse) -> Result<T, AnyError>
@@ -110,10 +114,19 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         
         public let type: String
         public let value: String
+        public let expiresIn: Int
+        public let creationTime: Date
         
-        public init(type: String, value: String) {
+        public init(type: String, value: String, expiresIn: Int, creationTime: Date = Date()) {
             self.type = type
             self.value = value
+            self.expiresIn = expiresIn
+            self.creationTime = creationTime
+        }
+        
+        public func isExpired() -> Bool {
+            let expirationDate = creationTime.addingTimeInterval(TimeInterval(expiresIn))
+            return Date() >= expirationDate
         }
         
         fileprivate var authorizationHeaderValue: String {
@@ -124,6 +137,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
     
     public enum RequestError: Error, CustomStringConvertible {
         
+        case fetchTokenFailure(Error)
         case missingContentTypeHeader
         case unexpectedContentType(String)
         case unexpectedErrorContentType(contentType: String, statusCode: Int)
@@ -140,6 +154,8 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         
         public var description: String {
             switch self {
+            case .fetchTokenFailure(let error):
+                return "There was an error while fetching access token: \(error)"
             case .missingContentTypeHeader:
                 return "Missing 'Content-Type' HTTP header"
             case .unexpectedContentType(let contentType):
@@ -151,11 +167,11 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
             case .unexpectedResponseStatusCode(let statusCode):
                 return "Unexpected response status code '\(statusCode)'"
             case .deserializationError(let error):
-                return "Deserialization error \(error.localizedDescription)"
+                return "Deserialization error \(error)"
             case .networkingError(let error):
-                return "Networking error \(error.localizedDescription)"
+                return "Networking error \(error)"
             case .resourceError(let error):
-                return "Resource error '\(error.localizedDescription)'"
+                return "Resource error '\(error)'"
             case .unexpectedResponseObjectType(let response):
                 return "Unexpected response object type: \(response)"
             }
@@ -201,8 +217,63 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
     public var printRequest = false
     public var responseDumpDirectoryPath: String? = .none
     
-    public func execute<T>(resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token,
-                    session: URLSession = .shared, deserializer: @escaping ResourceDeserializer<T>) -> ResourceProducer<T> {
+    private let tokenProvider: GoogleAPITokenProvider
+    
+    public init(tokenProvider: GoogleAPITokenProvider) {
+        self.tokenProvider = tokenProvider
+    }
+    
+    public func execute<T>(
+        resource: GoogleAPI.Resource<T>,
+        session: URLSession = .shared,
+        deserializer: @escaping ResourceDeserializer<T>) -> ResourceProducer<T> {
+
+        func executeResource(token: (GoogleAPI.Token)) -> ResourceProducer<T> {
+            return execute(resource: resource, token: token, deserializer: deserializer)
+        }
+        
+        return tokenProvider.fetchToken()
+            .mapError(RequestError.fetchTokenFailure)
+            .flatMap(.concat, executeResource)
+    }
+    
+    func urlRequest<T>(for resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token) -> URLRequest {
+        var request = URLRequest(url: URL(string: resource.urlPath)!)
+        request.httpMethod = resource.method.rawValue
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(token.authorizationHeaderValue, forHTTPHeaderField: "Authorization")
+        if let requestBody = resource.requestBody() {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = requestBody
+        }
+        return request
+    }
+}
+
+public extension GoogleAPI.Resource where T: Decodable {
+    
+    func execute(with executor: GoogleAPIResourceExecutor) -> GoogleAPI.ResourceProducer<T> {
+        return executor.execute(resource: self)
+    }
+    
+}
+
+public extension GoogleAPI.Resource where T == Void {
+    
+    func execute(with executor: GoogleAPIResourceExecutor) -> GoogleAPI.ResourceProducer<Void> {
+        return executor.execute(resource: self)
+    }
+    
+}
+
+fileprivate extension GoogleAPI {
+    
+    func execute<T>(
+        resource: GoogleAPI.Resource<T>,
+        token: GoogleAPI.Token,
+        session: URLSession = .shared,
+        deserializer: @escaping ResourceDeserializer<T>) -> ResourceProducer<T> {
+    
         let request = urlRequest(for: resource, token: token)
         return session.reactive.data(with: request)
             .mapError { .networkingError($0.error) }
@@ -249,39 +320,6 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
                 }
             })
     }
-    
-    func urlRequest<T>(for resource: GoogleAPI.Resource<T>, token: GoogleAPI.Token) -> URLRequest {
-        var request = URLRequest(url: URL(string: resource.urlPath)!)
-        request.httpMethod = resource.method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(token.authorizationHeaderValue, forHTTPHeaderField: "Authorization")
-        if let requestBody = resource.requestBody() {
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = requestBody
-        }
-        return request
-    }
-}
-
-public extension GoogleAPI.Resource where T: Decodable {
-    
-    func execute(using token: GoogleAPI.Token,
-                 with executor: GoogleAPIResourceExecutor = GoogleAPI.shared)  -> GoogleAPI.ResourceProducer<T> {
-        return executor.execute(resource: self, token: token)
-    }
-    
-}
-
-public extension GoogleAPI.Resource where T == Void {
-    
-    func execute(using token: GoogleAPI.Token,
-                 with executor: GoogleAPIResourceExecutor = GoogleAPI.shared)  -> GoogleAPI.ResourceProducer<Void> {
-        return executor.execute(resource: self, token: token)
-    }
-    
-}
-
-fileprivate extension GoogleAPI {
     
     func handleSuccessfulResponse<T>(_ response: HTTPURLResponse, data: Data,
                                      deserializer: ResourceDeserializer<T>) -> ResourceProducer<T> {

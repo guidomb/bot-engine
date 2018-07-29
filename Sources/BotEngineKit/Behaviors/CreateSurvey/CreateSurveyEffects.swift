@@ -45,18 +45,15 @@ extension CreateSurveyBehavior {
     
     public struct EffectPerformer: BehaviorEffectPerformer {
         
-        private let googleToken: GoogleAPI.Token
+        private let executor: GoogleAPIResourceExecutor
         private let repository: ObjectRepository
         private let slackService: SlackServiceProtocol
         
         init(services: BotEngine.Services) {
-            guard let googleToken = (services.context["GoogleToken"] as? GoogleAPI.Token) else {
-                fatalError("ERROR - Google API token is not available in services context.")
-            }
             guard let slackService = services.slackService else {
                 fatalError("ERROR - Slack service instance is not available in services.")
             }
-            self.googleToken = googleToken
+            self.executor = services.googleAPIResourceExecutor
             self.repository = services.repository
             self.slackService = slackService
         }
@@ -66,7 +63,7 @@ extension CreateSurveyBehavior {
 
             case .validateFormAccess(let formId):
                 return GoogleAPI.drive.files.get(byId: formId)
-                    .execute(using: googleToken)
+                    .execute(with: executor)
                     .then(successfulResponse(.formAccessValidated(formId: formId)))
                     .flatMapError(handleFormAccessFailure(formId: formId))
 

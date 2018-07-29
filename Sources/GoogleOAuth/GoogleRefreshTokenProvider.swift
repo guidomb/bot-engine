@@ -79,7 +79,7 @@ public class GoogleRefreshTokenProvider: TokenProvider {
     return token
   }
 
-  public func withToken(_ callback: @escaping (Token?, Error?) -> Void) throws {
+  public func withToken(delegatedAccount: String? = .none, _ callback: @escaping (Token?, Error?) -> Void) throws {
     callback(token, nil)
   }
 }

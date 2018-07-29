@@ -22,11 +22,8 @@ struct SyncMailChimpMailingList: BotEngineAction {
         guard let apiKey = ProcessInfo.processInfo.environment["MAILCHIMP_API_KEY"] else {
             fatalError("ERROR - Missing MAILCHIMP_API_KEY environmental variable")
         }
-        guard let googleToken = services.googleToken else {
-            fatalError("ERROR - Missing google token in context with key '\(ContextKey.googleToken.rawValue)'")
-        }
         
-        return MailGroupService(token: googleToken)
+        return MailGroupService(executor: services.googleAPIResourceExecutor)
             .members(in: .all)
             .mapError(BotEngine.ErrorMessage.init(error:))
             .flatMap(.concat, addMembersToMailChimpList(apiKey: apiKey))

@@ -41,9 +41,6 @@ struct SubscribeToMailGroup: BotEngineCommand {
     }
     
     func execute(using services: BotEngine.Services, parameters: MailGroupService.EveryOne, senderId: String) -> SignalProducer<String, BotEngine.ErrorMessage> {
-        guard let googleToken = services.googleToken else {
-            fatalError("ERROR - Google API is not available.")
-        }
         guard let slackService = services.slackService else {
             fatalError("ERROR - Slack service not available.")
         }
@@ -53,7 +50,7 @@ struct SubscribeToMailGroup: BotEngineCommand {
         
         return slackService.fetchUserInfo(userId: senderId)
             .mapError(BotEngine.ErrorMessage.init(error:))
-            .flatMap(.concat, subscribeUserToMailGroup(parameters, token: googleToken))
+            .flatMap(.concat, subscribeUserToMailGroup(parameters, executor: services.googleAPIResourceExecutor))
     }
     
 }
@@ -62,13 +59,13 @@ fileprivate func extractMailGroup(from input: String, using result: NSTextChecki
     return result.substring(from: input, at: 1).flatMap(MailGroupService.EveryOne.init)
 }
 
-fileprivate func subscribeUserToMailGroup(_ mailGroup: MailGroupService.EveryOne, token: GoogleAPI.Token) -> (SKCore.User) ->  SignalProducer<String, BotEngine.ErrorMessage> {
+fileprivate func subscribeUserToMailGroup(_ mailGroup: MailGroupService.EveryOne, executor: GoogleAPIResourceExecutor) -> (SKCore.User) ->  SignalProducer<String, BotEngine.ErrorMessage> {
     return { user in
         guard let email = user.profile?.email else {
             return .init(error: "I cannot subscribe. Your Slack account email address is not available.")
         }
         
-        let mailGroupService = MailGroupService(token: token)
+        let mailGroupService = MailGroupService(executor: executor)
         let member = Member(email: email, role: .member)
         
         func subscribeUnlessIncluded(_ members: [Member]) -> SignalProducer<String, BotEngine.ErrorMessage> {

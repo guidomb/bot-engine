@@ -53,8 +53,8 @@ public class DefaultTokenProvider : TokenProvider {
     tokenProvider = provider
   }
   
-  public func withToken(_ callback:@escaping (Token?, Error?) -> Void) throws {
-    try tokenProvider.withToken() {(token, error) in
+  public func withToken(delegatedAccount: String? = .none, _ callback:@escaping (Token?, Error?) -> Void) throws {
+    try tokenProvider.withToken(delegatedAccount: delegatedAccount) {(token, error) in
       self.token = token
       callback(token, error)
     }

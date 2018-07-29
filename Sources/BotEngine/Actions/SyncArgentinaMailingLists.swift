@@ -17,11 +17,7 @@ struct SyncArgentinaMailingLists: BotEngineAction {
     let startingMessage: String? = "Syncing argentinean mailing lists ..."
     
     func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer {
-        guard let googleToken = services.googleToken else {
-            fatalError("ERROR - Missing google token in context with key '\(ContextKey.googleToken.rawValue)'")
-        }
-        
-        let mailGroupService = MailGroupService(token: googleToken)
+        let mailGroupService = MailGroupService(executor: services.googleAPIResourceExecutor)
         return mailGroupService.syncBuenosAires(executeChanges: false)
             .mapError(BotEngine.ErrorMessage.init(error:))
             .flatMap(.concat, printMembers(using: services))

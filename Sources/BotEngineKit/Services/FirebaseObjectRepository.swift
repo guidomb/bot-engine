@@ -29,11 +29,11 @@ public struct FirebaseObjectRepository: ObjectRepository {
         
     }
     
-    private let token: GoogleAPI.Token
+    private let executor: GoogleAPIResourceExecutor
     private let firestore: GoogleAPI.Firestore
     
-    public init(token: GoogleAPI.Token, projectId: String, databaseId: String) {
-        self.token = token
+    public init(executor: GoogleAPIResourceExecutor, projectId: String, databaseId: String) {
+        self.executor = executor
         self.firestore = GoogleAPI.firestore(projectId: projectId, databaseId: databaseId)
     }
     
@@ -48,7 +48,7 @@ public struct FirebaseObjectRepository: ObjectRepository {
     public func fetch<ObjectType: Persistable>(byId id: Identifier<ObjectType>) -> SignalProducer<ObjectType, AnyError> {
         return firestore.documents
             .get(documentName: "\(ObjectType.collectionName)/\(id.description)")
-            .execute(using: token)
+            .execute(with: executor)
             .mapError { Error.requestError($0).asAnyError }
             .flatMap(.concat, deserialize(as: ObjectType.self))
     }
@@ -56,7 +56,7 @@ public struct FirebaseObjectRepository: ObjectRepository {
     public func fetchAll<ObjectType: Persistable>(_ objectType: ObjectType.Type) -> SignalProducer<[ObjectType], AnyError> {
         return firestore.documents
             .list(collectionId: ObjectType.collectionName)
-            .execute(using: token)
+            .execute(with: executor)
             .flatMap(.concat, fetchNextPage(collectionId: ObjectType.collectionName))
             .mapError { Error.requestError($0).asAnyError }
             .flatMap(.concat, deserialize(as: ObjectType.self))
@@ -68,7 +68,7 @@ public struct FirebaseObjectRepository: ObjectRepository {
         }
         return firestore.documents
             .delete(documentName: "\(ObjectType.collectionName)/\(id)")
-            .execute(using: token)
+            .execute(with: executor)
             .mapError { Error.requestError($0).asAnyError }
             .map { _ in object }
     }
@@ -103,7 +103,7 @@ fileprivate extension FirebaseObjectRepository {
         }
         return firestore.documents
             .createDocument(collectionId: ObjectType.collectionName, document: document)
-            .execute(using: token)
+            .execute(with: executor)
             .mapError { Error.requestError($0).asAnyError }
             .map(object.updateId)
     }
@@ -114,7 +114,7 @@ fileprivate extension FirebaseObjectRepository {
         }
         return firestore.documents
             .patch(document: document, updateMask: .allFieldKeys(of: document))
-            .execute(using: token)
+            .execute(with: executor)
             .mapError { Error.requestError($0).asAnyError }
             .flatMap(.concat, deserialize(as: ObjectType.self))
     }
@@ -129,7 +129,7 @@ fileprivate extension FirebaseObjectRepository {
             options.pageToken = nextPageToken
             return self.firestore.documents
                 .list(collectionId: collectionId, options: options)
-                .execute(using: self.token)
+                .execute(with: self.executor)
                 .flatMap(.concat) {
                     // TODO limit the amount of recursive requests
                     self.fetchNextPage(collectionId: collectionId)(documentsList.concat(with: $0))

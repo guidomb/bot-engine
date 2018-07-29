@@ -275,8 +275,8 @@ public extension BotEngine {
     static func slackBotEngine(
         server: BotEngine.HTTPServer,
         repository: ObjectRepository,
+        googleAPIResourceExecutor: GoogleAPIResourceExecutor,
         outputChannel: ChannelId,
-        context: [String : Any] = [:],
         environment: [String : String] = ProcessInfo.processInfo.environment) -> BotEngine {
         
         guard let token = environment["SLACK_API_TOKEN"] else {
@@ -304,7 +304,7 @@ public extension BotEngine {
             outputChannel: outputChannel,
             services: BotEngine.Services(
                 repository: repository,
-                context: context,
+                googleAPIResourceExecutor: googleAPIResourceExecutor,
                 slackService: slackService
             )
         )

@@ -19,7 +19,6 @@ public final class MockGoogleAPIResourceExecutor: GoogleAPIResourceExecutor {
     
     public func execute<T>(
         resource: GoogleAPI.Resource<T>,
-        token: GoogleAPI.Token,
         session: URLSession,
         deserializer: @escaping GoogleAPI.ResourceDeserializer<T>) -> GoogleAPI.ResourceProducer<T> {
         if let data = self.response {

@@ -146,20 +146,11 @@ struct StartCommand: CommandProtocol {
     let function = "Starts the bot engine server"
     
     func run(_ options: Options) -> Result<(), CommandLineError> {
-        
-        func isEnabled(_ keyPath: KeyPath<LoggerOptions, Bool>) -> Bool {
-            return options.loggerOptions.verbose || options.loggerOptions[keyPath: keyPath]
-        }
-
         if options.loggerOptions.verbose {
             print("INFO - Verbose mode enabled")
         }
         
-        GoogleAPI.shared.printDebugCurlCommand = isEnabled(\.googleApiPrintCurl)
-        GoogleAPI.shared.printRequest = isEnabled(\.googleApiPrintRequest)
-        FirestoreDocument.printSerializationDebugLog = isEnabled(\.firestorePrintSerializationLog)
-
-        let dependenciesProducer = startHTTPServer(with: options).flatMap(.concat, fetchGoogleAPIToken(with: options))
+        let dependenciesProducer = startHTTPServer(with: options).map(contextBuilder(with: options))
         guard let result = dependenciesProducer.first() else {
             return .failure(.cannotBootstrapDependencies)
         }
@@ -176,10 +167,11 @@ struct StartCommand: CommandProtocol {
 
 fileprivate extension StartCommand {
     
+    
     struct Context {
         
         let httpServer: BotEngine.HTTPServer
-        let googleToken: GoogleAPI.Token
+        let googleAPIResourceExecutor: GoogleAPIResourceExecutor
         let options: Options
         
     }
@@ -191,49 +183,11 @@ fileprivate extension StartCommand {
             .on(starting: { print("INFO - Starting HTTP server at port '\(options.port)'") })
     }
     
-    func fetchGoogleAPIToken(with options: Options) -> (BotEngine.HTTPServer) -> SignalProducer<Context, CommandLineError> {
+    func contextBuilder(with options: Options) -> (BotEngine.HTTPServer) -> Context {
         return { httpServer in
-            let env = ProcessInfo.processInfo.environment
-            let tokenProducer: SignalProducer<GoogleAPI.Token, CommandLineError>
-            if let gcloudEncodedCredentials = env["GCLOUD_ENCODED_CREDENTIALS"].flatMap({ Data(base64Encoded: $0) }) {
-                tokenProducer = self.fetchGoogleAPIToken(
-                    encodedCredentials: gcloudEncodedCredentials,
-                    delegatedAccount: options.delegatedAccount
-                )
-            } else if let gcloudCredentialsFile = options.credentialsFile  {
-                tokenProducer = self.fetchGoogleAPIToken(
-                    credentialsFile: gcloudCredentialsFile,
-                    delegatedAccount: options.delegatedAccount
-                )
-            } else {
-                tokenProducer = SignalProducer<GoogleAPI.Token, AnyError> { try GoogleAuth().login(with: httpServer) }
-                    .mapError { _ in .cannotObtainGoogleAPIAccessToken }
-            }
-            return tokenProducer.map { Context(httpServer: httpServer, googleToken: $0, options: options) }
-                .on(starting: {
-                    if let delegatedAccount = options.delegatedAccount {
-                        print("INFO - Delegating GCloud service account to '\(delegatedAccount)'")
-                    }
-                })
+            let googleAuth = GoogleAuth(options: options, server: httpServer)
+            return Context(httpServer: httpServer, googleAPIResourceExecutor: googleAuth.executor, options: options)
         }
-    }
-    
-    func fetchGoogleAPIToken(credentialsFile: URL, delegatedAccount: String?) -> SignalProducer<GoogleAPI.Token, CommandLineError> {
-        return GoogleAuth().login(
-            serviceAccountCredentials: credentialsFile,
-            delegatedAccount: delegatedAccount
-        )
-        .mapError { _ in .cannotObtainGoogleAPIAccessToken }
-        .on(starting: { print("INFO - Using google service account credentials file: '\(credentialsFile)'") })
-    }
-    
-    func fetchGoogleAPIToken(encodedCredentials: Data, delegatedAccount: String?) -> SignalProducer<GoogleAPI.Token, CommandLineError> {
-        return GoogleAuth().login(
-            serviceAccountCredentials: encodedCredentials,
-            delegatedAccount: delegatedAccount
-        )
-        .mapError { _ in .cannotObtainGoogleAPIAccessToken }
-        .on(starting: { print("INFO - Using google service account encoded credentials") })
     }
     
     func startBotEngine(with context: Context) -> Never {
@@ -241,14 +195,12 @@ fileprivate extension StartCommand {
         let engine = BotEngine.slackBotEngine(
             server: context.httpServer,
             repository: FirebaseObjectRepository(
-                token: context.googleToken,
+                executor: context.googleAPIResourceExecutor,
                 projectId: "feedi-dev",
                 databaseId: "(default)"
             ),
-            outputChannel: context.options.outputChannel,
-            context: [
-                ContextKey.googleToken.rawValue : context.googleToken
-            ]
+            googleAPIResourceExecutor: context.googleAPIResourceExecutor,
+            outputChannel: context.options.outputChannel
         )
         
         // Register behaviors
@@ -285,7 +237,7 @@ fileprivate extension StartCommand {
     }
 }
 
-fileprivate extension StartCommand.Options {
+extension StartCommand.Options {
     
     var credentialsFile: URL? {
         return self.gcloudOptions.credentialsFile.map(URL.init(fileURLWithPath:))

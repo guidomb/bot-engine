@@ -41,10 +41,10 @@ public struct MailGroupService {
         
     }
     
-    private let token: GoogleAPI.Token
+    private let executor: GoogleAPIResourceExecutor
     
-    public init(token: GoogleAPI.Token) {
-        self.token = token
+    public init(executor: GoogleAPIResourceExecutor) {
+        self.executor = executor
     }
     
     public func syncBuenosAires(executeChanges: Bool = true) -> SignalProducer<([Member], [Member]), GoogleAPI.RequestError> {
@@ -53,14 +53,14 @@ public struct MailGroupService {
             return GoogleAPI.directory
                 .members(for: EveryOne.buenosAires.email)
                 .insert(member: member)
-                .execute(using: token)
+                .execute(with: executor)
         }
         
         func deleteFromBuenosAires(member: Member) -> SignalProducer<Member, GoogleAPI.RequestError> {
             return GoogleAPI.directory
                 .members(for: EveryOne.buenosAires.email)
                 .delete(member: member.email)
-                .execute(using: token)
+                .execute(with: executor)
                 .map { _ in member }
         }
         
@@ -96,7 +96,7 @@ public struct MailGroupService {
             return GoogleAPI.directory
                 .members(for: group.email)
                 .list(options: options)
-                .execute(using: token)
+                .execute(with: executor)
                 .flatMap(.concat) { memberList -> SignalProducer<[Member], GoogleAPI.RequestError> in
                     if let nextPageToken = memberList.nextPageToken {
                         return fetchMembersPage(pageToken: nextPageToken).map { memberList.members + $0 }
@@ -114,6 +114,6 @@ public struct MailGroupService {
         return GoogleAPI.directory
             .members(for: group.email)
             .insert(member: member)
-            .execute(using: token)
+            .execute(with: executor)
     }
 }

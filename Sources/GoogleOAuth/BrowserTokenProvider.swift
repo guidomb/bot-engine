@@ -139,7 +139,7 @@ public class BrowserTokenProvider: TokenProvider {
         openURL(urlComponents.url!)
     }
     
-    public func withToken(_ callback: @escaping (Token?, Error?) -> Void) throws {
+    public func withToken(delegatedAccount: String? = .none, _ callback: @escaping (Token?, Error?) -> Void) throws {
         callback(token, nil)
     }
 }

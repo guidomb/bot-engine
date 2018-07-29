@@ -51,9 +51,8 @@ public extension GoogleAPI {
 
 public extension GoogleAPI.Resource where T == ScriptExecutionResponse<Form> {
     
-    func execute(using token: GoogleAPI.Token,
-                 with executor: GoogleAPIResourceExecutor = GoogleAPI.shared) -> GoogleAPI.FormProducer {
-        return executor.execute(resource: self, token: token)
+    func execute(with executor: GoogleAPIResourceExecutor) -> GoogleAPI.FormProducer {
+        return executor.execute(resource: self)
             .mapError(GoogleAPI.FormRequestError.requestError)
             .flatMap(.concat) { scriptResponse -> GoogleAPI.FormProducer in
                 switch scriptResponse {
