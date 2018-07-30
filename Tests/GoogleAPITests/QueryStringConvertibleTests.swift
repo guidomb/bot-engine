@@ -30,7 +30,6 @@ class QueryStringConvertibleTest: XCTestCase {
         options.roles = .owner
         
         let queryString = options.asQueryString.split(separator: "&")
-        print(queryString)
         XCTAssertTrue(queryString.count == 4)
         XCTAssertTrue(queryString.contains("pageToken=foo"))
         XCTAssertTrue(queryString.contains("includeDerivedMembership=true"))
