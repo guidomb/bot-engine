@@ -193,7 +193,6 @@ fileprivate extension FirestoreDocumentList {
 extension CreateSurveyBehavior.JobMessage: JSONRepresentable {
     
     public func asJson() throws -> [String : Any]? {
-        print("asJSON -> \(self)")
         return (try JSONSerialization.jsonObject(with: asJsonData(), options: .allowFragments)) as? [String : Any]
     }
     
@@ -201,7 +200,6 @@ extension CreateSurveyBehavior.JobMessage: JSONRepresentable {
 extension Survey.Destinatary: JSONRepresentable {
     
     public func asJson() throws -> [String : Any]? {
-        print("asJSON -> \(self)")
         return (try JSONSerialization.jsonObject(with: asJsonData(), options: .allowFragments)) as? [String : Any]
     }
     

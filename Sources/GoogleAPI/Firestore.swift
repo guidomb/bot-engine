@@ -538,10 +538,6 @@ public extension FirestoreDocument {
     }
 
     static func canBeCastToSimpleValue(_ value: Any) -> Bool {
-        guard !(value is NSNumber) else {
-            print("WARN - Cannot cast as simple value \(value) because NSNumber can be cast to any number type.")
-            return false
-        }
         return  value as? Bool != nil   ||
                 value as? Int != nil    ||
                 value as? Double != nil ||
