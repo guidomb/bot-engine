@@ -21,10 +21,6 @@ extension JSONRepresentable {
         return try JSONEncoder().encode(self)
     }
 
-    public func asJson() throws -> [String : Any]? {
-        return (try JSONSerialization.jsonObject(with: asJsonData(), options: .allowFragments)) as? [String : Any]
-    }
-
 }
 
 public extension GoogleAPI {
@@ -542,6 +538,10 @@ public extension FirestoreDocument {
     }
 
     static func canBeCastToSimpleValue(_ value: Any) -> Bool {
+        guard !(value is NSNumber) else {
+            print("WARN - Cannot cast as simple value \(value) because NSNumber can be cast to any number type.")
+            return false
+        }
         return  value as? Bool != nil   ||
                 value as? Int != nil    ||
                 value as? Double != nil ||

@@ -186,7 +186,55 @@ fileprivate extension FirestoreDocumentList {
 
 // TODO autogenerate this protocol conformances
 // for all persistable object and its properties recursively
-extension CreateSurveyBehavior.JobMessage: JSONRepresentable {}
-extension Survey.Destinatary: JSONRepresentable {}
-extension SchedulerInterval: JSONRepresentable {}
-extension DayTime: JSONRepresentable {}
+//
+// This method cannot be implemented as an extension over JSONRepresentable
+// because when custom implementation is needed the extension method
+// is always called due to static dispatching.
+extension CreateSurveyBehavior.JobMessage: JSONRepresentable {
+    
+    public func asJson() throws -> [String : Any]? {
+        print("asJSON -> \(self)")
+        return (try JSONSerialization.jsonObject(with: asJsonData(), options: .allowFragments)) as? [String : Any]
+    }
+    
+}
+extension Survey.Destinatary: JSONRepresentable {
+    
+    public func asJson() throws -> [String : Any]? {
+        print("asJSON -> \(self)")
+        return (try JSONSerialization.jsonObject(with: asJsonData(), options: .allowFragments)) as? [String : Any]
+    }
+    
+}
+extension SchedulerInterval: JSONRepresentable {
+    
+    // Manual implementation is needed to avoid
+    // https://bugs.swift.org/browse/SR-8407 because
+    // JSONSerialization uses NSNumber object
+    // which triger cast from Int to Bool.
+    public func asJson() throws -> [String : Any]? {
+        var json: [String : Any] = [:]
+        switch self {
+        case .every(let seconds):
+            json["every"] = ["seconds" : seconds]
+        case .everyDay(let at):
+            json["everyDay"] = ["at" : try at.asJson()]
+        }
+        return json
+    }
+    
+}
+extension DayTime: JSONRepresentable {
+    
+    // Manual implementation is needed to avoid
+    // https://bugs.swift.org/browse/SR-8407 because
+    // JSONSerialization uses NSNumber object
+    // which triger cast from Int to Bool.
+    public func asJson() throws -> [String : Any]? {
+        var json: [String : Any] = [:]
+        json["hours"] = self.hours
+        json["minutes"] = self.minutes
+        json["timeZone"] = ["identifier" : self.timeZone.identifier]
+        return json
+    }
+}
