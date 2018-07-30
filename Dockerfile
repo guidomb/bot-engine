@@ -1,5 +1,5 @@
 #FROM ibmcom/swift-ubuntu-runtime:4.1
-FROM guidomb/swift-snapshots:16.04-4.2-2018-06-21
+FROM guidomb/swift-snapshots:16.04-4.2-2018-07-28
 MAINTAINER Guido Marucci Blas
 LABEL Description="Dockerfile that provides Swift's runtime to embed the BotEngine application"
 
