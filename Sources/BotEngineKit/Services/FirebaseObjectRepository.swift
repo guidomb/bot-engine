@@ -190,20 +190,9 @@ fileprivate extension FirestoreDocumentList {
 // This method cannot be implemented as an extension over JSONRepresentable
 // because when custom implementation is needed the extension method
 // is always called due to static dispatching.
-extension CreateSurveyBehavior.JobMessage: JSONRepresentable {
-    
-    public func asJson() throws -> [String : Any]? {
-        return (try JSONSerialization.jsonObject(with: asJsonData(), options: .allowFragments)) as? [String : Any]
-    }
-    
-}
-extension Survey.Destinatary: JSONRepresentable {
-    
-    public func asJson() throws -> [String : Any]? {
-        return (try JSONSerialization.jsonObject(with: asJsonData(), options: .allowFragments)) as? [String : Any]
-    }
-    
-}
+extension CreateSurveyBehavior.JobMessage: JSONRepresentable {}
+extension Survey.Destinatary: JSONRepresentable {}
+
 extension SchedulerInterval: JSONRepresentable {
     
     // Manual implementation is needed to avoid

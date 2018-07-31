@@ -20,6 +20,10 @@ extension JSONRepresentable {
     public func asJsonData() throws -> Data {
         return try JSONEncoder().encode(self)
     }
+    
+    public func asJson() throws -> [String : Any]? {
+        return (try JSONSerialization.jsonObject(with: asJsonData(), options: .allowFragments)) as? [String : Any]
+    }
 
 }
 
