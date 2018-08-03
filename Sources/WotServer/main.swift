@@ -26,6 +26,8 @@ let configuration = BotEngineCLI.Configuration(
 let botEngine = BotEngineCLI(configuration: configuration) { engine in
     // Register commands
     engine.registerCommand(SubscribeToMailGroup())
+    engine.registerCommand(UnsubscribeMeFromMailGroup())
+    engine.registerCommand(ListEveryoneMailGroups())
     
     // Register schedulable actions
     engine.registerActions(
