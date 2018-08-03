@@ -182,7 +182,7 @@ public struct FirestoreCreateDocumentOptions: QueryStringConvertible {
 
 }
 
-public struct FirestoreListDocumentsOptions: QueryStringConvertible {
+public struct FirestoreListDocumentsOptions: PaginableFetcherOptions, QueryStringConvertible {
 
     public var pageSize: UInt?
     public var pageToken: String?
@@ -254,7 +254,7 @@ public struct FirestorePatchDocumentOptions: QueryStringConvertible {
 
 }
 
-public struct FirestoreDocumentList: Decodable {
+public struct FirestoreDocumentList: Paginable, Decodable {
 
     public let documents: [FirestoreDocument]?
     public let nextPageToken: String?

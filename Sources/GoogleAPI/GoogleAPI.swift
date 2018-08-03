@@ -42,6 +42,18 @@ extension GoogleAPIResourceExecutor {
     }
 }
 
+public protocol Paginable {
+    
+    var nextPageToken: String? { get }
+    
+}
+
+public protocol PaginableFetcherOptions {
+    
+    var pageToken: String? { get set }
+    
+}
+
 public final class GoogleAPI: GoogleAPIResourceExecutor {
     
     public typealias ResourceProducer<T> = SignalProducer<T, RequestError>
@@ -264,6 +276,37 @@ public extension GoogleAPI.Resource where T == Void {
         return executor.execute(resource: self)
     }
     
+}
+
+public func fetchAllPages<Element, Options: PaginableFetcherOptions, PaginableType: Paginable>(
+    options: Options,
+    using fetcher: @escaping (Options) -> GoogleAPI.Resource<PaginableType>,
+    executor: GoogleAPIResourceExecutor,
+    extract keyPath: KeyPath<PaginableType, [Element]?>) -> GoogleAPI.ResourceProducer<[Element]> where PaginableType: Decodable {
+    let resourceProducer: (Options) -> GoogleAPI.ResourceProducer<PaginableType> = {
+        let resource: GoogleAPI.Resource<PaginableType> = fetcher($0)
+        return executor.execute(resource: resource)
+    }
+    return fetchAllPages(options: options, using: resourceProducer, extract: keyPath)
+}
+
+public func fetchAllPages<Element, Options: PaginableFetcherOptions, PaginableType: Paginable>(
+    options: Options,
+    using fetcher: @escaping (Options) -> GoogleAPI.ResourceProducer<PaginableType>,
+    extract keyPath: KeyPath<PaginableType, [Element]?>) -> GoogleAPI.ResourceProducer<[Element]> {
+    var _options = options
+    _options.pageToken = .none
+    return fetcher(_options).flatMap(.concat) { (paginable: PaginableType) -> SignalProducer<[Element], GoogleAPI.RequestError> in
+        guard let elements = paginable[keyPath: keyPath] else {
+            return .init(value: [])
+        }
+        if let nextPageToken = paginable.nextPageToken {
+            _options.pageToken = nextPageToken
+            return fetcher(_options).map { elements + ($0[keyPath: keyPath] ?? []) }
+        } else {
+            return .init(value: elements)
+        }
+    }
 }
 
 fileprivate extension GoogleAPI {

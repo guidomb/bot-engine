@@ -54,12 +54,15 @@ public struct FirebaseObjectRepository: ObjectRepository {
     }
     
     public func fetchAll<ObjectType: Persistable>(_ objectType: ObjectType.Type) -> SignalProducer<[ObjectType], AnyError> {
-        return firestore.documents
-            .list(collectionId: ObjectType.collectionName)
-            .execute(with: executor)
-            .flatMap(.concat, fetchNextPage(collectionId: ObjectType.collectionName))
-            .mapError { Error.requestError($0).asAnyError }
-            .flatMap(.concat, deserialize(as: ObjectType.self))
+        let fetcher = { self.firestore.documents.list(collectionId: ObjectType.collectionName, options: $0) }
+        return fetchAllPages(
+            options: FirestoreListDocumentsOptions(),
+            using: fetcher,
+            executor: executor,
+            extract: \FirestoreDocumentList.documents
+        )
+        .mapError { Error.requestError($0).asAnyError }
+        .flatMap(.concat, deserialize(as: ObjectType.self))
     }
     
     public func delete<ObjectType: Persistable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
@@ -119,29 +122,8 @@ fileprivate extension FirebaseObjectRepository {
             .flatMap(.concat, deserialize(as: ObjectType.self))
     }
     
-    func fetchNextPage(collectionId: String) -> (FirestoreDocumentList) -> SignalProducer<FirestoreDocumentList, GoogleAPI.RequestError> {
-        return { documentsList in
-            guard let nextPageToken = documentsList.nextPageToken else {
-                return SignalProducer(value: documentsList)
-            }
-            
-            var options = FirestoreListDocumentsOptions()
-            options.pageToken = nextPageToken
-            return self.firestore.documents
-                .list(collectionId: collectionId, options: options)
-                .execute(with: self.executor)
-                .flatMap(.concat) {
-                    // TODO limit the amount of recursive requests
-                    self.fetchNextPage(collectionId: collectionId)(documentsList.concat(with: $0))
-                }
-        }
-    }
-    
-    func deserialize<ObjectType: Persistable>(as objectType: ObjectType.Type) -> (FirestoreDocumentList) -> SignalProducer<[ObjectType], AnyError> {
-        return { documentList in
-            guard let documents = documentList.documents else {
-                return SignalProducer(value: [])
-            }
+    func deserialize<ObjectType: Persistable>(as objectType: ObjectType.Type) -> ([FirestoreDocument]) -> SignalProducer<[ObjectType], AnyError> {
+        return { documents in
             do {
                 return SignalProducer(value: try documents.map { try $0.deserialize() })
             } catch let error {

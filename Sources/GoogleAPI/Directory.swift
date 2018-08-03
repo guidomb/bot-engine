@@ -87,7 +87,7 @@ public extension GoogleAPI {
 
 // MARK :- Data models
 
-public struct ListMembersOptions: QueryStringConvertible {
+public struct ListMembersOptions: PaginableFetcherOptions, QueryStringConvertible {
     
     public var includeDerivedMembership: Bool?
     public var maxResults: Int?
@@ -104,12 +104,12 @@ public struct ListMembersOptions: QueryStringConvertible {
 
 public struct UserList: Decodable {
     
-    public let users: [User]
+    public let users: [User]?
     public let nextPageToken: String?
     
 }
 
-public struct ListUsersOptions: QueryStringConvertible {
+public struct ListUsersOptions: PaginableFetcherOptions, QueryStringConvertible {
     
     public enum SortOder: String {
         
@@ -151,9 +151,9 @@ public struct ListUsersOptions: QueryStringConvertible {
     
 }
 
-public struct MemberList: Decodable {
+public struct MemberList: Paginable, Decodable {
     
-    public let members: [Member]
+    public let members: [Member]?
     public let nextPageToken: String?
 
 }
