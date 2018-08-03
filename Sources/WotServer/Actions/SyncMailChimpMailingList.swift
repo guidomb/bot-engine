@@ -18,7 +18,7 @@ struct SyncMailChimpMailingList: BotEngineAction {
     
     let startingMessage: String? = "Syncing MailChimp mailing list ..."
     
-    func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer {
+    func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputMessageProducer {
         guard let apiKey = ProcessInfo.processInfo.environment["MAILCHIMP_API_KEY"] else {
             fatalError("ERROR - Missing MAILCHIMP_API_KEY environmental variable")
         }
@@ -31,7 +31,7 @@ struct SyncMailChimpMailingList: BotEngineAction {
     
 }
 
-fileprivate func addMembersToMailChimpList(apiKey: String) -> ([Member]) -> BotEngine.ActionOutputProducer {
+fileprivate func addMembersToMailChimpList(apiKey: String) -> ([Member]) -> BotEngine.ActionOutputMessageProducer {
     return { members in
         MailChimp(apiKey: apiKey).lists
             .update(list: mailingListId, members: members.map(asMailChimpMember))

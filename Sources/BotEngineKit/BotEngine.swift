@@ -16,7 +16,7 @@ public protocol BotEngineAction {
     
     var startingMessage: String? { get }
     
-    func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer
+    func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputMessageProducer
     
 }
 
@@ -39,7 +39,7 @@ public protocol BotEngineCommand {
     func parseInput(_ input: String) -> ParametersType?
     
     func execute(using services: BotEngine.Services, parameters: ParametersType, senderId: String)
-        -> SignalProducer<String, BotEngine.ErrorMessage>
+        -> BotEngine.Producer<String>
     
 }
 
@@ -134,7 +134,8 @@ public final class BotEngine {
         
     }
     
-    public typealias ActionOutputProducer = SignalProducer<BotEngine.ActionOutputMessage, BotEngine.ErrorMessage>
+    public typealias Producer<T> = SignalProducer<T, BotEngine.ErrorMessage>
+    public typealias ActionOutputMessageProducer = Producer<ActionOutputMessage>
     public typealias InputProducer = SignalProducer<Input, NoError>
     public typealias MessageWithContext = (message: BehaviorMessage, context: BehaviorMessage.Context)
     public typealias BehaviorFactory = (MessageWithContext) -> ActiveBehavior?
@@ -249,7 +250,7 @@ public final class BotEngine {
         boundActions[command] = BoundAction(action: action, permission: permission)
     }
     
-    public func executeAction(_ action: BotEngineAction) -> ActionOutputProducer {
+    public func executeAction(_ action: BotEngineAction) -> ActionOutputMessageProducer {
         return action.execute(using: services)
     }
     

@@ -16,7 +16,7 @@ struct SyncArgentinaMailingLists: BotEngineAction {
     
     let startingMessage: String? = "Syncing argentinean mailing lists ..."
     
-    func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputProducer {
+    func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputMessageProducer {
         let mailGroupService = MailGroupService(executor: services.googleAPIResourceExecutor)
         return mailGroupService.syncBuenosAires(executeChanges: false)
             .mapError(BotEngine.ErrorMessage.init(error:))
@@ -26,7 +26,7 @@ struct SyncArgentinaMailingLists: BotEngineAction {
 }
 
 fileprivate func printMembers(using services: BotEngine.Services) -> ((inserted: [Member], deleted: [Member]))
-    -> BotEngine.ActionOutputProducer {
+    -> BotEngine.ActionOutputMessageProducer {
     return { members in
         guard !members.inserted.isEmpty && !members.deleted.isEmpty else {
             return .init(value: "There are no members from azurduy, guemes and buenos-aires mailing lists to be synced")
