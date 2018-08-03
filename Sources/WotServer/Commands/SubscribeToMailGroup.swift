@@ -56,7 +56,7 @@ struct SubscribeToMailGroup: BotEngineCommand {
 }
 
 fileprivate func extractMailGroup(from input: String, using result: NSTextCheckingResult) -> MailGroupService.EveryOne? {
-    return result.substring(from: input, at: 1).flatMap(MailGroupService.EveryOne.init)
+    return result.substring(from: input, at: 1).flatMap(MailGroupService.EveryOne.init(rawValue:))
 }
 
 fileprivate func subscribeUserToMailGroup(_ mailGroup: MailGroupService.EveryOne, executor: GoogleAPIResourceExecutor) -> (SKCore.User) ->  SignalProducer<String, BotEngine.ErrorMessage> {

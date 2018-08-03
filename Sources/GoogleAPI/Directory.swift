@@ -73,9 +73,35 @@ public extension GoogleAPI {
             
         }
         
+        public struct Groups {
+            
+            private let basePath: String
+            
+            fileprivate init(basePath: String) {
+                self.basePath = "\(basePath)/groups"
+            }
+            
+            // https://developers.google.com/admin-sdk/directory/v1/reference/groups/list
+            public func list(options: ListGroupsOptions = .init()) -> Resource<GroupList> {
+                return Resource(
+                    path: basePath,
+                    queryParameters: options,
+                    method: .get
+                )
+            }
+            
+            public func list(for member: Member) -> Resource<GroupList> {
+                var options = ListGroupsOptions()
+                options.customer = member.email
+                return list(options: options)
+            }
+            
+        }
+        
         fileprivate init() {}
 
         public var users: Users { return Users(basePath: basePath) }
+        public var groups: Groups { return Groups(basePath: basePath) }
         
         public func members(for groupKey: String) -> Members { return Members(basePath: basePath, groupKey: groupKey) }
         
@@ -102,7 +128,44 @@ public struct ListMembersOptions: PaginableFetcherOptions, QueryStringConvertibl
     
 }
 
-public struct UserList: Decodable {
+public struct ListGroupsOptions: PaginableFetcherOptions, QueryStringConvertible {
+    
+    public var customer: String?
+    public var domain: String?
+    public var maxResults: Int?
+    public var pageToken: String?
+    public var roles: Member.Role?
+    
+    public var asQueryString: String {
+        return toQueryString(object: self) ?? ""
+    }
+    
+    public init() { }
+    
+}
+
+public struct GroupList: Paginable, Decodable {
+    
+    public let groups: [Group]?
+    public let nextPageToken: String?
+    
+}
+
+public struct Group: Codable {
+    
+    public let id: String
+    public let email: String
+    public let name: String
+    public let directMembersCount: String
+    public let description: String
+    public let adminCreated: Bool
+    public let aliases: [String]?
+    public let nonEditableAliases: [String]?
+
+    
+}
+
+public struct UserList: Paginable, Decodable {
     
     public let users: [User]?
     public let nextPageToken: String?

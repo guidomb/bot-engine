@@ -9,6 +9,7 @@ import Foundation
 import ReactiveSwift
 import GoogleAPI
 import Result
+import BotEngineKit
 
 public struct MailGroupService {
     
@@ -36,6 +37,16 @@ public struct MailGroupService {
             } else {
                 return "everyone-\(self.rawValue)@wolox.com.ar"
                 
+            }
+        }
+        
+        public init?(email: String) {
+            if email == "everyone@wolox.com.ar" {
+                self = .all
+            } else if let value = parseEmail(email) {
+                self = value
+            } else {
+                return nil
             }
         }
         
@@ -89,25 +100,12 @@ public struct MailGroupService {
     }
  
     public func members(in group: EveryOne) -> SignalProducer<[Member], GoogleAPI.RequestError> {
-        
-        func fetchMembersPage(pageToken: String? = .none) -> SignalProducer<[Member], GoogleAPI.RequestError> {
-            var options = ListMembersOptions()
-            options.pageToken = pageToken
-            return GoogleAPI.directory
-                .members(for: group.email)
-                .list(options: options)
-                .execute(with: executor)
-                .flatMap(.concat) { memberList -> SignalProducer<[Member], GoogleAPI.RequestError> in
-                    if let nextPageToken = memberList.nextPageToken {
-                        return fetchMembersPage(pageToken: nextPageToken).map { memberList.members + $0 }
-                    } else {
-                        return .init(value: memberList.members)
-                    }
-                }
-        }
-        
-        return fetchMembersPage()
-
+        return fetchAllPages(
+            options: ListMembersOptions(),
+            using: GoogleAPI.directory.members(for: group.email).list(options:),
+            executor: executor,
+            extract: \.members
+        )
     }
     
     public func subscribeMember(_ member: Member, to group: EveryOne) -> SignalProducer<Member, GoogleAPI.RequestError> {
@@ -116,4 +114,49 @@ public struct MailGroupService {
             .insert(member: member)
             .execute(with: executor)
     }
+    
+    public func subscriptions(for member: Member) -> SignalProducer<[EveryOne], GoogleAPI.RequestError> {
+        var options = ListGroupsOptions()
+        options.domain = "wolox.com.ar"
+        return fetchAllPages(
+            options: options,
+            using: GoogleAPI.directory.groups.list(options:),
+            executor: executor,
+            extract: \.groups
+        )
+        .map(filterOnlyEveryOneGroups)
+    }
+    
+    public func unsubscribe(member: Member, from mailGroup: EveryOne) -> SignalProducer<(Member, EveryOne), GoogleAPI.RequestError> {
+        return GoogleAPI.directory
+            .members(for: mailGroup.email)
+            .delete(member: member.email)
+            .execute(with: executor)
+            .map { (member, mailGroup) }
+    }
+    
+}
+
+fileprivate let everyoneEmailRegex: NSRegularExpression = {
+    let subscribables = MailGroupService.EveryOne
+        .subscribables
+        .map { $0.rawValue }
+        .joined(separator: "|")
+    return try! NSRegularExpression(
+        pattern: "^everyone-(\(subscribables))@wolox.com.ar$",
+        options: .caseInsensitive
+    )
+}()
+
+fileprivate func filterOnlyEveryOneGroups(_ groups: [Group]) -> [MailGroupService.EveryOne]{
+    return groups.compactMap { MailGroupService.EveryOne.init(email: $0.email) }
+}
+
+fileprivate func parseEmail(_ email: String)  -> MailGroupService.EveryOne? {
+    return email.firstMatch(regex: everyoneEmailRegex).flatMap(extractMailGroup(from: email))
+}
+
+
+fileprivate func extractMailGroup(from input: String) -> (NSTextCheckingResult) -> MailGroupService.EveryOne? {
+    return { $0.substring(from: input, at: 1).flatMap(MailGroupService.EveryOne.init(rawValue:)) }
 }
