@@ -55,7 +55,7 @@ class FirestoreSerializationTests: XCTestCase {
                     )
                 ],
                 deadline: date,
-                creatorId: "U02F7KUJM"
+                creatorId: BotEngine.UserId(value: "U02F7KUJM")
             ),
             destinataries: Set(["U02FQLM2P"])
         )
