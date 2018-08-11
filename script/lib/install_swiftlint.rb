@@ -9,7 +9,7 @@ def install_swiftlint(swiftlint_version = nil)
   puts " → Donwloading SwiftLint version '#{swiftlint_version}' ..."
   `curl --progress-bar -L -O https://github.com/realm/SwiftLint/releases/download/#{swiftlint_version}/portable_swiftlint.zip`
   FileUtils.rm_rf(swiftlint_dir) if File.exist?(swiftlint_dir)
-  FileUtils.mkdir(swiftlint_dir)
+  FileUtils.mkdir_p(swiftlint_dir)
   `unzip -d bin/swiftlint portable_swiftlint.zip`
   FileUtils.rm_rf("portable_swiftlint.zip")
   swiftlint_installed_version = `bin/swiftlint/swiftlint version`.strip
