@@ -222,7 +222,7 @@ public struct SlackOutputRenderer: BehaviorOutputRenderer {
     
     let slackService: SlackServiceProtocol
     
-    fileprivate let (signal, observer) = Signal<(answer: String, channel: ChannelId, senderId: String), NoError>.pipe()
+    fileprivate let (signal, observer) = Signal<(answer: String, channel: ChannelId, senderId: BotEngine.UserId), NoError>.pipe()
     
     public init(slackService: SlackServiceProtocol) {
         self.slackService = slackService
@@ -260,7 +260,7 @@ public struct SlackOutputRenderer: BehaviorOutputRenderer {
             .startWithResult { result in
                 switch result {
                 case .success((let answer, let actualChannel)):
-                    self.observer.send(value: (answer.text, actualChannel, channel))
+                    self.observer.send(value: (answer.text, actualChannel, BotEngine.UserId(value: channel)))
                 case .failure(let error):
                     self.handle(error: error, for: channel)
                 }
@@ -591,7 +591,7 @@ fileprivate func eventToBehaviorMessage(_ event: Event) -> BehaviorMessage? {
             let userId = event.user?.id else {
         return nil
     }
-    return BehaviorMessage(channel: channel, senderId: userId, text: messageText)
+    return BehaviorMessage(channel: channel, senderId: BotEngine.UserId(value: userId), text: messageText)
 }
 
 fileprivate func addContextToBehaviorMessage(slackService: SlackService) -> (BehaviorMessage) -> BotEngine.InputProducer {

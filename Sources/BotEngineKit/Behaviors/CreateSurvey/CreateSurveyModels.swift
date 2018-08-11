@@ -80,7 +80,7 @@ public struct Survey: Codable {
     let formId: String
     let destinataries: [Destinatary]
     let deadline: Date
-    let creatorId: String
+    let creatorId: BotEngine.UserId
     
 }
 

@@ -62,6 +62,15 @@ public extension GoogleAPI {
                 self.basePath = "\(basePath)/users"
             }
             
+            // https://developers.google.com/admin-sdk/directory/v1/reference/users/get
+            public func get(userKey: String) -> Resource<DirectoryUser> {
+                return Resource(
+                    path: "\(basePath)/get",
+                    queryParameters: "userKey=\(userKey)",
+                    method: .get
+                )
+            }
+            
             // https://developers.google.com/admin-sdk/directory/v1/reference/users/list
             public func list(options: ListUsersOptions = .init()) -> Resource<UserList> {
                 return Resource(
@@ -135,6 +144,7 @@ public struct ListGroupsOptions: PaginableFetcherOptions, QueryStringConvertible
     public var maxResults: Int?
     public var pageToken: String?
     public var roles: Member.Role?
+    public var userKey: String?
     
     public var asQueryString: String {
         return toQueryString(object: self) ?? ""
@@ -167,7 +177,7 @@ public struct Group: Codable {
 
 public struct UserList: Paginable, Decodable {
     
-    public let users: [User]?
+    public let users: [DirectoryUser]?
     public let nextPageToken: String?
     
 }
@@ -284,7 +294,7 @@ public struct Member: Codable, Equatable, Hashable {
     
 }
 
-public struct User: Decodable {
+public struct DirectoryUser: Decodable {
     
     public struct Name: Decodable {
         
@@ -299,5 +309,6 @@ public struct User: Decodable {
     public let name: Name
     public let isAdmin: Bool
     public let isDelegatedAdmin: Bool
+    public let customerId: String
     
 }

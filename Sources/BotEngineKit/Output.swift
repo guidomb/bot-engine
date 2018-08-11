@@ -22,7 +22,7 @@ public enum BehaviorOutput {
 
 public struct ResponseTransform {
     
-    static func messageTransform(expected: String, transformed: String, channel: ChannelId, sender: String) -> ResponseTransform {
+    static func messageTransform(expected: String, transformed: String, channel: ChannelId, sender: BotEngine.UserId) -> ResponseTransform {
         return .init(
             expectedResponse: .message(
                 message: BehaviorMessage(channel: channel, senderId: sender, text: expected),

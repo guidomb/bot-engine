@@ -40,7 +40,7 @@ struct SubscribeToMailGroup: BotEngineCommand {
         }
     }
     
-    func execute(using services: BotEngine.Services, parameters: MailGroupService.EveryOne, senderId: String) -> SignalProducer<String, BotEngine.ErrorMessage> {
+    func execute(using services: BotEngine.Services, parameters: MailGroupService.EveryOne, senderId: BotEngine.UserId) -> SignalProducer<String, BotEngine.ErrorMessage> {
         guard let slackService = services.slackService else {
             fatalError("ERROR - Slack service not available.")
         }
@@ -48,9 +48,8 @@ struct SubscribeToMailGroup: BotEngineCommand {
             return .init(value: "You cannot subscribe to mail group '\(parameters.email)'")
         }
         
-        return slackService.fetchUserInfo(userId: senderId)
-            .mapError(BotEngine.ErrorMessage.init(error:))
-            .flatMap(.concat, subscribeUserToMailGroup(parameters, executor: services.googleAPIResourceExecutor))
+        return fetchUserInfo(userId: senderId, using: slackService)
+            |> subscribeUserToMailGroup(parameters, executor: services.googleAPIResourceExecutor)
     }
     
 }

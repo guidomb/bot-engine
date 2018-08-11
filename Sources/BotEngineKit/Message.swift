@@ -50,22 +50,20 @@ public struct BehaviorMessage {
     
     public let channel: ChannelId
     public let text: String
-    public let senderId: String
+    public let senderId: BotEngine.UserId
     public let entities: [Entity]
+    public let originalSenderId: BotEngine.UserId
     
     public var isCancelMessage: Bool {
         return text == "cancel"
     }
     
-    public var isListCommandsMessage: Bool {
-        return text == "list commands"
-    }
-    
-    public init(channel: ChannelId, senderId: String, text: String) {
+    init(channel: ChannelId, senderId: BotEngine.UserId, text: String, originalSenderId: BotEngine.UserId? = .none) {
         self.channel = channel
         self.senderId = senderId
         self.text = text
         self.entities = BehaviorMessage.parseSlackEntities(from: text)
+        self.originalSenderId = originalSenderId ?? senderId
     }
     
 }
@@ -74,6 +72,10 @@ extension BehaviorMessage {
     
     var slackUserIdEntities: [String] {
         return entities.map { $0.slackUserId ?? "" }.filter { !$0.isEmpty }
+    }
+    
+    func impersonate(user: BotEngine.UserId) -> BehaviorMessage {
+        return .init(channel: channel, senderId: user, text: text, originalSenderId: senderId)
     }
     
 }

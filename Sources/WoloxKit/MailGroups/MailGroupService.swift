@@ -118,10 +118,11 @@ public struct MailGroupService {
     public func subscriptions(for member: Member) -> SignalProducer<[EveryOne], GoogleAPI.RequestError> {
         var options = ListGroupsOptions()
         options.domain = "wolox.com.ar"
+        options.userKey = member.email
         return fetchAllPages(
             options: options,
             using: GoogleAPI.directory.groups.list(options:),
-            executor: executor,
+            executor: self.executor,
             extract: \.groups
         )
         .map(filterOnlyEveryOneGroups)
@@ -133,6 +134,22 @@ public struct MailGroupService {
             .delete(member: member.email)
             .execute(with: executor)
             .map { (member, mailGroup) }
+    }
+    
+    public func unsubscribe(member: String, from mailGroup: EveryOne) -> SignalProducer<(String, EveryOne), GoogleAPI.RequestError> {
+        return GoogleAPI.directory
+            .members(for: mailGroup.email)
+            .delete(member: member)
+            .execute(with: executor)
+            .map { (member, mailGroup) }
+    }
+    
+}
+
+extension Array where Element == MailGroupService.EveryOne {
+    
+    public func containsAnyBuenosAiresOffice() -> Bool {
+        return self.contains(.azurduy) || self.contains(.guemes)
     }
     
 }

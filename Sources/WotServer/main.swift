@@ -1,7 +1,6 @@
 import Foundation
 import BotEngineCLI
 
-let admins = ["U02F7KUJM"]
 let configuration = BotEngineCLI.Configuration(
     googleAuth: .init(
         scopes: [
@@ -39,12 +38,12 @@ let botEngine = BotEngineCLI(configuration: configuration) { engine in
     engine.bindAction(
         SyncArgentinaMailingLists(),
         to: "sync argentinean mailing lists",
-        allow: .only(admins)
+        allow: .only(engine.admins)
     )
     engine.bindAction(
         SyncMailChimpMailingList(),
         to: "sync mailchimp mailing list",
-        allow: .only(admins)
+        allow: .only(engine.admins)
     )
 }
 botEngine.run()

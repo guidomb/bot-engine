@@ -21,29 +21,31 @@ struct ListEveryoneMailGroups: BotEngineCommand {
     }
     
     func parseInput(_ input: String) -> Optional<()> {
-        return ()
+        return input == commandUsage ? () : nil
     }
     
-    func execute(using services: BotEngine.Services, parameters: (), senderId: String)
+    func execute(using services: BotEngine.Services, parameters: (), senderId: BotEngine.UserId)
         -> BotEngine.Producer<String> {
-            guard let slackService = services.slackService else {
-                fatalError("ERROR - Slack service not available.")
-            }
-            
-            let mailGroupService = MailGroupService(executor: services.googleAPIResourceExecutor)
-            return fetchUserInfo(userId: senderId, using: slackService)
-                |> asMember
-                |> fetchMemberSubscriptions(using: mailGroupService)
-                |> renderSubscriptions
+        guard let slackService = services.slackService else {
+            fatalError("ERROR - Slack service not available.")
+        }
+        
+        let mailGroupService = MailGroupService(executor: services.googleAPIResourceExecutor)
+        return fetchUserInfo(userId: senderId, using: slackService)
+            |> asMember
+            |> fetchMemberSubscriptions(using: mailGroupService)
+            |> renderSubscriptions
             
     }
     
 }
 
-fileprivate func renderSubscriptions(_ member: MemberWithSubscriptions) -> String {
-    guard !member.subscriptions.isEmpty else {
+fileprivate func renderSubscriptions(_ member: EveryoneMember) -> String {
+    guard member.hasSubscriptions() else {
         return "You are not subscribed to any everyone mail group. That's weird."
     }
+    
     let subscriptions = member.subscriptions.map { "- \($0.email)" }.sorted().joined(separator: "\n")
     return "You are subscribed to:\n\(subscriptions)"
 }
+

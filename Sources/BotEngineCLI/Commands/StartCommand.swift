@@ -31,10 +31,16 @@ extension BotEngineCLI {
                 defaultValue: "general",
                 usage: "sets the bot engine's logs output channel"
             )
+            private static let admins = Option<[String]>(
+                key: "admins",
+                defaultValue: [],
+                usage: "a comma-separated list of users id who would act as admins"
+            )
             
             let hostname: String
             let port: Int
             let outputChannel: String
+            let admins: [String]
             let gcloudOptions: GCloudOptions
             let loggerOptions: LoggerOptions
             
@@ -43,6 +49,7 @@ extension BotEngineCLI {
                     <*> mode <| hostname
                     <*> mode <| port
                     <*> mode <| outputChannel
+                    <*> mode <| admins
                     <*> GCloudOptions.evaluate(mode)
                     <*> LoggerOptions.evaluate(mode)
             }
@@ -124,6 +131,7 @@ fileprivate extension BotEngineCLI.StartCommand {
             googleAPIResourceExecutor: context.googleAPIResourceExecutor,
             outputChannel: context.options.outputChannel
         )
+        engine.admins = context.options.admins.map(BotEngine.UserId.init(value:))
         
         // Register behaviors
         engine.registerBehavior(CreateSurveyBehavior())

@@ -302,7 +302,8 @@ public func fetchAllPages<Element, Options: PaginableFetcherOptions, PaginableTy
         }
         if let nextPageToken = paginable.nextPageToken {
             _options.pageToken = nextPageToken
-            return fetcher(_options).map { elements + ($0[keyPath: keyPath] ?? []) }
+            return fetcher(_options).map { elements + ($0[keyPath: keyPath] ?? [])
+}
         } else {
             return .init(value: elements)
         }

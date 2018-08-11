@@ -124,7 +124,7 @@ public struct Behavior<StateType: BehaviorState, EffectType: BehaviorEffect> {
         
         case message(BehaviorMessage, BehaviorMessage.Context)
         case effectResult(EffectType.EffectResult)
-        case interactiveMessageAnswer(String, String)
+        case interactiveMessageAnswer(String, BotEngine.UserId)
     
     }
     

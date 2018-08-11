@@ -40,7 +40,7 @@ struct UnsubscribeMeFromMailGroup: BotEngineCommand {
         }
     }
     
-    func execute(using services: BotEngine.Services, parameters: MailGroupService.EveryOne, senderId: String)
+    func execute(using services: BotEngine.Services, parameters: MailGroupService.EveryOne, senderId: BotEngine.UserId)
         -> BotEngine.Producer<String> {
         guard let slackService = services.slackService else {
             fatalError("ERROR - Slack service not available.")
@@ -62,33 +62,32 @@ fileprivate func extractMailGroup(from input: String, using result: NSTextChecki
 }
 
 fileprivate func unsubscribe(from mailGroup: MailGroupService.EveryOne, using service: MailGroupService)
-    -> (MemberWithSubscriptions) -> BotEngine.Producer<String> {
-    return { input in
-        
-        guard input.subscriptions.contains(mailGroup) else {
+    -> (EveryoneMember) -> BotEngine.Producer<String> {
+    return { member in
+        guard member.subscriptions.contains(mailGroup) else {
             return .init(value: "You are not subscribed to '\(mailGroup.email)'.")
         }
-        let canUnsubscribeFromBuenosAires = { input.subscriptions.contains(.azurduy) || input.subscriptions.contains(.guemes) }
-        guard mailGroup != .buenosAires || canUnsubscribeFromBuenosAires() else {
-            return .init(value: "You cannot unsubscribe from '\(mailGroup.email)' as long as you are subscribed to \(MailGroupService.EveryOne.azurduy.email) or \(MailGroupService.EveryOne.guemes.email)")
-        }
-        guard input.subscriptions.count > 1 else {
+        guard member.subscriptions.count > 1 else {
             return .init(value: "I cannot unsubscribe you from '\(mailGroup.email)'. You must be subscribed at least to one mail group.")
         }
+        if mailGroup == .buenosAires && member.isSubscribedToAnyBuenosAiresOffice() {
+            return .init(value: "You cannot unsubscribe from '\(mailGroup.email)' as long as you are subscribed to \(MailGroupService.EveryOne.azurduy.email) or \(MailGroupService.EveryOne.guemes.email)")
+            
+        }
         
-        let remainingSubscriptions = input.subscriptions
+        let remainingSubscriptions = member.subscriptions
             .filter { $0 != mailGroup }
             .map { " - \($0.email)" }
             .sorted()
             .joined(separator: "\n")
         
-        return service.unsubscribe(member: input.member, from: mailGroup)
-            .mapError(subscriptionError(input.member, mailGroup))
+        return service.unsubscribe(member: member.email, from: mailGroup)
+            .mapError(subscriptionError(member, mailGroup))
             .map { _ in "You are now unsubscribed from '\(mailGroup.email)'. You remaing subscribed to:\n\(remainingSubscriptions)" }
     }
 }
 
-fileprivate func subscriptionError(_ member: Member, _ mailGroup: MailGroupService.EveryOne)
+fileprivate func subscriptionError(_ member: EveryoneMember, _ mailGroup: MailGroupService.EveryOne)
     -> (GoogleAPI.RequestError) -> BotEngine.ErrorMessage {
     return { error in
         print(error)

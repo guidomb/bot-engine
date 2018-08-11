@@ -38,8 +38,21 @@ public protocol BotEngineCommand {
     
     func parseInput(_ input: String) -> ParametersType?
     
-    func execute(using services: BotEngine.Services, parameters: ParametersType, senderId: String)
+    func execute(using services: BotEngine.Services, parameters: ParametersType, senderId: BotEngine.UserId)
         -> BotEngine.Producer<String>
+    
+}
+
+extension BotEngineCommand {
+    
+    public func canBeExecuted(by user: BotEngine.UserId) -> Bool {
+        switch permission {
+        case .all:
+            return true
+        case .only(let allowedUsers):
+            return allowedUsers.contains(user)
+        }
+    }
     
 }
 
@@ -68,7 +81,7 @@ public final class BotEngine {
     public enum ExecutionPermission {
         
         case all
-        case only([String])
+        case only([UserId])
         
     }
     
@@ -112,7 +125,7 @@ public final class BotEngine {
     public enum Input {
         
         case message(message: BehaviorMessage, context: BehaviorMessage.Context)
-        case interactiveMessageAnswer(answer: String, channel: ChannelId, senderId: String)
+        case interactiveMessageAnswer(answer: String, channel: ChannelId, senderId: BotEngine.UserId)
         
         var channel: ChannelId {
             switch self {
@@ -123,7 +136,7 @@ public final class BotEngine {
             }
         }
         
-        var senderId: String {
+        var senderId: BotEngine.UserId {
             switch self {
             case .message(let message, _):
                 return message.senderId
@@ -134,12 +147,48 @@ public final class BotEngine {
         
     }
     
+    public struct UserId: Equatable, Hashable, Codable {
+        
+        public let value: String
+        
+        public init(value: String) {
+            self.value = value
+        }
+        
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            self.init(value: try container.decode(String.self))
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(value)
+        }
+        
+    }
+    
+    struct ImpersonatorId: Equatable, Hashable {
+        
+        public let value: String
+        
+        init(value: String) {
+            self.value = value
+        }
+        
+    }
+    
     public typealias Producer<T> = SignalProducer<T, BotEngine.ErrorMessage>
     public typealias ActionOutputMessageProducer = Producer<ActionOutputMessage>
     public typealias InputProducer = SignalProducer<Input, NoError>
     public typealias MessageWithContext = (message: BehaviorMessage, context: BehaviorMessage.Context)
     public typealias BehaviorFactory = (MessageWithContext) -> ActiveBehavior?
     public typealias OutputSignal = Signal<ChanneledBehaviorOutput, NoError>
+    
+    public var admins: [UserId] = [] {
+        didSet {
+            registerInternalCommands()
+        }
+    }
     
     private let inputProducer: InputProducer
     private let outputRenderer: BehaviorOutputRenderer
@@ -155,7 +204,9 @@ public final class BotEngine {
     private var disposable = CompositeDisposable()
     private var boundActions: [String : BoundAction] = [:]
     private var commands: [RegisteredCommand] = []
+    private var internalCommands: [RegisteredCommand] = []
     private var actionRegistry: [String : BotEngineAction] = [:]
+    private var impersonators : [ImpersonatorId : UserId] = [:]
     
     fileprivate var repository: ObjectRepository {
         return services.repository
@@ -263,7 +314,7 @@ fileprivate extension BotEngine {
         let action: BotEngineAction
         let permission: ExecutionPermission
         
-        func canBeExecuted(by senderId: String) -> Bool {
+        func canBeExecuted(by senderId: UserId) -> Bool {
             switch permission {
             case .all:
                 return true
@@ -319,9 +370,9 @@ fileprivate extension BotEngine {
         // at a given time.
         switch transformsRegistry.applyTransform(to: input) {
         case .message(let message, let context):
-            handle(message: message, context: context)
+            handle(message: applyImpersonationIfNeeded(message), context: context)
         case .interactiveMessageAnswer(let answer, let channel, let senderId):
-            handle(answer: answer, channel: channel, senderId: senderId)
+            handle(answer: answer, channel: channel, senderId: applyImpersonationIfNeeded(senderId))
         }
     }
     
@@ -331,17 +382,13 @@ fileprivate extension BotEngine {
             cancelActiveBehavior(for: channel)
             return
         }
-        guard !message.isListCommandsMessage else {
-            listCommands(for: channel)
-            return
-        }
         
         if let activeBehavior = activeBehaviors[channel] {
             activeBehavior.handle(input: .message(message: message, context: context))
         } else if let command = findCommand(for: message) {
-            handle(command: command, with: message)
+            handle(command: command, with: message, channel: channel)
         } else if let action = boundActions[message.text] {
-            handle(action: action, channel: channel, senderId: message.senderId)
+            handle(action: action, channel: channel, message: message)
         } else if let activeBehavior = findBehavior(for: (message, context)) {
             mount(behavior: activeBehavior, for: channel)
         } else {
@@ -349,19 +396,19 @@ fileprivate extension BotEngine {
         }
     }
     
-    func handle(command: RegisteredCommand.BoundHandler, with message: BehaviorMessage) {
-        command(message.senderId, services).startWithResult { result in
+    func handle(command: RegisteredCommand.BoundHandler, with message: BehaviorMessage, channel: ChannelId) {
+        command(message.senderId, message.originalSenderId, services).startWithResult { result in
             switch result {
             case .success(let output):
-                self.send(message: output, for: message.senderId)
+                self.send(message: output, for: channel)
             case .failure(let error):
-                self.send(message: error.message, for: message.senderId)
+                self.send(message: error.message, for: channel)
             }
         }
     }
     
-    func handle(action boundAction: BoundAction, channel: ChannelId, senderId: String) {
-        guard boundAction.canBeExecuted(by: senderId) else {
+    func handle(action boundAction: BoundAction, channel: ChannelId, message: BehaviorMessage) {
+        guard boundAction.canBeExecuted(by: message.originalSenderId) else {
             send(message: "Sorry, you are not allowed to execute such action", for: channel)
             return
         }
@@ -387,7 +434,7 @@ fileprivate extension BotEngine {
         }
     }
     
-    func handle(answer: String, channel: ChannelId, senderId: String) {
+    func handle(answer: String, channel: ChannelId, senderId: UserId) {
         guard let activeBehavior = activeBehaviors[channel] else {
             print("WARN - There is not active behavior for channel '\(channel)' to handle interactive message answer 'answer'")
             return
@@ -417,7 +464,7 @@ fileprivate extension BotEngine {
     }
     
     func findCommand(for message: BehaviorMessage) -> RegisteredCommand.BoundHandler? {
-        for command in commands {
+        for command in (commands + internalCommands) {
             if let handler = command.handle(input: message.text) {
                 return handler
             }
@@ -441,17 +488,6 @@ fileprivate extension BotEngine {
         } else {
             send(reply: .nothingToCancel, for: channel)
         }
-    }
-    
-    func listCommands(for channel: ChannelId) {
-        let commandsList = self.commands.map { "- *\($0.commandUsage)*" }
-        let actionsList = boundActions.keys.map { "- *\($0)*" }
-        let commands = (commandsList + actionsList).sorted().joined(separator: "\n")
-        let message = """
-        Commands:
-        \(commands)
-        """
-        send(message: message, for: channel)
     }
     
     func removeActiveBehavior(for channel: ChannelId) {
@@ -505,6 +541,64 @@ fileprivate extension BotEngine {
         }
     }
     
+    func impersonate(user: UserId, with impersonator: ImpersonatorId) {
+        impersonators[impersonator] = user
+    }
+        
+    func registerInternalCommands() {
+        internalCommands.append(impersonateUserCommand())
+        internalCommands.append(clearImpersonationCommand())
+        internalCommands.append(listCommandsCommand())
+    }
+    
+    func applyImpersonationIfNeeded(_ sender: BotEngine.UserId) -> BotEngine.UserId {
+        return impersonators[sender.asImpersonator] ?? sender
+    }
+    
+    func applyImpersonationIfNeeded(_ message: BehaviorMessage) -> BehaviorMessage {
+        return message.impersonate(user: applyImpersonationIfNeeded(message.senderId))
+    }
+    
+}
+
+fileprivate extension BotEngine {
+    
+    func impersonateUserCommand() -> RegisteredCommand {
+        return .init(ImpersonateUser(admins: admins) { [unowned self] in self.impersonate(user: $0, with: $1) })
+    }
+    
+    func clearImpersonationCommand() -> RegisteredCommand {
+        return .init(SimpleCommand(command: "clear impersonation") { [unowned self] sender in
+            // FIXME need originalSender to check impersonator dic
+            if let impersonatee = self.impersonators[sender.asImpersonator] {
+                return .init(value: "You stopped impersonating \(impersonatee.value)")
+            } else {
+                return .init(value: "You are not impersonating anyone")
+            }
+        })
+    }
+    
+    func listCommandsCommand() -> RegisteredCommand {
+        return .init(SimpleCommand(command: "list commands") { [unowned self] _ in
+            let commandsList = (self.commands + self.internalCommands).map { "- *\($0.commandUsage)*" }
+            let actionsList = self.boundActions.keys.map { "- *\($0)*" }
+            let commands = (commandsList + actionsList).sorted().joined(separator: "\n")
+            let message = """
+            Commands:
+            \(commands)
+            """
+            return .init(value: message)
+        })
+    }
+    
+}
+
+extension BotEngine.UserId {
+    
+    var asImpersonator: BotEngine.ImpersonatorId {
+        return .init(value: value)
+    }
+    
 }
 
 fileprivate final class ResponseTransformRegistry {
@@ -528,7 +622,7 @@ fileprivate final class ResponseTransformRegistry {
     }
     
     func transform(for input: BotEngine.Input) -> ResponseTransform? {
-        guard let transforms = transformsByChannel[input.senderId] else {
+        guard let transforms = transformsByChannel[input.senderId.value] else {
             return .none
         }
         
@@ -708,18 +802,26 @@ fileprivate extension BehaviorProtocol {
 
 fileprivate struct RegisteredCommand {
     
-    typealias BoundHandler = (String, BotEngine.Services) -> SignalProducer<String, BotEngine.ErrorMessage>
+    typealias BoundHandler = (BotEngine.UserId, BotEngine.UserId, BotEngine.Services) -> SignalProducer<String, BotEngine.ErrorMessage>
     
     let commandUsage: String
     private let _handle: (String) -> BoundHandler?
+    private let permission: BotEngine.ExecutionPermission
     
     init<CommandType: BotEngineCommand>(_ command: CommandType) {
         self.commandUsage = command.commandUsage
         self._handle = { input in
             return command.parseInput(input).map { parameters in
-                { senderId, services in command.execute(using: services, parameters: parameters, senderId: senderId) }
+                return { senderId, originalSender, services in
+                    guard command.canBeExecuted(by: originalSender) else {
+                        return .init(error: "Sorry, you are not allowed to execute such command.")
+                    }
+                    // FIXME Pass originalSenderId
+                    return command.execute(using: services, parameters: parameters, senderId: senderId)
+                }
             }
         }
+        self.permission = command.permission
     }
     
     func handle(input: String) -> BoundHandler? {

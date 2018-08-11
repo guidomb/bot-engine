@@ -69,7 +69,8 @@ fileprivate extension CreateSurveyBehavior.JobExecutor {
             fatalError("ERROR - Cannot create job output for non-persisted active survey")
         }
         let message = "Survey with id *'\(surveyId)'* is completed. There were *\(survey.responders.count)* responders *out of* a total of *\(survey.destinataries.count)* destinataries."
-        return .completed(outputs: [.init(output: .textMessage(message), channel: survey.survey.creatorId)])
+        let channel = survey.survey.creatorId.value
+        return .completed(outputs: [.init(output: .textMessage(message), channel: channel)])
     }
     
 }
