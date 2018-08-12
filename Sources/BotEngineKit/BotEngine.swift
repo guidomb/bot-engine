@@ -28,6 +28,14 @@ public extension BotEngineAction {
     
 }
 
+public struct SchedulableBotEngineAction: Persistable {
+    
+    public var id: Identifier<SchedulableBotEngineAction>?
+    public let key: BotEngineAction.Key
+    public let interval: SchedulerInterval
+    
+}
+
 public protocol BotEngineCommand {
     
     associatedtype ParametersType
@@ -63,17 +71,20 @@ public final class BotEngine {
         public let environment: [String : String]
         public let repository: ObjectRepository
         public let googleAPIResourceExecutor: GoogleAPIResourceExecutor
+        public let googleProjectId: String
         public let slackService: SlackServiceProtocol?
         
         public init(
             environment: [String : String] = ProcessInfo.processInfo.environment,
             repository: ObjectRepository,
             googleAPIResourceExecutor: GoogleAPIResourceExecutor,
+            googleProjectId: String,
             slackService: SlackServiceProtocol? = .none) {
             self.environment = environment
             self.repository = repository
             self.googleAPIResourceExecutor = googleAPIResourceExecutor
             self.slackService = slackService
+            self.googleProjectId = googleProjectId
         }
         
     }
@@ -330,6 +341,7 @@ fileprivate extension BotEngine {
         case dontUnderstandMessage
         case nothingToCancel
         case cancelConfirmation(description: String)
+        case internalError
         
         var message: String {
             switch self {
@@ -339,6 +351,8 @@ fileprivate extension BotEngine {
                 return "There is nothing for me to cancel."
             case .cancelConfirmation(let description):
                 return "OK. I cancelled \(description)."
+            case .internalError:
+                return "Oops! Something went wrong. I feel a little bit confused. Could you try that again later."
             }
         }
     }
@@ -392,7 +406,7 @@ fileprivate extension BotEngine {
         } else if let activeBehavior = findBehavior(for: (message, context)) {
             mount(behavior: activeBehavior, for: channel)
         } else {
-            send(reply: .dontUnderstandMessage, for: channel)
+            matchIntent(for: message, channel: channel)
         }
     }
     
@@ -461,6 +475,18 @@ fileprivate extension BotEngine {
         }
         // TODO handle error state
         // if activeBehavior.isInErrorState
+    }
+    
+    func matchIntent(for message: BehaviorMessage, channel: ChannelId) {
+        services.intentMatcher.matchIntent(text: message.text, userId: message.senderId).startWithResult { result in
+            switch result {
+            case .success(let answer):
+                self.send(message: answer, for: channel)
+            case .failure(let error):
+                print("ERROR - Could not match intent: \(error)")
+                self.send(reply: .internalError, for: channel)
+            }
+        }
     }
     
     func findCommand(for message: BehaviorMessage) -> RegisteredCommand.BoundHandler? {
@@ -837,10 +863,17 @@ fileprivate extension BotEngineAction {
     }
 }
 
-public struct SchedulableBotEngineAction: Persistable {
+fileprivate extension BotEngine.Services {
     
-    public var id: Identifier<SchedulableBotEngineAction>?
-    public let key: BotEngineAction.Key
-    public let interval: SchedulerInterval
+    var intentMatcher: IntentMatcherService {
+        guard let slackService = self.slackService else {
+            fatalError("ERROR - Slack service is not available")
+        }
+        return .init(
+            projectId: self.googleProjectId,
+            executor: self.googleAPIResourceExecutor,
+            slackService: slackService
+        )
+    }
     
 }

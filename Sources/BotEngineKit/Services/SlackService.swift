@@ -137,6 +137,7 @@ public final class SlackService: SlackServiceProtocol {
         return SignalProducer { [webAPI = self.webAPI] observer, _ in
             webAPI.userInfo(
                 id: userId,
+                includeLocale: true,
                 success: { user in
                     observer.send(value: user)
                     observer.sendCompleted()
@@ -276,6 +277,7 @@ public extension BotEngine {
         server: BotEngine.HTTPServer,
         repository: ObjectRepository,
         googleAPIResourceExecutor: GoogleAPIResourceExecutor,
+        googleProjectId: String,
         outputChannel: ChannelId,
         environment: [String : String] = ProcessInfo.processInfo.environment) -> BotEngine {
         
@@ -305,6 +307,7 @@ public extension BotEngine {
             services: BotEngine.Services(
                 repository: repository,
                 googleAPIResourceExecutor: googleAPIResourceExecutor,
+                googleProjectId: googleProjectId,
                 slackService: slackService
             )
         )

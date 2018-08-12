@@ -14,10 +14,11 @@ let configuration = BotEngineCLI.Configuration(
         ],
         credentialsFilename: "wotcrendentials.json"
     ),
+    googleProjectId: "feedi-dev",
     environment: ProcessInfo.processInfo.environment,
     repositoryBuilder: { FirebaseObjectRepository(
         executor: $0,
-        projectId: "feedi-dev",
+        projectId: $1,
         databaseId: "(default)"
         )
     }

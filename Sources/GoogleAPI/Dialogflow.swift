@@ -109,6 +109,8 @@ public struct Intent: Codable {
     
     public enum Language: String, Codable  {
         
+        case spanish                = "es"
+        case english                = "en"
         case latinAmericanSpanish   = "es-419"
         case spainSpanish           = "es-ES"
         case austrlianEnglish       = "en-AU"
@@ -116,6 +118,16 @@ public struct Intent: Codable {
         case greatBritainEnglish    = "en-GB"
         case indianEnglish          = "en-IN"
         case usEnglish              = "en-US"
+        
+        public init?(identifier: String) {
+            if identifier.starts(with: "es-") && identifier != "es-ES" {
+                self = .latinAmericanSpanish
+            } else if let language = Language(rawValue: identifier) {
+                self = language
+            } else {
+                return nil
+            }
+        }
         
     }
     

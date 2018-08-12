@@ -124,11 +124,12 @@ fileprivate extension BotEngineCLI.StartCommand {
     
     func startBotEngine(with context: Context) -> Never {
         print("INFO - Running bot engine ...")
-        let repository = configuration.repositoryBuilder(context.googleAPIResourceExecutor)
+        let repository = configuration.repositoryBuilder(context.googleAPIResourceExecutor, configuration.googleProjectId)
         let engine = BotEngine.slackBotEngine(
             server: context.httpServer,
             repository: repository,
             googleAPIResourceExecutor: context.googleAPIResourceExecutor,
+            googleProjectId: configuration.googleProjectId,
             outputChannel: context.options.outputChannel
         )
         engine.admins = context.options.admins.map(BotEngine.UserId.init(value:))
