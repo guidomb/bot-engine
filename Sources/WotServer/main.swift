@@ -9,7 +9,8 @@ let configuration = BotEngineCLI.Configuration(
             "https://www.googleapis.com/auth/drive.metadata.readonly",
             "https://www.googleapis.com/auth/datastore",
             "https://www.googleapis.com/auth/admin.directory.group",
-            "https://www.googleapis.com/auth/admin.directory.user.readonly"
+            "https://www.googleapis.com/auth/admin.directory.user.readonly",
+            "https://www.googleapis.com/auth/cloud-platform"
         ],
         credentialsFilename: "wotcrendentials.json"
     ),

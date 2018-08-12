@@ -138,7 +138,10 @@ fileprivate extension BotEngineCLI.StartCommand {
         engine.registerBehavior(RandomMathQuestionBehavior())
         
         botBuilder(engine)
-        
+        if !configuration.beforeStart(engine.services) {
+            print("INFO - Terminating because before start hook returned false.")
+            exit(0)
+        }
         engine.start()
         
         while true {

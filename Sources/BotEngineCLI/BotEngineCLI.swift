@@ -48,14 +48,17 @@ public struct BotEngineCLI {
         public let googleAuth: GoogleAuth
         public let environment: [String : String]
         public let repositoryBuilder: ObjectRepositoryBuilder
+        public let beforeStart: (BotEngine.Services) -> Bool
         
         public init(
             googleAuth: GoogleAuth,
             environment: [String : String],
-            repositoryBuilder: @escaping ObjectRepositoryBuilder) {
+            repositoryBuilder: @escaping ObjectRepositoryBuilder,
+            beforeStart: @escaping (BotEngine.Services) -> Bool = { _ in true }) {
             self.googleAuth = googleAuth
             self.environment = environment
             self.repositoryBuilder = repositoryBuilder
+            self.beforeStart = beforeStart
         }
         
     }

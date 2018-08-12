@@ -159,6 +159,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         case deserializationError(Error)
         case networkingError(Error)
         case resourceError(ResourceError)
+        case htmlErrorResponse(Data)
         
         public var localizedDescription: String {
             return description
@@ -173,7 +174,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
             case .unexpectedContentType(let contentType):
                 return "Unexpected value in 'Content-Type' HTTP header '\(contentType)'"
             case .unexpectedErrorContentType(let contentType, let statusCode):
-                return "Unexpected value in 'Conten-Type' HTTP header '\(contentType)' for error response with status code '\(statusCode)'"
+                return "Unexpected value in 'Content-Type' HTTP header '\(contentType)' for error response with status code '\(statusCode)'"
             case .errorDataDeserializationError(let error, let statusCode):
                 return "Deserialization error while deserialinzing error response with status code '\(statusCode)': \(error.localizedDescription)"
             case .unexpectedResponseStatusCode(let statusCode):
@@ -186,6 +187,8 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
                 return "Resource error '\(error)'"
             case .unexpectedResponseObjectType(let response):
                 return "Unexpected response object type: \(response)"
+            case .htmlErrorResponse(let error):
+                return String(data: error, encoding: .utf8) ?? ""
             }
         }
         
@@ -385,6 +388,11 @@ fileprivate extension GoogleAPI {
         guard let contentType = response.allHeaderFields["Content-Type"] as? String else {
             return ResourceProducer(error: .missingContentTypeHeader)
         }
+        
+        if contentType.starts(with: "text/html") {
+            return ResourceProducer(error: .htmlErrorResponse(data))
+        }
+        
         // Content-Type header may include string encoding information. e.g: "application/json; charset=UTF-8"
         guard contentType.starts(with: "application/json") else {
             return ResourceProducer(error: .unexpectedErrorContentType(

@@ -67,10 +67,10 @@ extension Array: QueryStringConvertible where Element: QueryStringConvertible {
     
 }
 
-extension Dictionary: QueryStringConvertible where Key == String, Value: CustomStringConvertible {
+extension Dictionary: QueryStringConvertible where Key == String, Value == Optional<String> {
     
     public var asQueryString: String {
-        return self.map { "\($0)=\($1)" }.joined(separator: "&")
+        return self.filter { $1 != nil }.map { "\($0)=\($1!)".urlEncoded }.joined(separator: "&")
     }
     
 }

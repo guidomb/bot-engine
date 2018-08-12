@@ -15,103 +15,115 @@
 import Foundation
 
 struct ServiceAccountCredentials : Codable {
-  let CredentialType : String
-  let ProjectId : String
-  let PrivateKeyId : String
-  let PrivateKey : String
-  let ClientEmail : String
-  let ClientID : String
-  let AuthURI : String
-  let TokenURI : String
-  let AuthProviderX509CertURL : String
-  let ClientX509CertURL : String
-  enum CodingKeys: String, CodingKey {
-    case CredentialType = "type"
-    case ProjectId = "project_id"
-    case PrivateKeyId = "private_key_id"
-    case PrivateKey = "private_key"
-    case ClientEmail = "client_email"
-    case ClientID = "client_id"
-    case AuthURI = "auth_uri"
-    case TokenURI = "token_uri"
-    case AuthProviderX509CertURL = "auth_provider_x509_cert_url"
-    case ClientX509CertURL = "client_x509_cert_url"
-  }
+    let CredentialType : String
+    let ProjectId : String
+    let PrivateKeyId : String
+    let PrivateKey : String
+    let ClientEmail : String
+    let ClientID : String
+    let AuthURI : String
+    let TokenURI : String
+    let AuthProviderX509CertURL : String
+    let ClientX509CertURL : String
+    enum CodingKeys: String, CodingKey {
+        case CredentialType = "type"
+        case ProjectId = "project_id"
+        case PrivateKeyId = "private_key_id"
+        case PrivateKey = "private_key"
+        case ClientEmail = "client_email"
+        case ClientID = "client_id"
+        case AuthURI = "auth_uri"
+        case TokenURI = "token_uri"
+        case AuthProviderX509CertURL = "auth_provider_x509_cert_url"
+        case ClientX509CertURL = "client_x509_cert_url"
+    }
 }
 
 public class ServiceAccountTokenProvider : TokenProvider {
-  public var token: Token?
-  
-  var credentials : ServiceAccountCredentials
-  var scopes : [String]
-  var rsaKey : RSAKey
-  
-  public init?(credentialsData:Data, scopes:[String]) {
-    let decoder = JSONDecoder()
-    guard let credentials = try? decoder.decode(ServiceAccountCredentials.self,
-                                                from: credentialsData)
-      else {
-        return nil
+    public var token: Token?
+    
+    var credentials : ServiceAccountCredentials
+    var scopes : [String]
+    var rsaKey : RSAKey
+    
+    public init?(credentialsData:Data, scopes:[String]) {
+        let decoder = JSONDecoder()
+        guard let credentials = try? decoder.decode(ServiceAccountCredentials.self,
+                                                    from: credentialsData)
+            else {
+                return nil
+        }
+        self.credentials = credentials
+        self.scopes = scopes
+        guard let rsaKey = RSAKey(privateKey:credentials.PrivateKey)
+            else {
+                return nil
+        }
+        self.rsaKey = rsaKey
     }
-    self.credentials = credentials
-    self.scopes = scopes
-    guard let rsaKey = RSAKey(privateKey:credentials.PrivateKey)
-      else {
-        return nil
+    
+    convenience public init?(credentialsURL:URL, scopes:[String]) {
+        guard let credentialsData = try? Data(contentsOf:credentialsURL, options:[]) else {
+            return nil
+        }
+        self.init(credentialsData:credentialsData, scopes:scopes)
     }
-    self.rsaKey = rsaKey
-  }
-  
-  convenience public init?(credentialsURL:URL, scopes:[String]) {
-    guard let credentialsData = try? Data(contentsOf:credentialsURL, options:[]) else {
-      return nil
-    }
-    self.init(credentialsData:credentialsData, scopes:scopes)
-  }
-  
+    
     public func withToken(_ callback:@escaping (Token?, Error?) -> Void) throws {
         return try withToken(delegatedAccount: .none, callback)
     }
     
     
-  public func withToken(delegatedAccount: String?, _ callback:@escaping (Token?, Error?) -> Void) throws {
-    let iat = Date()
-    let exp = iat.addingTimeInterval(3600)
-    let jwtClaimSet = JWTClaimSet(issuer:credentials.ClientEmail,
-                                  audience:credentials.TokenURI,
-                                  scope:  scopes.joined(separator: " "),
-                                  issuedAt: Int(iat.timeIntervalSince1970),
-                                  expiration: Int(exp.timeIntervalSince1970),
-                                  delegatedAccount: delegatedAccount)
-    let jwtHeader = JWTHeader(Algorithm: "RS256",
-                              Format: "JWT")
-    let msg = try JWT.encodeWithRS256(jwtHeader:jwtHeader,
-                                      jwtClaimSet:jwtClaimSet,
-                                      rsaKey:rsaKey)
-    var urlComponents = URLComponents(string:"")!
-    urlComponents.queryItems =
-      [URLQueryItem(name:"grant_type",
-                    value:"urn:ietf:params:oauth:grant-type:jwt-bearer"),
-       URLQueryItem(name:"assertion",
-                    value:msg)]
-    let query = urlComponents.percentEncodedQuery!
-    
-    var urlRequest = URLRequest(url:URL(string:credentials.TokenURI)!)
-    urlRequest.httpMethod = "POST"
-    urlRequest.httpBody = query.data(using:.utf8)
-    urlRequest.setValue("application/x-www-form-urlencoded", forHTTPHeaderField:"Content-Type")
-    
-    let session = URLSession(configuration: URLSessionConfiguration.default)
-    let task: URLSessionDataTask = session.dataTask(with:urlRequest)
-    {(data, response, error) -> Void in
-      let decoder = JSONDecoder()
-      if let data = data,
-        let token = try? decoder.decode(Token.self, from: data) {
-        callback(token, error)
-      } else {
-        callback(nil, error)
-      }
+    public func withToken(delegatedAccount: String?, _ callback:@escaping (Token?, Error?) -> Void) throws {
+        let iat = Date()
+        let exp = iat.addingTimeInterval(3600)
+        let jwtClaimSet = JWTClaimSet(issuer:credentials.ClientEmail,
+                                      audience:credentials.TokenURI,
+                                      scope:  scopes.joined(separator: " "),
+                                      issuedAt: Int(iat.timeIntervalSince1970),
+                                      expiration: Int(exp.timeIntervalSince1970),
+                                      delegatedAccount: delegatedAccount)
+        let jwtHeader = JWTHeader(Algorithm: "RS256",
+                                  Format: "JWT")
+        let msg = try JWT.encodeWithRS256(jwtHeader:jwtHeader,
+                                          jwtClaimSet:jwtClaimSet,
+                                          rsaKey:rsaKey)
+        var urlComponents = URLComponents(string:"")!
+        urlComponents.queryItems =
+            [URLQueryItem(name:"grant_type",
+                          value:"urn:ietf:params:oauth:grant-type:jwt-bearer"),
+             URLQueryItem(name:"assertion",
+                          value:msg)]
+        let query = urlComponents.percentEncodedQuery!
+        
+        var urlRequest = URLRequest(url:URL(string:credentials.TokenURI)!)
+        urlRequest.httpMethod = "POST"
+        urlRequest.httpBody = query.data(using:.utf8)
+        urlRequest.setValue("application/x-www-form-urlencoded", forHTTPHeaderField:"Content-Type")
+        
+        let session = URLSession(configuration: URLSessionConfiguration.default)
+        let task: URLSessionDataTask = session.dataTask(with:urlRequest)
+        {(data, response, error) -> Void in
+            guard let httpResponse = response as? HTTPURLResponse else {
+                fatalError("ERROR - Response is not a HTTPURLResponse object.")
+            }
+            guard httpResponse.statusCode == 200 else {
+                let requestError = NSError(domain: "GoogleAuth.HTTPRequestResponse", code: httpResponse.statusCode, userInfo: nil)
+                callback(nil, requestError)
+                return 
+            }
+            let decoder = JSONDecoder()
+            if let data = data {
+                do {
+                    let token = try decoder.decode(Token.self, from: data)
+                    callback(token, error)
+                } catch let decodeError {
+                    callback(nil, decodeError)
+                }
+            } else {
+                callback(nil, error)
+            }
+        }
+        task.resume()
     }
-    task.resume()
-  }
 }

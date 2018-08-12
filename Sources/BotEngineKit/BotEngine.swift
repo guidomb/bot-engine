@@ -184,6 +184,7 @@ public final class BotEngine {
     public typealias BehaviorFactory = (MessageWithContext) -> ActiveBehavior?
     public typealias OutputSignal = Signal<ChanneledBehaviorOutput, NoError>
     
+    public let services: Services
     public var admins: [UserId] = [] {
         didSet {
             registerInternalCommands()
@@ -195,7 +196,6 @@ public final class BotEngine {
     private let output: OutputSignal
     private let outputObserver: OutputSignal.Observer
     private let outputChannel: ChannelId
-    private let services: Services
     private let jobScheduler: JobScheduler
     private let transformsRegistry = ResponseTransformRegistry()
 
