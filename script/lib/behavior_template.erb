@@ -1,0 +1,105 @@
+//
+//  <%= behavior_name %>Behavior.swift
+//  BotEngineKit
+//
+//  Created by <%= author_name %> on <%= created_at %>.
+//
+
+import Foundation
+import ReactiveSwift
+import Result
+
+public struct <%= behavior_name %>Behavior: BehaviorProtocol {
+
+    public typealias _Behavior = Behavior<State, Effect>
+    public typealias TransitionOutput = _Behavior.TransitionOutput
+    public typealias Input = _Behavior.Input
+
+    public var descriptionForCancellation: String {
+        return "<%= description_for_cancellation %>"
+    }
+
+    public init() { }
+
+    public func createSchedulable(services: BotEngine.Services) -> BehaviorSchedulableJobs<NoBehaviorJobExecutor>? {
+        return .none
+    }
+
+    public func createEffectPerformer(services: BotEngine.Services) -> EffectPerformer {
+        return EffectPerformer()
+    }
+
+    public func create(message: BehaviorMessage, context: BehaviorMessage.Context) -> TransitionOutput? {
+        return .none
+    }
+
+    public func update(state: State, input: Input) -> TransitionOutput {
+        switch input {
+        case .message(let message, let context):
+            return update(state: state, message: message, context: context)
+        case .effectResult(let effectResult):
+            return update(state: state, effectResult: effectResult)
+        case .interactiveMessageAnswer(let answer, let senderId):
+            return update(state: state, interactiveAnswer: answer, senderId: senderId)
+        }
+    }
+
+}
+
+extension <%= behavior_name %>Behavior {
+
+    public struct State: BehaviorState {
+
+        public var isFinalState: Bool { return true }
+
+    }
+
+}
+
+extension <%= behavior_name %>Behavior {
+
+    public struct Effect: BehaviorEffect {
+
+        public typealias ResponseType = Response
+        public typealias ErrorType = Error
+        public typealias JobMessageType = NoJobMessage
+
+        public enum Error: Swift.Error {
+
+        }
+
+        public enum Response {
+
+        }
+
+    }
+
+}
+
+extension <%= behavior_name %>Behavior {
+
+    public struct EffectPerformer: BehaviorEffectPerformer {
+
+        public func perform(effect: Effect, for channel: ChannelId) -> Effect.EffectOutputProducer {
+            return .empty
+        }
+
+    }
+
+}
+
+fileprivate extension <%= behavior_name %>Behavior {
+
+    func update(state: State, message: BehaviorMessage, context: BehaviorMessage.Context) -> TransitionOutput {
+        fatalError("TODO Implement me!")
+    }
+
+    func update(state: State, effectResult: Effect.EffectResult) -> TransitionOutput {
+        fatalError("TODO Implement me!")
+    }
+
+    func update(state: State, interactiveAnswer: String, senderId: BotEngine.UserId) -> TransitionOutput {
+        fatalError("TODO Implement me!")
+    }
+
+}
