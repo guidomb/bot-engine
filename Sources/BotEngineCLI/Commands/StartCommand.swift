@@ -137,6 +137,7 @@ fileprivate extension BotEngineCLI.StartCommand {
         // Register behaviors
         engine.registerBehavior(CreateSurveyBehavior())
         engine.registerBehavior(RandomMathQuestionBehavior())
+        engine.registerBehavior(AddIntentBehavior())
         
         botBuilder(engine)
         if !configuration.beforeStart(engine.services) {

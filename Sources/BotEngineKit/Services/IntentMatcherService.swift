@@ -15,29 +15,28 @@ struct IntentMatcherService {
     
     private let executor: GoogleAPIResourceExecutor
     private let projectId: String
-    private let slackService: SlackServiceProtocol
+    private let languageService: UserLanguageService
     
-    init(projectId: String, executor: GoogleAPIResourceExecutor, slackService: SlackServiceProtocol) {
+    init(projectId: String, executor: GoogleAPIResourceExecutor, languageService: UserLanguageService) {
         self.executor = executor
         self.projectId = projectId
-        self.slackService = slackService
+        self.languageService = languageService
     }
     
     func matchIntent(text: String, userId: BotEngine.UserId) -> SignalProducer<String, AnyError> {
-        return fetchUserInfo(userId) |> matchIntent(text: text, userId: userId)
+        return fetchUserIntentLanguage(for: userId) |> matchIntent(text: text, userId: userId)
     }
     
 }
 
 fileprivate extension IntentMatcherService {
     
-    func fetchUserInfo(_ userId: BotEngine.UserId) -> SignalProducer<SKCore.User, AnyError> {
-        return slackService.fetchUserInfo(userId: userId.value).mapError(AnyError.init)
+    func fetchUserIntentLanguage(for userId: BotEngine.UserId) -> SignalProducer<Intent.Language, AnyError> {
+        return languageService.fetchUserIntentLanguage(userId: userId)
     }
     
-    func matchIntent(text: String, userId: BotEngine.UserId) -> (SKCore.User) -> SignalProducer<String, AnyError> {
-        return { user in
-            let languageCode = user.locale.flatMap(Intent.Language.init(identifier:)) ?? .latinAmericanSpanish
+    func matchIntent(text: String, userId: BotEngine.UserId) -> (Intent.Language) -> SignalProducer<String, AnyError> {
+        return { languageCode in
             return GoogleAPI.dialogflow(projectId: self.projectId)
                 .session(sessionId: userId.value)
                 .detectIntent(text: text, languageCode: languageCode)

@@ -25,7 +25,7 @@ extension GoogleAPI {
                 return Resource(
                     path: basePath,
                     queryParameters: [
-                        "language" : language.map { $0.rawValue },
+                        "languageCode" : language.map { $0.rawValue },
                         "intentView" : intentView.map { $0.rawValue }
                     ].asQueryString,
                     requestBody: intent,
@@ -112,17 +112,17 @@ public struct Intent: Codable {
         case spanish                = "es"
         case english                = "en"
         case latinAmericanSpanish   = "es-419"
-        case spainSpanish           = "es-ES"
-        case austrlianEnglish       = "en-AU"
-        case canadianEnglish        = "en-CA"
-        case greatBritainEnglish    = "en-GB"
-        case indianEnglish          = "en-IN"
-        case usEnglish              = "en-US"
+        case spainSpanish           = "es-es"
+        case austrlianEnglish       = "en-au"
+        case canadianEnglish        = "en-ca"
+        case greatBritainEnglish    = "en-gb"
+        case indianEnglish          = "en-in"
+        case usEnglish              = "en-us"
         
         public init?(identifier: String) {
             if identifier.starts(with: "es-") && identifier != "es-ES" {
                 self = .latinAmericanSpanish
-            } else if let language = Language(rawValue: identifier) {
+            } else if let language = Language(rawValue: identifier.lowercased()) {
                 self = language
             } else {
                 return nil

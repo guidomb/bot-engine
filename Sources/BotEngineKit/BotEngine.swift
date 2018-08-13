@@ -862,18 +862,3 @@ fileprivate extension BotEngineAction {
         return String(describing: Self.self)
     }
 }
-
-fileprivate extension BotEngine.Services {
-    
-    var intentMatcher: IntentMatcherService {
-        guard let slackService = self.slackService else {
-            fatalError("ERROR - Slack service is not available")
-        }
-        return .init(
-            projectId: self.googleProjectId,
-            executor: self.googleAPIResourceExecutor,
-            slackService: slackService
-        )
-    }
-    
-}
