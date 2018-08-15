@@ -18,7 +18,7 @@ struct SyncArgentinaMailingLists: BotEngineAction {
     
     func execute(using services: BotEngine.Services) -> BotEngine.ActionOutputMessageProducer {
         let mailGroupService = MailGroupService(executor: services.googleAPIResourceExecutor)
-        return mailGroupService.syncBuenosAires(executeChanges: false)
+        return mailGroupService.syncBuenosAires()
             .mapError(BotEngine.ErrorMessage.init(error:))
             .flatMap(.concat, printMembers(using: services))
     }
