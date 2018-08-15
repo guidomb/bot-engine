@@ -37,10 +37,10 @@ struct ImpersonateUser: BotEngineCommand {
     }
     
     func execute(using services: BotEngine.Services, parameters: BotEngine.UserId, senderId: BotEngine.UserId)
-        -> BotEngine.Producer<String> {
+        -> BotEngine.Producer<BotEngine.CommandOutput> {
         let impersonatee = parameters
         impersonate(impersonatee, senderId.asImpersonator)
-        return .init(value: "You are now impersonating \(impersonatee.value)")
+            return .init(value: .init(message: "You are now impersonating \(impersonatee.value)"))
     }
     
 }

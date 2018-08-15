@@ -47,7 +47,7 @@ public protocol BotEngineCommand {
     func parseInput(_ input: String) -> ParametersType?
     
     func execute(using services: BotEngine.Services, parameters: ParametersType, senderId: BotEngine.UserId)
-        -> BotEngine.Producer<String>
+        -> BotEngine.CommandOutputProducer
     
 }
 
@@ -104,6 +104,42 @@ public final class BotEngine {
         public init(message: String, channel: ChannelId? = .none) {
             self.channel = channel
             self.message = message
+        }
+        
+        public init(stringLiteral value: String) {
+            self.init(message: value)
+        }
+        
+    }
+    
+    public struct CommandOutput: ExpressibleByStringLiteral {
+        
+        public struct File {
+            
+            public let name: String
+            public let contentType: String
+            public let content: Data
+            public let description: String?
+            
+            public var size: Int {
+                return content.count
+            }
+            
+            public init(name: String, contentType: String, content: Data, description: String? = .none) {
+                self.name = name
+                self.contentType = contentType
+                self.content = content
+                self.description = description
+            }
+            
+        }
+        
+        public let message: String
+        public let file: File?
+        
+        public init(message: String, file: File? = .none) {
+            self.message = message
+            self.file = file
         }
         
         public init(stringLiteral value: String) {
@@ -189,6 +225,7 @@ public final class BotEngine {
     }
     
     public typealias Producer<T> = SignalProducer<T, BotEngine.ErrorMessage>
+    public typealias CommandOutputProducer = Producer<CommandOutput>
     public typealias ActionOutputMessageProducer = Producer<ActionOutputMessage>
     public typealias InputProducer = SignalProducer<Input, NoError>
     public typealias MessageWithContext = (message: BehaviorMessage, context: BehaviorMessage.Context)
@@ -828,7 +865,7 @@ fileprivate extension BehaviorProtocol {
 
 fileprivate struct RegisteredCommand {
     
-    typealias BoundHandler = (BotEngine.UserId, BotEngine.UserId, BotEngine.Services) -> SignalProducer<String, BotEngine.ErrorMessage>
+    typealias BoundHandler = (BotEngine.UserId, BotEngine.UserId, BotEngine.Services) -> BotEngine.Producer<BotEngine.CommandOutput>
     
     let commandUsage: String
     private let _handle: (String) -> BoundHandler?

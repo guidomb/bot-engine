@@ -41,7 +41,7 @@ struct UnsubscribeMeFromMailGroup: BotEngineCommand {
     }
     
     func execute(using services: BotEngine.Services, parameters: MailGroupService.EveryOne, senderId: BotEngine.UserId)
-        -> BotEngine.Producer<String> {
+        -> BotEngine.CommandOutputProducer {
         guard let slackService = services.slackService else {
             fatalError("ERROR - Slack service not available.")
         }
@@ -62,16 +62,16 @@ fileprivate func extractMailGroup(from input: String, using result: NSTextChecki
 }
 
 fileprivate func unsubscribe(from mailGroup: MailGroupService.EveryOne, using service: MailGroupService)
-    -> (EveryoneMember) -> BotEngine.Producer<String> {
+    -> (EveryoneMember) -> BotEngine.CommandOutputProducer {
     return { member in
         guard member.subscriptions.contains(mailGroup) else {
-            return .init(value: "You are not subscribed to '\(mailGroup.email)'.")
+            return .init(value: .init(message: "You are not subscribed to '\(mailGroup.email)'."))
         }
         guard member.subscriptions.count > 1 else {
-            return .init(value: "I cannot unsubscribe you from '\(mailGroup.email)'. You must be subscribed at least to one mail group.")
+            return .init(value: .init(message: "I cannot unsubscribe you from '\(mailGroup.email)'. You must be subscribed at least to one mail group."))
         }
         if mailGroup == .buenosAires && member.isSubscribedToAnyBuenosAiresOffice() {
-            return .init(value: "You cannot unsubscribe from '\(mailGroup.email)' as long as you are subscribed to \(MailGroupService.EveryOne.azurduy.email) or \(MailGroupService.EveryOne.guemes.email)")
+            return .init(value: .init(message: "You cannot unsubscribe from '\(mailGroup.email)' as long as you are subscribed to \(MailGroupService.EveryOne.azurduy.email) or \(MailGroupService.EveryOne.guemes.email)"))
             
         }
         
@@ -83,7 +83,7 @@ fileprivate func unsubscribe(from mailGroup: MailGroupService.EveryOne, using se
         
         return service.unsubscribe(member: member.email, from: mailGroup)
             .mapError(subscriptionError(member, mailGroup))
-            .map { _ in "You are now unsubscribed from '\(mailGroup.email)'. You remaing subscribed to:\n\(remainingSubscriptions)" }
+            .map { _ in .init(message: "You are now unsubscribed from '\(mailGroup.email)'. You remaing subscribed to:\n\(remainingSubscriptions)") }
     }
 }
 

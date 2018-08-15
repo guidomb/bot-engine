@@ -40,12 +40,12 @@ struct SubscribeToMailGroup: BotEngineCommand {
         }
     }
     
-    func execute(using services: BotEngine.Services, parameters: MailGroupService.EveryOne, senderId: BotEngine.UserId) -> SignalProducer<String, BotEngine.ErrorMessage> {
+    func execute(using services: BotEngine.Services, parameters: MailGroupService.EveryOne, senderId: BotEngine.UserId) -> BotEngine.CommandOutputProducer {
         guard let slackService = services.slackService else {
             fatalError("ERROR - Slack service not available.")
         }
         guard MailGroupService.EveryOne.subscribables.contains(parameters) else {
-            return .init(value: "You cannot subscribe to mail group '\(parameters.email)'")
+            return .init(value: .init(message: "You cannot subscribe to mail group '\(parameters.email)'"))
         }
         
         return fetchUserInfo(userId: senderId, using: slackService)
@@ -58,7 +58,7 @@ fileprivate func extractMailGroup(from input: String, using result: NSTextChecki
     return result.substring(from: input, at: 1).flatMap(MailGroupService.EveryOne.init(rawValue:))
 }
 
-fileprivate func subscribeUserToMailGroup(_ mailGroup: MailGroupService.EveryOne, executor: GoogleAPIResourceExecutor) -> (SKCore.User) ->  SignalProducer<String, BotEngine.ErrorMessage> {
+fileprivate func subscribeUserToMailGroup(_ mailGroup: MailGroupService.EveryOne, executor: GoogleAPIResourceExecutor) -> (SKCore.User) ->  BotEngine.CommandOutputProducer {
     return { user in
         guard let email = user.profile?.email else {
             return .init(error: "I cannot subscribe. Your Slack account email address is not available.")
@@ -67,14 +67,14 @@ fileprivate func subscribeUserToMailGroup(_ mailGroup: MailGroupService.EveryOne
         let mailGroupService = MailGroupService(executor: executor)
         let member = Member(email: email, role: .member)
         
-        func subscribeUnlessIncluded(_ members: [Member]) -> SignalProducer<String, BotEngine.ErrorMessage> {
+        func subscribeUnlessIncluded(_ members: [Member]) -> BotEngine.CommandOutputProducer {
             guard !members.contains(member) else {
-                return .init(value: "You are already subscribed to '\(mailGroup.email)'")
+                return .init(value: .init(message: "You are already subscribed to '\(mailGroup.email)'"))
             }
             return mailGroupService
                 .subscribeMember(member, to: mailGroup)
                 .mapError(subscriptionError(member, mailGroup))
-                .map { _ in "You have been subscribed to '\(mailGroup.email)'" }
+                .map { _ in .init(message: "You have been subscribed to '\(mailGroup.email)'") }
         }
         
         return mailGroupService.members(in: mailGroup)

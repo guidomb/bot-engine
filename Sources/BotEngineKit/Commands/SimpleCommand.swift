@@ -25,9 +25,8 @@ struct SimpleCommand: BotEngineCommand {
         return input == commandUsage ? () : nil
     }
     
-    func execute(using services: BotEngine.Services, parameters: (), senderId: BotEngine.UserId)
-        -> BotEngine.Producer<String> {
-        return action(senderId)
+    func execute(using services: BotEngine.Services, parameters: (), senderId: BotEngine.UserId) -> BotEngine.Producer<BotEngine.CommandOutput> {
+        return action(senderId).map { .init(message: $0) }
     }
     
 }

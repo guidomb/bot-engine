@@ -24,8 +24,7 @@ struct ListEveryoneMailGroups: BotEngineCommand {
         return input == commandUsage ? () : nil
     }
     
-    func execute(using services: BotEngine.Services, parameters: (), senderId: BotEngine.UserId)
-        -> BotEngine.Producer<String> {
+    func execute(using services: BotEngine.Services, parameters: (), senderId: BotEngine.UserId) -> BotEngine.CommandOutputProducer {
         guard let slackService = services.slackService else {
             fatalError("ERROR - Slack service not available.")
         }
@@ -40,12 +39,12 @@ struct ListEveryoneMailGroups: BotEngineCommand {
     
 }
 
-fileprivate func renderSubscriptions(_ member: EveryoneMember) -> String {
+fileprivate func renderSubscriptions(_ member: EveryoneMember) -> BotEngine.CommandOutput {
     guard member.hasSubscriptions() else {
         return "You are not subscribed to any everyone mail group. That's weird."
     }
     
     let subscriptions = member.subscriptions.map { "- \($0.email)" }.sorted().joined(separator: "\n")
-    return "You are subscribed to:\n\(subscriptions)"
+    return .init(message: "You are subscribed to:\n\(subscriptions)")
 }
 
