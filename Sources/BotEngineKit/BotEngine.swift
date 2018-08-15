@@ -428,6 +428,9 @@ fileprivate extension BotEngine {
     }
     
     func handle(message: BehaviorMessage, context: BehaviorMessage.Context) {
+        guard !message.text.isEmpty else {
+            return
+        }
         let channel = message.channel
         guard !message.isCancelMessage else {
             cancelActiveBehavior(for: channel)
