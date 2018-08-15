@@ -1,5 +1,6 @@
 import Foundation
 import BotEngineCLI
+import WoloxKit
 
 let configuration = BotEngineCLI.Configuration(
     googleAuth: .init(
@@ -29,6 +30,7 @@ let botEngine = BotEngineCLI(configuration: configuration) { engine in
     engine.registerCommand(SubscribeToMailGroup())
     engine.registerCommand(UnsubscribeMeFromMailGroup())
     engine.registerCommand(ListEveryoneMailGroups())
+    engine.registerCommand(ListWoloxers(permission: .only(engine.admins)))
     
     // Register schedulable actions
     engine.registerActions(

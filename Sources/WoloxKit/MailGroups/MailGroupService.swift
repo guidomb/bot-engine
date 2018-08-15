@@ -13,6 +13,14 @@ import BotEngineKit
 
 public struct MailGroupService {
     
+    public enum Domain: String {
+        
+        case woloxComAr = "wolox.com.ar"
+        case woloxCo    = "wolox.co"
+        case woloxCl    = "wolox.cl"
+        
+    }
+    
     public enum EveryOne: String {
         
         public static let subscribables: [EveryOne] = [
@@ -142,6 +150,44 @@ public struct MailGroupService {
             .delete(member: member)
             .execute(with: executor)
             .map { (member, mailGroup) }
+    }
+    
+    public func listUsers(in domain: Domain) -> SignalProducer<[DirectoryUser], GoogleAPI.RequestError> {
+        var options = ListUsersOptions()
+        options.domain = domain.rawValue
+        return fetchAllPages(
+            options: options,
+            using: GoogleAPI.directory.users.list(options:),
+            executor: executor,
+            extract: \.users
+        )
+        .map { users in
+            let filteredUsers = Set(domain.filteredUsersEmail(in: domain))
+            return users.filter { !filteredUsers.contains($0.primaryEmail) }
+        }
+    }
+    
+    public func listAllUsers() -> SignalProducer<[DirectoryUser], GoogleAPI.RequestError> {
+        return SignalProducer.merge(
+            listUsers(in: .woloxComAr),
+            listUsers(in: .woloxCo),
+            listUsers(in: .woloxCl)
+        )
+        .collect()
+        .map { lists in lists.flatMap { $0 } }
+    }
+    
+}
+
+fileprivate extension MailGroupService.Domain {
+    
+    func filteredUsersEmail(in domain: MailGroupService.Domain) -> [String] {
+        switch domain {
+        case .woloxComAr:
+            return ["wonu@wolox.com.ar", "transparency@wolox.com.ar"]
+        default:
+            return []
+        }
     }
     
 }
