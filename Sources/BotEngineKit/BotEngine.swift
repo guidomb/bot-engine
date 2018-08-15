@@ -448,14 +448,16 @@ fileprivate extension BotEngine {
     }
     
     func handle(command: RegisteredCommand.BoundHandler, with message: BehaviorMessage, channel: ChannelId) {
-        command(message.senderId, message.originalSenderId, services).startWithResult { result in
-            switch result {
-            case .success(let output):
-                self.send(message: output, for: channel)
-            case .failure(let error):
-                self.send(message: error.message, for: channel)
+        command(message.senderId, message.originalSenderId, services)
+            .flatMap(.concat, uploadFileIfNeeded(channel: channel))
+            .startWithResult { result in
+                switch result {
+                case .success(let output):
+                    self.send(message: output.message, for: channel)
+                case .failure(let error):
+                    self.send(message: error.message, for: channel)
+                }
             }
-        }
     }
     
     func handle(action boundAction: BoundAction, channel: ChannelId, message: BehaviorMessage) {
@@ -620,6 +622,28 @@ fileprivate extension BotEngine {
     
     func applyImpersonationIfNeeded(_ message: BehaviorMessage) -> BehaviorMessage {
         return message.impersonate(user: applyImpersonationIfNeeded(message.senderId))
+    }
+    
+    func uploadFileIfNeeded(channel: ChannelId) -> (CommandOutput) -> CommandOutputProducer {
+        return { output in
+            guard let file = output.file else {
+                return .init(value: output)
+            }
+            // TODO decouple this method from slack service
+            guard let slackService = self.services.slackService else {
+                return .init(error: "There was an internal error. I cannot upload a file because Slack service is not available")
+            }
+            
+            return slackService.uploadFile(
+                file: file.content,
+                filename: file.name,
+                filetype: file.contentType,
+                title: file.description,
+                channels: [channel]
+                )
+                .mapError(ErrorMessage.init(error:))
+                .map { _ in output }
+        }
     }
     
 }

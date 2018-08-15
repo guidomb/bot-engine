@@ -21,6 +21,7 @@ public enum SlackServiceError: Swift.Error {
     case fetchUserInfoFailure(SlackError)
     case directMessageChannelNotAvailable
     case connectionFailure(Error)
+    case fileUploadError(Error)
     
 }
 
@@ -43,6 +44,13 @@ public protocol SlackServiceProtocol {
     func fetchUsersInChannel(_ channelId: String) -> SignalProducer<[SKCore.User], SlackServiceError>
     
     func openDirectMessageChannel(withUser userId: String) -> SignalProducer<String, SlackServiceError>
+    
+    func uploadFile(
+        file: Data,
+        filename: String,
+        filetype: String,
+        title: String?,
+        channels: [String]?) -> SignalProducer<SKCore.File, SlackServiceError>
     
 }
 
@@ -164,6 +172,28 @@ public final class SlackService: SlackServiceProtocol {
                     }
                 },
                 failure: { observer.send(error: .fetchUserInfoFailure($0)) })
+        }
+    }
+    
+    public func uploadFile(
+        file: Data,
+        filename: String,
+        filetype: String,
+        title: String?,
+        channels: [String]?) -> SignalProducer<SKCore.File, SlackServiceError> {
+        return SignalProducer { [webAPI = self.webAPI] observer, _ in
+            webAPI.uploadFile(
+                file: file,
+                filename: filename,
+                filetype: filetype,
+                title: title,
+                channels: channels,
+                success: { file in
+                    observer.send(value: file)
+                    observer.sendCompleted()
+                },
+                failure: { observer.send(error: .fileUploadError($0)) }
+            )
         }
     }
     
