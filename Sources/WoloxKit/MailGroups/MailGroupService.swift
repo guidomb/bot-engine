@@ -21,11 +21,28 @@ public struct MailGroupService {
         
     }
     
+    public enum Country: String {
+        
+        static let all: [Country] = [
+            .argentina,
+            .colombia,
+            .chile,
+            .us
+        ]
+        
+        case argentina  = "argentina@wolox.com.ar"
+        case colombia   = "colombia@wolox.com.ar"
+        case chile      = "chile@wolox.com.ar"
+        case us         = "us@wolox.com.ar"
+        
+    }
+    
     public enum EveryOne: String {
         
         public static let subscribables: [EveryOne] = [
             .guemes,
             .azurduy,
+            .colombia,
             .chile,
             .mexico,
             .us
@@ -35,6 +52,7 @@ public struct MailGroupService {
         case guemes
         case azurduy
         case buenosAires = "buenosaires"
+        case colombia
         case chile
         case mexico
         case us
@@ -114,6 +132,21 @@ public struct MailGroupService {
             executor: executor,
             extract: \.members
         )
+    }
+    
+    public func members(in group: Country) -> SignalProducer<[Member], GoogleAPI.RequestError> {
+        return fetchAllPages(
+            options: ListMembersOptions(),
+            using: GoogleAPI.directory.members(for: group.rawValue).list(options:),
+            executor: executor,
+            extract: \.members
+        )
+    }
+    
+    public func allCountryMembers() -> SignalProducer<[Member], GoogleAPI.RequestError> {
+        return SignalProducer.merge(Country.all.map { members(in: $0) })
+            .collect()
+            .map { $0.flatten() }
     }
     
     public func subscribeMember(_ member: Member, to group: EveryOne) -> SignalProducer<Member, GoogleAPI.RequestError> {

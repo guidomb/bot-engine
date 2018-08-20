@@ -35,7 +35,8 @@ let botEngine = BotEngineCLI(configuration: configuration) { engine in
     // Register schedulable actions
     engine.registerActions(
         SyncArgentinaMailingLists(),
-        SyncMailChimpMailingList()
+        SyncMailChimpMailingList(),
+        CheckMailingListIntegrity()
     )
     
     // Bind actions
@@ -47,6 +48,11 @@ let botEngine = BotEngineCLI(configuration: configuration) { engine in
     engine.bindAction(
         SyncMailChimpMailingList(),
         to: "sync mailchimp mailing list",
+        allow: .only(engine.admins)
+    )
+    engine.bindAction(
+        CheckMailingListIntegrity(),
+        to: "check mailing lists integrity",
         allow: .only(engine.admins)
     )
 }
