@@ -12,4 +12,4 @@ WORKDIR /botengine
 COPY .build-ubuntu/x86_64-unknown-linux/release/WotServer wotserver
 
 # Command to start Swift application
-CMD ./wotserver --output-channel wot-log --port $PORT --gcloud-delegated-account $GCLOUD_DELEGATED_ACCOUNT
+CMD ./wotserver --admins $ADMINS --output-channel wot-log --port $PORT --gcloud-delegated-account $GCLOUD_DELEGATED_ACCOUNT
