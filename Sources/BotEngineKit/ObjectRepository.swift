@@ -23,6 +23,12 @@ public protocol Persistable: Identifiable, Codable {
     
 }
 
+public protocol QueryableByProperty {
+    
+    static var queryableProperties: [String : AnyKeyPath] { get }
+    
+}
+
 extension Persistable {
     
     public static var collectionName: String {
@@ -47,13 +53,40 @@ public protocol ObjectRepository {
     func fetch<ObjectType: Persistable>(byId id: Identifier<ObjectType>) -> SignalProducer<ObjectType, AnyError>
     
     func fetchAll<ObjectType: Persistable>(_ objectType: ObjectType.Type) -> SignalProducer<[ObjectType], AnyError>
+
+    func fetchAll<ObjectType: Persistable & QueryableByProperty, Value: Equatable>(_ objectType: ObjectType.Type, where: KeyPatchMatcher<ObjectType, Value>) -> SignalProducer<[ObjectType], AnyError>
     
     func delete<ObjectType: Persistable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError>
     
 }
 
-public final class InMemoryObjectRepository: ObjectRepository {
+extension ObjectRepository {
     
+    
+    public func fetchFirst<ObjectType: Persistable & QueryableByProperty, Value: Equatable>(_ objectType: ObjectType.Type, where keyPathMatcher: KeyPatchMatcher<ObjectType, Value>) -> SignalProducer<ObjectType?, AnyError> {
+        return fetchAll(objectType, where: keyPathMatcher).map { $0.first }
+    }
+    
+}
+
+public struct KeyPatchMatcher<Root, Value> {
+    
+    public let keyPath: KeyPath<Root, Value>
+    public let value: Value
+    
+    init(keyPath: KeyPath<Root, Value>, value: Value) {
+        self.keyPath = keyPath
+        self.value = value
+    }
+    
+}
+
+public func ==<Root, Value>(lhs: KeyPath<Root, Value>, rhs: Value) -> KeyPatchMatcher<Root, Value> {
+    return .init(keyPath: lhs, value: rhs)
+}
+
+public final class InMemoryObjectRepository: ObjectRepository {
+
     enum Error: Swift.Error {
         
         case objectRepositoryDoesNotExist
@@ -103,6 +136,13 @@ public final class InMemoryObjectRepository: ObjectRepository {
         }
         return SignalProducer(value: objects)
     }
+    
+    public func fetchAll<ObjectType: Persistable & QueryableByProperty, Value: Equatable>(_ objectType: ObjectType.Type, where keyPatchMatcher: KeyPatchMatcher<ObjectType, Value>) -> SignalProducer<[ObjectType], AnyError> {
+        return fetchAll(objectType).map { objects in
+            objects.filter { $0[keyPath: keyPatchMatcher.keyPath] == keyPatchMatcher.value }
+        }
+    }
+
     
     public func delete<ObjectType: Persistable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
         let key = String(describing: ObjectType.self)

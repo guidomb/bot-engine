@@ -107,6 +107,20 @@ public extension GoogleAPI {
                     method: .delete
                 )
             }
+            
+            // https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents/runQuery
+            public func runQuery(collectionId: String, parameters: RunQueryParameters) -> Resource<RunQueryResponse> {
+                return Resource(
+                    path: "\(basePath)/\(collectionId)",
+                    queryParameters: { .none },
+                    requestBody: try? JSONEncoder().encode(parameters),
+                    method: .post
+                )
+            }
+            
+            public func runQuery(collectionId: String, query: StructuredQuery) -> Resource<RunQueryResponse> {
+                return runQuery(collectionId: collectionId, parameters: .init(structuredQuery: query))
+            }
         }
 
         public var documents: Documents { return Documents(basePath: basePath) }
@@ -222,9 +236,7 @@ public enum FirestoreDocumentPrecondition: QueryStringConvertible {
         case .exists(let exists):
             return "exists=\(exists)"
         case .updateTime(let updateTime):
-            let formatter = DateFormatter()
-            formatter.dateFormat = FirestoreDocument.dateFormat
-            return "updateTime=\(formatter.string(from: updateTime))"
+            return "updateTime=\(FirestoreDocument.serialize(date: updateTime))"
         }
     }
 
@@ -432,9 +444,327 @@ public struct FirestoreDocument: Codable, AutoEquatable {
 
 }
 
+
+public enum Transaction: Codable {
+    
+    case readOnly(readTime: Date)
+    case readWrite(retryTransaction: String)
+    
+    enum CodingKeys: CodingKey {
+        
+        case readOnly
+        case readWrite
+        case readTime
+        case retryTransaction
+        
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if container.contains(.readOnly) {
+            let nestedContainer = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .readOnly)
+            let timestamp = try nestedContainer.decode(String.self, forKey: .readTime)
+            guard let readTime = FirestoreDocument.deserialize(date: timestamp) else {
+                throw FirestoreDocument.DecodeError.cannotDeserializeTimestamp(timestamp)
+            }
+            self = .readOnly(readTime: readTime)
+        } else {
+            let nestedContainer = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .readWrite)
+            let retryTransaction = try nestedContainer.decode(String.self, forKey: .retryTransaction)
+            self = .readWrite(retryTransaction: retryTransaction)
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch  self {
+        case .readOnly(let readTime):
+            var nestedContainer = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .readOnly)
+            try nestedContainer.encode(FirestoreDocument.serialize(date: readTime), forKey: .readTime)
+        case .readWrite(let retryTransaction):
+            var nestedContainer = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .readWrite)
+            try nestedContainer.encode(retryTransaction, forKey: .retryTransaction)
+        }
+    }
+    
+}
+
+public struct RunQueryResponse: Codable {
+    
+    public let transaction: String?
+    public let document: FirestoreDocument?
+    public let readTime: String?
+    public let skippedResults: Int?
+    
+}
+
+public struct RunQueryParameters: Codable {
+    
+    public enum ConsistencySelector: Codable {
+        
+        case transaction(String)
+        case newTransaction(Transaction)
+        case readTime(Date)
+        
+        enum CodingKeys: CodingKey {
+            
+            case transaction
+            case newTransaction
+            case readTime
+            
+        }
+        
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            if let transactionId = try container.decodeIfPresent(String.self, forKey: .transaction) {
+                self = .transaction(transactionId)
+            } else if let transaction = try container.decodeIfPresent(Transaction.self, forKey: .newTransaction) {
+                self = .newTransaction(transaction)
+            } else {
+                let timestamp = try container.decode(String.self, forKey: .readTime)
+                guard let date = FirestoreDocument.deserialize(date: timestamp) else {
+                    throw FirestoreDocument.DecodeError.cannotDeserializeTimestamp(timestamp)
+                }
+                self = .readTime(date)
+            }
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            switch self {
+            case .transaction(let transactionId):
+                try container.encode(transactionId, forKey: .transaction)
+            case .newTransaction(let transaction):
+                try container.encode(transaction, forKey: .newTransaction)
+            case .readTime(let timestamp):
+                try container.encode(FirestoreDocument.serialize(date: timestamp), forKey: .readTime)
+            }
+        }
+        
+    }
+    
+    public let structuredQuery: StructuredQuery
+    public let consistencySelector: ConsistencySelector?
+    
+    init(structuredQuery: StructuredQuery, consistencySelector: ConsistencySelector? = .none) {
+        self.structuredQuery = structuredQuery
+        self.consistencySelector = consistencySelector
+    }
+    
+}
+
+public struct StructuredQuery: Codable {
+    
+    public struct Projection: Codable {
+        
+        public let fields: [FieldReference]
+        
+        init(fields: [FieldReference]) {
+            self.fields = fields
+        }
+        
+    }
+    
+    public struct FieldReference: Codable {
+        
+        public let fieldPath: String
+        
+        public init(fieldPath: String) {
+            self.fieldPath = fieldPath
+        }
+        
+    }
+    
+    public struct CollectionSelector: Codable {
+        
+        public let collectionId: String
+        public let allDescendants: Bool
+        
+        public init(collectionId: String, allDescendants: Bool) {
+            self.collectionId = collectionId
+            self.allDescendants = allDescendants
+        }
+        
+    }
+    
+    public enum Filter: Codable {
+        
+        case composite(CompositeFilter)
+        case field(FieldFilter)
+        case unary(UnaryFilter)
+        
+        enum CodingKeys: CodingKey {
+            
+            case compositeFilter
+            case fieldFilter
+            case unaryFilter
+            
+        }
+        
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            if let filter = try container.decodeIfPresent(CompositeFilter.self, forKey: .compositeFilter) {
+                self = .composite(filter)
+            } else if let filter = try container.decodeIfPresent(FieldFilter.self, forKey: .fieldFilter) {
+                self = .field(filter)
+            } else {
+                self = .unary(try container.decode(UnaryFilter.self, forKey: .unaryFilter))
+            }
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            switch self {
+            case .composite(let filter):
+                try container.encode(filter, forKey: .compositeFilter)
+            case .field(let filter):
+                try container.encode(filter, forKey: .fieldFilter)
+            case .unary(let filter):
+                try container.encode(filter, forKey: .unaryFilter)
+            }
+        }
+        
+    }
+    
+    public struct FieldFilter: Codable {
+        
+        public enum Operator: String, Codable {
+            
+            case unspecified        = "OPERATOR_UNSPECIFIED"
+            case lessThan           = "LESS_THAN"
+            case lessThanOrEqual    = "LESS_THAN_OR_EQUAL"
+            case greaterThan        = "GREATER_THAN"
+            case greaterThanOrEqual = "GREATER_THAN_OR_EQUAL"
+            case equal              = "EQUAL"
+            case arrayContains      = "ARRAY_CONTAINS"
+            
+        }
+        
+        public let field: FieldReference
+        public let op: Operator
+        public let value: FirestoreDocument.Value
+        
+        public init(field: FieldReference, op: Operator, value: FirestoreDocument.Value) {
+            self.field = field
+            self.op = op
+            self.value = value
+        }
+        
+        public init(fieldPath: String, op: Operator, value: FirestoreDocument.Value) {
+            self.init(field: .init(fieldPath: fieldPath), op: op, value: value)
+        }
+        
+    }
+    
+    public struct CompositeFilter: Codable {
+        
+        public enum Operator: String, Codable {
+            
+            case and            = "AND"
+            case unspecified    = "OPERATOR_UNSPECIFIED"
+            
+        }
+        
+        public let op: Operator
+        public let filters: [Filter]
+        
+        public init(op: Operator, filters: [Filter]) {
+            self.op = op
+            self.filters = filters
+        }
+        
+    }
+    
+    public struct UnaryFilter: Codable {
+        
+        public enum Operator: String, Codable {
+            
+            case unspecified        = "OPERATOR_UNSPECIFIED"
+            case isNan              = "IS_NAN"
+            case isNull             = "IS_NULL"
+            
+        }
+        
+        public let op: Operator
+        public let field: FieldReference
+        
+        public init(op: Operator, field: FieldReference) {
+            self.op = op
+            self.field = field
+        }
+        
+    }
+    
+    public struct Order: Codable {
+        
+        public enum Direction: String, Codable {
+            
+            case unspecified    = "DIRECTION_UNSPECIFIED"
+            case ascending      = "ASCENDING"
+            case descending     = "DESCENDING"
+            
+        }
+        
+        public let field: FieldReference
+        public let direction: Direction
+        
+        public init(field: FieldReference, direction: Direction) {
+            self.field = field
+            self.direction = direction
+        }
+        
+    }
+    
+    public struct Cursor: Codable {
+        
+        public let values: [FirestoreDocument.Value]
+        public let before: Bool
+        
+        public init(values: [FirestoreDocument.Value], before: Bool) {
+            self.values = values
+            self.before = before
+        }
+        
+    }
+    
+    public var select: Projection?
+    public let from: [CollectionSelector]
+    public var `where`: Filter?
+    public var orderBy: Order?
+    public var offset: UInt?
+    public var limit: UInt?
+    
+    public init(from: CollectionSelector...) {
+        self.from = from
+    }
+    
+    public init(from collectionId: String) {
+        self.init(from: CollectionSelector(collectionId: collectionId, allDescendants: true))
+    }
+    
+}
+
+
 public extension FirestoreDocument {
 
     static var printSerializationDebugLog = false
+    
+    static func serialize(date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = FirestoreDocument.dateFormat
+        return formatter.string(from:date)
+    }
+    
+    static func deserialize(date serializedDate: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = FirestoreDocument.dateFormat
+        if let date = formatter.date(from: serializedDate) {
+            return date
+        } else {
+            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+            return formatter.date(from: serializedDate)
+        }
+    }
 
     static func serialize(object: Any, skipFields: [String] = []) -> FirestoreDocument? {
         if printSerializationDebugLog {
@@ -557,9 +887,7 @@ public extension FirestoreDocument {
         } else if let doubleValue = value as? Double {
             return .doubleValue(doubleValue)
         } else if let dateValue = value as? Date {
-            let formatter = DateFormatter()
-            formatter.dateFormat = FirestoreDocument.dateFormat
-            return .timestampValue(formatter.string(from: dateValue))
+            return .timestampValue(FirestoreDocument.serialize(date: dateValue))
         } else if let dataValue = value as? Data {
             return .bytesValue(dataValue.base64EncodedString())
         } else if let stringValue = value as? String {
@@ -573,10 +901,8 @@ public extension FirestoreDocument {
 
     var unwrapped: [String : Any] {
         var unwrappedFields = fields.mapValues { $0.unwrapped }
-        let formatter = DateFormatter()
-        formatter.dateFormat = FirestoreDocument.dateFormat
-        unwrappedFields["createTime"] = formatter.string(from: createTime)
-        unwrappedFields["updateTime"] = formatter.string(from: updateTime)
+        unwrappedFields["createTime"] = FirestoreDocument.serialize(date: createTime)
+        unwrappedFields["updateTime"] = FirestoreDocument.serialize(date: updateTime)
         return unwrappedFields
     }
 
@@ -612,21 +938,13 @@ public extension FirestoreDocument.Value {
             // First we use the Firestore declared time format. If that fails
             // it might be because firebase omits the miliseconds with dates
             // that have the time set to 00:00:00.
-            let formatter = DateFormatter()
-            formatter.dateFormat = FirestoreDocument.dateFormat
-            if let date = formatter.date(from: value) {
-                return date.timeIntervalSinceReferenceDate
-            } else {
-                formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
-                if let date = formatter.date(from: value) {
-                    return date.timeIntervalSinceReferenceDate
-                } else {
-                    if FirestoreDocument.printSerializationDebugLog {
-                        print("WARN - FirestoreDocument.unwrapped - Unable to unwrap timestamp value '\(value)'")
-                    }
-                    return value
+            guard let date = FirestoreDocument.deserialize(date: value)?.timeIntervalSinceReferenceDate else {
+                if FirestoreDocument.printSerializationDebugLog {
+                    print("WARN - FirestoreDocument.unwrapped - Unable to unwrap timestamp value '\(value)'")
                 }
+                return value
             }
+            return date
         case .stringValue(let value):
             return value
         case .bytesValue(let value):
@@ -649,11 +967,9 @@ fileprivate extension FirestoreDocument {
     static let dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
 
     static func decodeDate(forKey key: CodingKeys, container: KeyedDecodingContainer<CodingKeys>) throws -> Date {
-        let formatter = DateFormatter()
-        formatter.dateFormat = dateFormat
         let dateString = try container.decode(String.self, forKey: key)
-        guard let date = formatter.date(from: dateString) else {
-            throw DecodeError.invalidDate(date: dateString, format: formatter.dateFormat, key: key)
+        guard let date = FirestoreDocument.deserialize(date: dateString) else {
+            throw DecodeError.invalidDate(date: dateString, format: dateFormat, key: key)
         }
         return date
     }
@@ -676,6 +992,7 @@ fileprivate extension FirestoreDocument {
 
         case invalidDate(date: String, format: String, key: CodingKeys)
         case unsupportedValueType
+        case cannotDeserializeTimestamp(String)
 
     }
 }

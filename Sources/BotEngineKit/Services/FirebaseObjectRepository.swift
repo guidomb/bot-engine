@@ -18,6 +18,7 @@ public struct FirebaseObjectRepository: ObjectRepository {
         case requestError(GoogleAPI.RequestError)
         case deserializationError(Swift.Error)
         case objectIsNotPersisted
+        case cannotSerializeFieldValue(Any)
         
         var asAnyError: AnyError {
             return AnyError(self)
@@ -63,6 +64,32 @@ public struct FirebaseObjectRepository: ObjectRepository {
         )
         .mapError { Error.requestError($0).asAnyError }
         .flatMap(.concat, deserialize(as: ObjectType.self))
+    }
+    
+    public func fetchAll<ObjectType: Persistable & QueryableByProperty, Value: Equatable>(_ objectType: ObjectType.Type, where keyPatchMatcher: KeyPatchMatcher<ObjectType, Value>) -> SignalProducer<[ObjectType], AnyError> {
+        
+        let keyPath = keyPatchMatcher.keyPath as AnyKeyPath
+        guard let queryableProperty = ObjectType.queryableProperties.first(where: { $0.value == keyPath }) else {
+            return .init(value: [])
+        }
+        guard let fieldValue = FirestoreDocument.serializeSimpleValue(keyPatchMatcher.value) else {
+            return SignalProducer(error: Error.cannotSerializeFieldValue(keyPatchMatcher.value).asAnyError)
+        }
+        
+        var query = StructuredQuery(from: ObjectType.collectionName)
+        query.where = .field(.init(fieldPath: queryableProperty.key, op: .equal, value: fieldValue))
+        let collectionId = ObjectType.collectionName
+        return firestore.documents
+            .runQuery(collectionId: collectionId, query: query)
+            .execute(with: executor)
+            .mapError { Error.requestError($0).asAnyError }
+            .flatMap(.concat) { response -> SignalProducer<[ObjectType], AnyError> in
+                if let document = response.document {
+                    return .empty
+                } else {
+                    return .init(value: [])
+                }
+            }
     }
     
     public func delete<ObjectType: Persistable>(object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
