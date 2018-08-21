@@ -77,6 +77,70 @@ extension SchedulerInterval {
 
 }
 
+extension UserConfiguration.Property {
+
+    enum CodingKeys: String, CodingKey {
+        case string
+        case integer
+        case doulbe
+        case bool
+        case stringValue
+        case integerValue
+        case doubleValue
+        case boolValue
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        if container.allKeys.contains(.string), try container.decodeNil(forKey: .string) == false {
+            let associatedValues = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .string)
+            let stringValue = try associatedValues.decode(String.self, forKey: .stringValue)
+            self = .string(stringValue: stringValue)
+            return
+        }
+        if container.allKeys.contains(.integer), try container.decodeNil(forKey: .integer) == false {
+            let associatedValues = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .integer)
+            let integerValue = try associatedValues.decode(Int.self, forKey: .integerValue)
+            self = .integer(integerValue: integerValue)
+            return
+        }
+        if container.allKeys.contains(.doulbe), try container.decodeNil(forKey: .doulbe) == false {
+            let associatedValues = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .doulbe)
+            let doubleValue = try associatedValues.decode(Double.self, forKey: .doubleValue)
+            self = .doulbe(doubleValue: doubleValue)
+            return
+        }
+        if container.allKeys.contains(.bool), try container.decodeNil(forKey: .bool) == false {
+            let associatedValues = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .bool)
+            let boolValue = try associatedValues.decode(Bool.self, forKey: .boolValue)
+            self = .bool(boolValue: boolValue)
+            return
+        }
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Unknown enum case"))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case let .string(stringValue):
+            var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .string)
+            try associatedValues.encode(stringValue, forKey: .stringValue)
+        case let .integer(integerValue):
+            var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .integer)
+            try associatedValues.encode(integerValue, forKey: .integerValue)
+        case let .doulbe(doubleValue):
+            var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .doulbe)
+            try associatedValues.encode(doubleValue, forKey: .doubleValue)
+        case let .bool(boolValue):
+            var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .bool)
+            try associatedValues.encode(boolValue, forKey: .boolValue)
+        }
+    }
+
+}
+
 // swiftlint:disable file_length
 fileprivate func compareOptionals<T>(lhs: T?, rhs: T?, compare: (_ lhs: T, _ rhs: T) -> Bool) -> Bool {
     switch (lhs, rhs) {
