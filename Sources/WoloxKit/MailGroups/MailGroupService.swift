@@ -23,7 +23,7 @@ public struct MailGroupService {
     
     public enum Country: String {
         
-        static let all: [Country] = [
+        public static let all: [Country] = [
             .argentina,
             .colombia,
             .chile,
@@ -75,6 +75,14 @@ public struct MailGroupService {
                 return nil
             }
         }
+        
+    }
+    
+    public enum Special: String {
+        
+        case everyoneBlacklist  = "everyone-blacklist@wolox.com.ar"
+        case nonWoloxers        = "non-woloxers@wolox.com.ar"
+        case multicountry       = "multicountry@wolox.com.ar"
         
     }
     
@@ -135,6 +143,15 @@ public struct MailGroupService {
     }
     
     public func members(in group: Country) -> SignalProducer<[Member], GoogleAPI.RequestError> {
+        return fetchAllPages(
+            options: ListMembersOptions(),
+            using: GoogleAPI.directory.members(for: group.rawValue).list(options:),
+            executor: executor,
+            extract: \.members
+        )
+    }
+    
+    public func members(in group: Special) -> SignalProducer<[Member], GoogleAPI.RequestError> {
         return fetchAllPages(
             options: ListMembersOptions(),
             using: GoogleAPI.directory.members(for: group.rawValue).list(options:),

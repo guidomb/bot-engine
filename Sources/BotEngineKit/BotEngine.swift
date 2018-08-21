@@ -148,7 +148,7 @@ public final class BotEngine {
         
     }
     
-    public struct ErrorMessage: Error, ExpressibleByStringLiteral {
+    public struct ErrorMessage: Error, ExpressibleByStringLiteral, CustomStringConvertible {
         
         public let message: String
         
@@ -165,6 +165,10 @@ public final class BotEngine {
         }
         
         public var localizedDescription: String {
+            return message
+        }
+        
+        public var description: String {
             return message
         }
     }
