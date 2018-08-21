@@ -194,7 +194,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         
     }
     
-    public struct ResourceError: Error, Decodable {
+    public struct ResourceError: Error, Decodable, CustomStringConvertible {
         
         public struct ExtendedError: Decodable {
             
@@ -220,6 +220,10 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         public let error: ErrorInfo
         
         public var localizedDescription: String {
+            return error.message
+        }
+        
+        public var description: String {
             return error.message
         }
         
