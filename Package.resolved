@@ -69,8 +69,8 @@
         "repositoryURL": "https://github.com/vapor/http.git",
         "state": {
           "branch": null,
-          "revision": "8123ea00e9858b369cd168d0303d33e7d3804d19",
-          "version": "3.0.7"
+          "revision": "0fac5c7c9ab1e424621ba001d83cb59ffca99ad2",
+          "version": "3.1.1"
         }
       },
       {
@@ -120,11 +120,11 @@
       },
       {
         "package": "SKClient",
-        "repositoryURL": "https://github.com/SlackKit/SKClient",
+        "repositoryURL": "https://github.com/guidomb/SKClient",
         "state": {
-          "branch": null,
-          "revision": "008e10a402f17519750a5b94c4cf6b16310abf18",
-          "version": "4.1.0"
+          "branch": "master",
+          "revision": "550da08cda5abedd53519788128cf1158bc7f131",
+          "version": null
         }
       },
       {
