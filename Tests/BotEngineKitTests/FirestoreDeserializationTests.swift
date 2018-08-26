@@ -37,10 +37,23 @@ class FirestoreDeserializationTests: XCTestCase {
             in: "Deserialization/ActiveSurvey_FirestoreDocument.json",
             as: FirestoreDocument.self
         )
+        
         let activeSurvey: ActiveSurvey? = document
             .flatMap { try? $0.deserialize() }
         
         XCTAssertNotNil(activeSurvey)
+    }
+    
+    func testDeserializeUserConfiguration() {
+        let document = try? fixtureManager.loadFixture(
+            in: "Deserialization/UserConfiguration_FirestoreDocument.json",
+            as: FirestoreDocument.self
+        )
+
+        let configuration: UserConfiguration? = document
+            .flatMap { try? $0.deserialize() }
+        
+        XCTAssertNotNil(configuration)
     }
     
 }

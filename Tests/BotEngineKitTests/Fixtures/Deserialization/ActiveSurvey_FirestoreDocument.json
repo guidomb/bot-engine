@@ -44,7 +44,13 @@
             }
           },
           "creatorId": {
-            "stringValue": "U02F7KUJM"
+            "mapValue": {
+              "fields": {
+                "value": {
+                  "stringValue": "U02F7KUJM"
+                }
+              }
+            }
           },
           "formId": {
             "stringValue": "1mlteVfq46HlO4VPR4LQjUKAqGS8f8fE7AtqWapqoM3w"

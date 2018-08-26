@@ -109,17 +109,17 @@ public extension GoogleAPI {
             }
             
             // https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents/runQuery
-            public func runQuery(collectionId: String, parameters: RunQueryParameters) -> Resource<RunQueryResponse> {
+            public func runQuery(parameters: RunQueryParameters) -> Resource<[RunQueryResponse]> {
                 return Resource(
-                    path: "\(basePath)/\(collectionId)",
+                    path: "\(basePath):runQuery",
                     queryParameters: { .none },
                     requestBody: try? JSONEncoder().encode(parameters),
                     method: .post
                 )
             }
             
-            public func runQuery(collectionId: String, query: StructuredQuery) -> Resource<RunQueryResponse> {
-                return runQuery(collectionId: collectionId, parameters: .init(structuredQuery: query))
+            public func runQuery(query: StructuredQuery) -> Resource<[RunQueryResponse]> {
+                return runQuery(parameters: .init(structuredQuery: query))
             }
         }
 
@@ -311,7 +311,7 @@ public struct FirestoreDocument: Codable, AutoEquatable {
 
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            if let _ = try container.decodeIfPresent(String?.self, forKey: .nullValue) {
+            if container.contains(.nullValue) {
                 self = .nullValue
             } else if let value = try container.decodeIfPresent(Bool.self, forKey: .booleanValue) {
                 self = .booleanValue(value)
@@ -739,7 +739,7 @@ public struct StructuredQuery: Codable {
     }
     
     public init(from collectionId: String) {
-        self.init(from: CollectionSelector(collectionId: collectionId, allDescendants: true))
+        self.init(from: CollectionSelector(collectionId: collectionId, allDescendants: false))
     }
     
 }

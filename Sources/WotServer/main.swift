@@ -5,13 +5,13 @@ import WoloxKit
 let configuration = BotEngineCLI.Configuration(
     googleAuth: .init(
         scopes: [
-            "https://www.googleapis.com/auth/spreadsheets.readonly",
-            "https://www.googleapis.com/auth/forms",
-            "https://www.googleapis.com/auth/drive.metadata.readonly",
-            "https://www.googleapis.com/auth/datastore",
             "https://www.googleapis.com/auth/admin.directory.group",
             "https://www.googleapis.com/auth/admin.directory.user.readonly",
-            "https://www.googleapis.com/auth/cloud-platform"
+            "https://www.googleapis.com/auth/cloud-platform",
+            "https://www.googleapis.com/auth/datastore",
+            "https://www.googleapis.com/auth/drive",
+            "https://www.googleapis.com/auth/forms",
+            "https://www.googleapis.com/auth/spreadsheets",
         ],
         credentialsFilename: "wotcrendentials.json"
     ),

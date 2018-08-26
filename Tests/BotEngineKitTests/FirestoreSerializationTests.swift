@@ -70,5 +70,18 @@ class FirestoreSerializationTests: XCTestCase {
         XCTAssertEqual(values, fixture)
     }
     
+    func testSerializeUserConfiguration() {
+        let configuration = UserConfiguration(engineUserId: .init(value: "U02FQLM2P"))
+        
+        let fields = FirestoreDocument.serialize(object: configuration, skipFields: ["id"])?.fields
+        let values = fields.map(FirestoreDocument.MapValue.init)
+        let fixture = try? fixtureManager.loadFixture(
+            in: "Serialization/UserConfiguration.json",
+            as: FirestoreDocument.MapValue.self
+        )
+        
+        XCTAssertEqual(values, fixture)
+    }
+    
 }
 

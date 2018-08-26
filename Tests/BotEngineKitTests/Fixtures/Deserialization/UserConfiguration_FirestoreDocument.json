@@ -1,0 +1,16 @@
+{
+  "name": "projects/feedi-dev/databases/(default)/documents/botenginekit_userconfiguration/EH9jbKuEH76Ya7lYIxp9",
+  "fields": {
+    "properties": {
+      "mapValue": {}
+    },
+    "engineUserId": {
+      "stringValue": "U02F7KUJM"
+    },
+    "intentLanguage": {
+      "nullValue": null
+    }
+  },
+  "createTime": "2018-08-25T23:15:30.744179Z",
+  "updateTime": "2018-08-25T23:15:30.744179Z"
+}

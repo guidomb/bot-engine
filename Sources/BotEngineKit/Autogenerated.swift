@@ -82,7 +82,7 @@ extension UserConfiguration.Property {
     enum CodingKeys: String, CodingKey {
         case string
         case integer
-        case doulbe
+        case double
         case bool
         case stringValue
         case integerValue
@@ -105,10 +105,10 @@ extension UserConfiguration.Property {
             self = .integer(integerValue: integerValue)
             return
         }
-        if container.allKeys.contains(.doulbe), try container.decodeNil(forKey: .doulbe) == false {
-            let associatedValues = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .doulbe)
+        if container.allKeys.contains(.double), try container.decodeNil(forKey: .double) == false {
+            let associatedValues = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .double)
             let doubleValue = try associatedValues.decode(Double.self, forKey: .doubleValue)
-            self = .doulbe(doubleValue: doubleValue)
+            self = .double(doubleValue: doubleValue)
             return
         }
         if container.allKeys.contains(.bool), try container.decodeNil(forKey: .bool) == false {
@@ -130,8 +130,8 @@ extension UserConfiguration.Property {
         case let .integer(integerValue):
             var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .integer)
             try associatedValues.encode(integerValue, forKey: .integerValue)
-        case let .doulbe(doubleValue):
-            var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .doulbe)
+        case let .double(doubleValue):
+            var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .double)
             try associatedValues.encode(doubleValue, forKey: .doubleValue)
         case let .bool(boolValue):
             var associatedValues = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .bool)

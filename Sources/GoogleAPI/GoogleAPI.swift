@@ -159,6 +159,7 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
         case deserializationError(Error)
         case networkingError(Error)
         case resourceError(ResourceError)
+        case resourceErrors([ResourceError])
         case htmlErrorResponse(Data)
         
         public var localizedDescription: String {
@@ -185,6 +186,8 @@ public final class GoogleAPI: GoogleAPIResourceExecutor {
                 return "Networking error \(error)"
             case .resourceError(let error):
                 return "Resource error '\(error)'"
+            case .resourceErrors(let errors):
+                return "Resource error '\(errors)'"
             case .unexpectedResponseObjectType(let response):
                 return "Unexpected response object type: \(response)"
             case .htmlErrorResponse(let error):
@@ -408,11 +411,16 @@ fileprivate extension GoogleAPI {
         do {
             let error = try JSONDecoder().decode(ResourceError.self, from: data)
             return ResourceProducer(error: .resourceError(error))
-        } catch let error {
-            return ResourceProducer(error: .errorDataDeserializationError(
-                error: error,
-                statusCode: response.statusCode)
-            )
+        } catch {
+            do {
+                let errors = try JSONDecoder().decode([ResourceError].self, from: data)
+                return ResourceProducer(error: .resourceErrors(errors))
+            } catch let error {
+                return ResourceProducer(error: .errorDataDeserializationError(
+                    error: error,
+                    statusCode: response.statusCode)
+                )
+            }
         }
     }
     

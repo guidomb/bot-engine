@@ -206,16 +206,6 @@ public final class BotEngine {
             self.value = value
         }
         
-        public init(from decoder: Decoder) throws {
-            let container = try decoder.singleValueContainer()
-            self.init(value: try container.decode(String.self))
-        }
-        
-        public func encode(to encoder: Encoder) throws {
-            var container = encoder.singleValueContainer()
-            try container.encode(value)
-        }
-        
     }
     
     struct ImpersonatorId: Equatable, Hashable {

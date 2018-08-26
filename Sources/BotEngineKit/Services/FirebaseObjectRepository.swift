@@ -78,17 +78,26 @@ public struct FirebaseObjectRepository: ObjectRepository {
         
         var query = StructuredQuery(from: ObjectType.collectionName)
         query.where = .field(.init(fieldPath: queryableProperty.key, op: .equal, value: fieldValue))
-        let collectionId = ObjectType.collectionName
         return firestore.documents
-            .runQuery(collectionId: collectionId, query: query)
+            .runQuery(query: query)
             .execute(with: executor)
             .mapError { Error.requestError($0).asAnyError }
             .flatMap(.concat) { response -> SignalProducer<[ObjectType], AnyError> in
-                if let document = response.document {
-                    return .empty
-                } else {
+                guard !response.isEmpty else {
                     return .init(value: [])
                 }
+                
+                var result: [ObjectType] = Array()
+                result.reserveCapacity(response.count)
+                for document in response.compactMap({ $0.document }) {
+                    do {
+                        result.append(try document.deserialize())
+                    } catch let error {
+                        return .init(error: .init(error))
+                    }
+                }
+                
+                return .init(value: result)
             }
     }
     
@@ -131,9 +140,14 @@ fileprivate extension FirebaseObjectRepository {
         guard let document = FirestoreDocument.serialize(object: object, skipFields: ["id"]) else {
             return Error.cannotSerializeDocument.asFailedProducer()
         }
-        return firestore.documents
+        
+        // Explicit cast to FirestoreDocument is needed to avoid deserializing to ObjectType
+        // when we only want to update the object's ID.
+        let documentProducer: GoogleAPI.ResourceProducer<FirestoreDocument> = firestore.documents
             .createDocument(collectionId: ObjectType.collectionName, document: document)
             .execute(with: executor)
+            
+        return documentProducer
             .mapError { Error.requestError($0).asAnyError }
             .map(object.updateId)
     }

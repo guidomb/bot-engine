@@ -15,18 +15,18 @@ public struct UserConfiguration: Persistable {
         
         case string(stringValue: String)
         case integer(integerValue: Int)
-        case doulbe(doubleValue: Double)
+        case double(doubleValue: Double)
         case bool(boolValue: Bool)
         
     }
     
     public var id: Identifier<UserConfiguration>?
-    public let engineUserId: BotEngine.UserId
+    public let engineUserId: String
     public var intentLanguage: Intent.Language?
     public var properties: [String : Property]
     
-    init(engineUserId: BotEngine.UserId) {
-        self.engineUserId = engineUserId
+    public init(engineUserId: BotEngine.UserId) {
+        self.engineUserId = engineUserId.value
         self.properties = [:]
     }
     
@@ -44,12 +44,12 @@ public struct UserConfigurationService {
     
     private let repository: ObjectRepository
     
-    init(repository: ObjectRepository) {
+    public init(repository: ObjectRepository) {
         self.repository = repository
     }
     
     public func fetchUserConfiguration(for userId: BotEngine.UserId) -> SignalProducer<UserConfiguration, AnyError> {
-        return repository.fetchFirst(UserConfiguration.self, where: \.engineUserId == userId)
+        return repository.fetchFirst(UserConfiguration.self, where: \.engineUserId == userId.value)
             .map { $0 ?? UserConfiguration(engineUserId: userId) }
     }
     
