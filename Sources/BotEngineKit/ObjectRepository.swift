@@ -69,7 +69,7 @@ extension ObjectRepository {
     
 }
 
-public struct KeyPatchMatcher<Root, Value> {
+public struct KeyPatchMatcher<Root, Value: Encodable> {
     
     public let keyPath: KeyPath<Root, Value>
     public let value: Value

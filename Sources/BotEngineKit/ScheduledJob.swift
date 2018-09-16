@@ -39,7 +39,7 @@ public struct NoJobMessage: Codable {
     
 }
 
-public struct DayTime: Codable {
+public struct DayTime {
     
     public static func at(_ dayTimeHours: String, in timeZone: String? = .none) -> DayTime? {
         let components = dayTimeHours.split(separator: ":")
@@ -130,6 +130,37 @@ extension DayTime: CustomStringConvertible {
     
     public var description: String {
         return "\(String(format: "%02d:%02d", hours, minutes)) \(timeZone) time zone"
+    }
+    
+}
+
+extension DayTime: Codable {
+    
+    enum CodingKeys: CodingKey {
+        
+        case hours
+        case minutes
+        case timeZone
+        
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let identifier = try container.decode(String.self, forKey: .timeZone)
+        guard let timeZone = TimeZone(identifier: identifier) else {
+            throw DecodingError.dataCorruptedError(forKey: .timeZone, in: container, debugDescription: "Invalid timezone identifier '\(identifier)'")
+        }
+        
+        self.hours = try container.decode(Int.self, forKey: .hours)
+        self.minutes = try container.decode(Int.self, forKey: .minutes)
+        self.timeZone = timeZone
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(hours, forKey: .hours)
+        try container.encode(minutes, forKey: .minutes)
+        try container.encode(timeZone.identifier, forKey: .timeZone)
     }
     
 }

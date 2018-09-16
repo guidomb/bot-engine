@@ -66,13 +66,15 @@ public struct FirebaseObjectRepository: ObjectRepository {
         .flatMap(.concat, deserialize(as: ObjectType.self))
     }
     
-    public func fetchAll<ObjectType: Persistable & QueryableByProperty, Value: Equatable>(_ objectType: ObjectType.Type, where keyPatchMatcher: KeyPatchMatcher<ObjectType, Value>) -> SignalProducer<[ObjectType], AnyError> {
+    public func fetchAll<ObjectType: Persistable & QueryableByProperty, Value: Equatable>(
+        _ objectType: ObjectType.Type,
+        where keyPatchMatcher: KeyPatchMatcher<ObjectType, Value>) -> SignalProducer<[ObjectType], AnyError> {
         
         let keyPath = keyPatchMatcher.keyPath as AnyKeyPath
         guard let queryableProperty = ObjectType.queryableProperties.first(where: { $0.value == keyPath }) else {
             return .init(value: [])
         }
-        guard let fieldValue = FirestoreDocument.serializeSimpleValue(keyPatchMatcher.value) else {
+        guard let fieldValue = try? serializeValue(keyPatchMatcher.value) else {
             return SignalProducer(error: Error.cannotSerializeFieldValue(keyPatchMatcher.value).asAnyError)
         }
         
@@ -121,15 +123,7 @@ public extension FirestoreDocument {
     }
     
     func deserialize<ObjectType: Persistable>() throws -> ObjectType {
-        var jsonObject = self.unwrapped
-        if let id = self.id {
-            jsonObject["id"] = id
-        }
-        if FirestoreDocument.printSerializationDebugLog {
-            print("DEBUG - FirestoreDocument.deserialize - \(jsonObject)")
-        }
-        let data = try JSONSerialization.data(withJSONObject: jsonObject, options: [])
-        return try JSONDecoder().decode(ObjectType.self, from: data)
+        return try FirestoreDecoder().decode(ObjectType.self, from: self)
     }
     
 }
@@ -137,7 +131,7 @@ public extension FirestoreDocument {
 fileprivate extension FirebaseObjectRepository {
     
     func createDocument<ObjectType: Persistable>(for object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
-        guard let document = FirestoreDocument.serialize(object: object, skipFields: ["id"]) else {
+        guard let document = try? serialize(object) else {
             return Error.cannotSerializeDocument.asFailedProducer()
         }
         
@@ -153,7 +147,7 @@ fileprivate extension FirebaseObjectRepository {
     }
     
     func updateDocument<ObjectType: Persistable>(for object: ObjectType) -> SignalProducer<ObjectType, AnyError> {
-        guard let document = FirestoreDocument.serialize(object: object, skipFields: ["id"]) else {
+        guard let document = try? serialize(object) else {
             return Error.cannotSerializeDocument.asFailedProducer()
         }
         return firestore.documents
@@ -161,6 +155,14 @@ fileprivate extension FirebaseObjectRepository {
             .execute(with: executor)
             .mapError { Error.requestError($0).asAnyError }
             .flatMap(.concat, deserialize(as: ObjectType.self))
+    }
+    
+    func serializeValue<T: Encodable>(_ value: T) throws -> FirestoreDocument.Value {
+        return try FirestoreEncoder().encodeProperty(value)
+    }
+    
+    func serialize<ObjectType: Persistable>(_ object: ObjectType) throws -> FirestoreDocument {
+        return try FirestoreEncoder().encode(object, name: ObjectType.collectionName, skipFields: ["id"])
     }
     
     func deserialize<ObjectType: Persistable>(as objectType: ObjectType.Type) -> ([FirestoreDocument]) -> SignalProducer<[ObjectType], AnyError> {
@@ -205,46 +207,4 @@ fileprivate extension FirestoreDocumentList {
         return FirestoreDocumentList(documents: newDocuments, nextPageToken: list.nextPageToken)
     }
     
-}
-
-// TODO autogenerate this protocol conformances
-// for all persistable object and its properties recursively
-//
-// This method cannot be implemented as an extension over JSONRepresentable
-// because when custom implementation is needed the extension method
-// is always called due to static dispatching.
-extension CreateSurveyBehavior.JobMessage: JSONRepresentable {}
-extension Survey.Destinatary: JSONRepresentable {}
-
-extension SchedulerInterval: JSONRepresentable {
-    
-    // Manual implementation is needed to avoid
-    // https://bugs.swift.org/browse/SR-8407 because
-    // JSONSerialization uses NSNumber object
-    // which triger cast from Int to Bool.
-    public func asJson() throws -> [String : Any]? {
-        var json: [String : Any] = [:]
-        switch self {
-        case .every(let seconds):
-            json["every"] = ["seconds" : seconds]
-        case .everyDay(let at):
-            json["everyDay"] = ["at" : try at.asJson()]
-        }
-        return json
-    }
-    
-}
-extension DayTime: JSONRepresentable {
-    
-    // Manual implementation is needed to avoid
-    // https://bugs.swift.org/browse/SR-8407 because
-    // JSONSerialization uses NSNumber object
-    // which triger cast from Int to Bool.
-    public func asJson() throws -> [String : Any]? {
-        var json: [String : Any] = [:]
-        json["hours"] = self.hours
-        json["minutes"] = self.minutes
-        json["timeZone"] = ["identifier" : self.timeZone.identifier]
-        return json
-    }
 }

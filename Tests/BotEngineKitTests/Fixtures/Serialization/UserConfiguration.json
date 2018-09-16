@@ -1,14 +1,28 @@
 {
+  "name": "projects/feedi-dev/databases/(default)/documents/botenginekit_userconfiguration/fKtnskPFrsR7YdM0KXmS",
   "fields": {
     "intentLanguage": {
-      "nullValue": null
+      "stringValue": "es"
     },
     "engineUserId": {
       "stringValue": "U02FQLM2P"
     },
     "properties": {
       "mapValue": {
-        "fields": {}
+        "fields": {
+          "someFlag": {
+            "booleanValue": true
+          },
+          "someStringValue": {
+            "stringValue": "hello"
+          },
+          "someIntegerValue": {
+            "integerValue": "10"
+          },
+          "someDoubleValue": {
+            "doubleValue": 10.5
+          }
+        }
       }
     }
   }

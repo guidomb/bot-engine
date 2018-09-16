@@ -25,14 +25,10 @@ class FirestoreSerializationTests: XCTestCase {
             message: .monitorSurvey(surveyId: Identifier(identifier: "xwu9KTMoKOFBc9xmF6kR"))
         ).asCancelableJob()
         
-        let fields = FirestoreDocument.serialize(object: schedulableJob, skipFields: ["id"])?.fields
-        let values = fields.map(FirestoreDocument.MapValue.init)
-        let fixture = try? fixtureManager.loadFixture(
-            in: "Serialization/ScheduledJob_CreateSurvey_JobMessage.json",
-            as: FirestoreDocument.MapValue.self
-        )
+        let json = serialize(value: schedulableJob)
+        let expectedJson = try! fixtureManager.loadFixtureAsDictionary(in: "Serialization/ScheduledJob_CreateSurvey_JobMessage.json")
         
-        XCTAssertEqual(values, fixture)
+        XCTAssertEqual(json, expectedJson)
     }
     
     func testSerializeActiveSurvey() {
@@ -60,28 +56,34 @@ class FirestoreSerializationTests: XCTestCase {
             destinataries: Set(["U02FQLM2P"])
         )
         
-        let fields = FirestoreDocument.serialize(object: survey, skipFields: ["id"])?.fields
-        let values = fields.map(FirestoreDocument.MapValue.init)
-        let fixture = try? fixtureManager.loadFixture(
-            in: "Serialization/ActiveSurvey.json",
-            as: FirestoreDocument.MapValue.self
-        )
+        let json = serialize(value: survey)
+        let expectedJson = try! fixtureManager.loadFixtureAsDictionary(in: "Serialization/ActiveSurvey.json")
     
-        XCTAssertEqual(values, fixture)
+        XCTAssertEqual(json, expectedJson)
     }
     
-    func testSerializeUserConfiguration() {
-        let configuration = UserConfiguration(engineUserId: .init(value: "U02FQLM2P"))
+    func testSerializeEmptyUserConfiguration() {
+        var configuration = UserConfiguration(engineUserId: .init(value: "U02FQLM2P"))
+        configuration.intentLanguage = .spanish
+        configuration.properties = [
+            "someFlag"          : .bool(true),
+            "someStringValue"   : .string("hello"),
+            "someDoubleValue"   : .double(10.50),
+            "someIntegerValue"  : .integer(10)
+        ]
         
-        let fields = FirestoreDocument.serialize(object: configuration, skipFields: ["id"])?.fields
-        let values = fields.map(FirestoreDocument.MapValue.init)
-        let fixture = try? fixtureManager.loadFixture(
-            in: "Serialization/UserConfiguration.json",
-            as: FirestoreDocument.MapValue.self
-        )
+        let json = serialize(value: configuration)
+        let expectedJson = try! fixtureManager.loadFixtureAsDictionary(in: "Serialization/UserConfiguration.json")
         
-        XCTAssertEqual(values, fixture)
+        XCTAssertEqual(json, expectedJson)
     }
     
 }
 
+fileprivate func serialize<T: Persistable>(value: T, id: String = "fKtnskPFrsR7YdM0KXmS") -> NSDictionary {
+    let name = "projects/feedi-dev/databases/(default)/documents/\(T.collectionName)/\(id)"
+    let document = try! FirestoreEncoder().encode(value, name: name, skipFields: ["id"])
+    let data = try! JSONEncoder().encode(document)
+    let json = try! JSONSerialization.jsonObject(with: data, options: []) as! NSDictionary
+    return json
+}

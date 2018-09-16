@@ -1,0 +1,15 @@
+{
+  "fields": {
+    "intentLanguage": {
+      "nullValue": null
+    },
+    "engineUserId": {
+      "stringValue": "U02FQLM2P"
+    },
+    "properties": {
+      "mapValue": {
+        "fields": {}
+      }
+    }
+  }
+}

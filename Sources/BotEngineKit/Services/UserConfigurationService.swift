@@ -11,12 +11,12 @@ import Result
 
 public struct UserConfiguration: Persistable {
     
-    public enum Property: AutoCodable {
+    public enum Property {
         
-        case string(stringValue: String)
-        case integer(integerValue: Int)
-        case double(doubleValue: Double)
-        case bool(boolValue: Bool)
+        case string(String)
+        case integer(Int)
+        case double(Double)
+        case bool(Bool)
         
     }
     
@@ -55,6 +55,38 @@ public struct UserConfigurationService {
     
     public func saveUserConfiguration(_ configuration: UserConfiguration) -> SignalProducer<UserConfiguration, AnyError> {
         return repository.save(object: configuration)
+    }
+    
+}
+
+extension UserConfiguration.Property: Codable {
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        if let value = try? container.decode(Bool.self) {
+            self = .bool(value)
+        } else if let value = try? container.decode(String.self) {
+            self = .string(value)
+        } else if let value = try? container.decode(Int.self) {
+            self = .integer(value)
+        } else {
+            self = .double(try container.decode(Double.self))
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .string(let value):
+            try container.encode(value)
+        case .integer(let value):
+            try container.encode(value)
+        case .double(let value):
+            try container.encode(value)
+        case .bool(let value):
+            try container.encode(value)
+        }
     }
     
 }

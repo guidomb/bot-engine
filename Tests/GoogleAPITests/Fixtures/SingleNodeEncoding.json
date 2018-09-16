@@ -1,0 +1,62 @@
+{
+  "name": "RootContainerTestValue",
+  "fields": {
+    "simpleArrayValue": {
+      "arrayValue": {
+        "values": []
+      }
+    },
+    "uint16Value": {
+      "integerValue": "65534"
+    },
+    "uint32Value": {
+      "integerValue": "4294967294"
+    },
+    "int8Value": {
+      "integerValue": "126"
+    },
+    "arrayValue": {
+      "arrayValue": {
+        "values": []
+      }
+    },
+    "mapValue": {
+      "mapValue": {
+        "fields": {}
+      }
+    },
+    "int64Value": {
+      "integerValue": "9223372036854775806"
+    },
+    "intValue": {
+      "integerValue": "10"
+    },
+    "uint8Value": {
+      "integerValue": "254"
+    },
+    "doubleValue": {
+      "doubleValue": 3.1415926535897931
+    },
+    "stringValue": {
+      "stringValue": "This is a sample text"
+    },
+    "dataValue": {
+      "bytesValue": "VGhpcyBpcyBhbm90aGVyIHNhbXBsZSB0ZXh0"
+    },
+    "boolValue": {
+      "booleanValue": false
+    },
+    "uint64Value": {
+      "integerValue": "18446744073709551614"
+    },
+    "int16Value": {
+      "integerValue": "32766"
+    },
+    "dateValue": {
+      "timestampValue": "2018-10-02T00:20:54.966Z"
+    },
+    "int32Value": {
+      "integerValue": "2147483646"
+    }
+  }
+}

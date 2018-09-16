@@ -19,6 +19,11 @@ public final class FixtureManager {
         return try Data(contentsOf: fixtureUrl(for: fixturePath))
     }
     
+    public func loadFixtureAsDictionary(in fixturePath: String) throws -> NSDictionary {
+        let data = try loadFixture(in: fixturePath)
+        return (try JSONSerialization.jsonObject(with: data, options: [])) as! NSDictionary
+    }
+    
     public func loadJSONFixture(in fixturePath: String) throws -> [String : Any] {
         let data = try loadFixture(in: fixturePath)
         return (try JSONSerialization.jsonObject(with: data, options: [])) as! [String : Any]

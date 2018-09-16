@@ -1,4 +1,5 @@
 {
+  "name": "projects/feedi-dev/databases/(default)/documents/botenginekit_scheduledjob_botenginekit_createsurveybehavior_jobmessage/fKtnskPFrsR7YdM0KXmS",
   "fields": {
     "job": {
       "mapValue": {
@@ -31,13 +32,7 @@
                               "integerValue": "30"
                             },
                             "timeZone": {
-                              "mapValue": {
-                                "fields": {
-                                  "identifier": {
-                                    "stringValue": "America/Argentina/Buenos_Aires"
-                                  }
-                                }
-                              }
+                              "stringValue": "America/Argentina/Buenos_Aires"
                             },
                             "hours": {
                               "integerValue": "10"

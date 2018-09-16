@@ -37,13 +37,7 @@
                                   "integerValue": "30"
                                 },
                                 "timeZone": {
-                                  "mapValue": {
-                                    "fields": {
-                                      "identifier": {
-                                        "stringValue": "America/Argentina/Buenos_Aires"
-                                      }
-                                    }
-                                  }
+                                  "stringValue": "America/Argentina/Buenos_Aires"
                                 },
                                 "hours": {
                                   "integerValue": "11"

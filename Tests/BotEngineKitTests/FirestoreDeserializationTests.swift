@@ -24,6 +24,7 @@ class FirestoreDeserializationTests: XCTestCase {
             in: "Deserialization/ScheduledJob_CreateSurvey_JobMessage_FirestoreDocumentList.json",
             as: FirestoreDocumentList.self
         )
+
         let scheduledJob: ScheduledJob<CreateSurveyBehavior.JobMessage>? = documentList?
             .documents?
             .first

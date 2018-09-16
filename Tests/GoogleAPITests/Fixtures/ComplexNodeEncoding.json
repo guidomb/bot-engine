@@ -1,0 +1,410 @@
+{
+  "name": "RootContainerTestValue",
+  "fields": {
+    "uint16Value": {
+      "integerValue": "65534"
+    },
+    "simpleArrayValue": {
+      "arrayValue": {
+        "values": [
+          {
+            "integerValue": "1"
+          },
+          {
+            "integerValue": "2"
+          },
+          {
+            "integerValue": "3"
+          },
+          {
+            "integerValue": "4"
+          },
+          {
+            "integerValue": "5"
+          },
+          {
+            "integerValue": "6"
+          },
+          {
+            "integerValue": "7"
+          },
+          {
+            "integerValue": "8"
+          },
+          {
+            "integerValue": "9"
+          },
+          {
+            "integerValue": "10"
+          }
+        ]
+      }
+    },
+    "arrayValue": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "simpleArrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "uint16Value": {
+                  "integerValue": "65534"
+                },
+                "uint32Value": {
+                  "integerValue": "4294967294"
+                },
+                "arrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "int8Value": {
+                  "integerValue": "126"
+                },
+                "mapValue": {
+                  "mapValue": {
+                    "fields": {}
+                  }
+                },
+                "int64Value": {
+                  "integerValue": "9223372036854775806"
+                },
+                "intValue": {
+                  "integerValue": "10"
+                },
+                "uint8Value": {
+                  "integerValue": "254"
+                },
+                "doubleValue": {
+                  "doubleValue": 3.1415926535897931
+                },
+                "boolValue": {
+                  "booleanValue": false
+                },
+                "dataValue": {
+                  "bytesValue": "VGhpcyBpcyBhbm90aGVyIHNhbXBsZSB0ZXh0"
+                },
+                "uint64Value": {
+                  "integerValue": "18446744073709551614"
+                },
+                "stringValue": {
+                  "stringValue": "This is a sample text"
+                },
+                "int16Value": {
+                  "integerValue": "32766"
+                },
+                "dateValue": {
+                  "timestampValue": "2018-10-02T00:20:54.966Z"
+                },
+                "int32Value": {
+                  "integerValue": "2147483646"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "simpleArrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "uint16Value": {
+                  "integerValue": "65534"
+                },
+                "uint32Value": {
+                  "integerValue": "4294967294"
+                },
+                "arrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "int8Value": {
+                  "integerValue": "126"
+                },
+                "mapValue": {
+                  "mapValue": {
+                    "fields": {}
+                  }
+                },
+                "int64Value": {
+                  "integerValue": "9223372036854775806"
+                },
+                "intValue": {
+                  "integerValue": "10"
+                },
+                "uint8Value": {
+                  "integerValue": "254"
+                },
+                "doubleValue": {
+                  "doubleValue": 3.1415926535897931
+                },
+                "boolValue": {
+                  "booleanValue": false
+                },
+                "dataValue": {
+                  "bytesValue": "VGhpcyBpcyBhbm90aGVyIHNhbXBsZSB0ZXh0"
+                },
+                "uint64Value": {
+                  "integerValue": "18446744073709551614"
+                },
+                "stringValue": {
+                  "stringValue": "This is a sample text"
+                },
+                "int16Value": {
+                  "integerValue": "32766"
+                },
+                "dateValue": {
+                  "timestampValue": "2018-10-02T00:20:54.966Z"
+                },
+                "int32Value": {
+                  "integerValue": "2147483646"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "simpleArrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "uint16Value": {
+                  "integerValue": "65534"
+                },
+                "uint32Value": {
+                  "integerValue": "4294967294"
+                },
+                "arrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "int8Value": {
+                  "integerValue": "126"
+                },
+                "mapValue": {
+                  "mapValue": {
+                    "fields": {}
+                  }
+                },
+                "int64Value": {
+                  "integerValue": "9223372036854775806"
+                },
+                "intValue": {
+                  "integerValue": "10"
+                },
+                "uint8Value": {
+                  "integerValue": "254"
+                },
+                "doubleValue": {
+                  "doubleValue": 3.1415926535897931
+                },
+                "boolValue": {
+                  "booleanValue": false
+                },
+                "dataValue": {
+                  "bytesValue": "VGhpcyBpcyBhbm90aGVyIHNhbXBsZSB0ZXh0"
+                },
+                "uint64Value": {
+                  "integerValue": "18446744073709551614"
+                },
+                "stringValue": {
+                  "stringValue": "This is a sample text"
+                },
+                "int16Value": {
+                  "integerValue": "32766"
+                },
+                "dateValue": {
+                  "timestampValue": "2018-10-02T00:20:54.966Z"
+                },
+                "int32Value": {
+                  "integerValue": "2147483646"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "int8Value": {
+      "integerValue": "126"
+    },
+    "uint32Value": {
+      "integerValue": "4294967294"
+    },
+    "mapValue": {
+      "mapValue": {
+        "fields": {
+          "foo": {
+            "mapValue": {
+              "fields": {
+                "uint16Value": {
+                  "integerValue": "65534"
+                },
+                "simpleArrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "arrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "int8Value": {
+                  "integerValue": "126"
+                },
+                "uint32Value": {
+                  "integerValue": "4294967294"
+                },
+                "mapValue": {
+                  "mapValue": {
+                    "fields": {}
+                  }
+                },
+                "int64Value": {
+                  "integerValue": "9223372036854775806"
+                },
+                "intValue": {
+                  "integerValue": "10"
+                },
+                "uint8Value": {
+                  "integerValue": "254"
+                },
+                "doubleValue": {
+                  "doubleValue": 3.1415926535897931
+                },
+                "boolValue": {
+                  "booleanValue": false
+                },
+                "dataValue": {
+                  "bytesValue": "VGhpcyBpcyBhbm90aGVyIHNhbXBsZSB0ZXh0"
+                },
+                "stringValue": {
+                  "stringValue": "This is a sample text"
+                },
+                "uint64Value": {
+                  "integerValue": "18446744073709551614"
+                },
+                "int16Value": {
+                  "integerValue": "32766"
+                },
+                "dateValue": {
+                  "timestampValue": "2018-10-02T00:20:54.966Z"
+                },
+                "int32Value": {
+                  "integerValue": "2147483646"
+                }
+              }
+            }
+          },
+          "bar": {
+            "mapValue": {
+              "fields": {
+                "uint16Value": {
+                  "integerValue": "65534"
+                },
+                "simpleArrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "arrayValue": {
+                  "arrayValue": {
+                    "values": []
+                  }
+                },
+                "int8Value": {
+                  "integerValue": "126"
+                },
+                "uint32Value": {
+                  "integerValue": "4294967294"
+                },
+                "mapValue": {
+                  "mapValue": {
+                    "fields": {}
+                  }
+                },
+                "int64Value": {
+                  "integerValue": "9223372036854775806"
+                },
+                "intValue": {
+                  "integerValue": "10"
+                },
+                "uint8Value": {
+                  "integerValue": "254"
+                },
+                "doubleValue": {
+                  "doubleValue": 3.1415926535897931
+                },
+                "boolValue": {
+                  "booleanValue": false
+                },
+                "dataValue": {
+                  "bytesValue": "VGhpcyBpcyBhbm90aGVyIHNhbXBsZSB0ZXh0"
+                },
+                "stringValue": {
+                  "stringValue": "This is a sample text"
+                },
+                "uint64Value": {
+                  "integerValue": "18446744073709551614"
+                },
+                "int16Value": {
+                  "integerValue": "32766"
+                },
+                "dateValue": {
+                  "timestampValue": "2018-10-02T00:20:54.966Z"
+                },
+                "int32Value": {
+                  "integerValue": "2147483646"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "int64Value": {
+      "integerValue": "9223372036854775806"
+    },
+    "intValue": {
+      "integerValue": "10"
+    },
+    "uint8Value": {
+      "integerValue": "254"
+    },
+    "doubleValue": {
+      "doubleValue": 3.1415926535897931
+    },
+    "boolValue": {
+      "booleanValue": false
+    },
+    "dataValue": {
+      "bytesValue": "VGhpcyBpcyBhbm90aGVyIHNhbXBsZSB0ZXh0"
+    },
+    "stringValue": {
+      "stringValue": "This is a sample text"
+    },
+    "uint64Value": {
+      "integerValue": "18446744073709551614"
+    },
+    "int16Value": {
+      "integerValue": "32766"
+    },
+    "dateValue": {
+      "timestampValue": "2018-10-02T00:20:54.966Z"
+    },
+    "int32Value": {
+      "integerValue": "2147483646"
+    }
+  }
+}

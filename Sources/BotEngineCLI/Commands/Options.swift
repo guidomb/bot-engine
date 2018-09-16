@@ -53,23 +53,16 @@ extension BotEngineCLI {
             defaultValue: false,
             usage: "print Google API requests"
         )
-        private static let firestorePrintSerializationLog = Option<Bool>(
-            key: "firestore-print-serialization",
-            defaultValue: false,
-            usage: "print debug serialization logs when serializing/deserializing Firestore objects"
-        )
         
         let verbose: Bool
         let googleApiPrintCurl: Bool
         let googleApiPrintRequest: Bool
-        let firestorePrintSerializationLog: Bool
         
         static func evaluate(_ mode: CommandMode) -> Result<LoggerOptions, CLIError> {
             return curry(LoggerOptions.init)
                 <*> mode <| verbose
                 <*> mode <| googleApiPrintCurl
                 <*> mode <| googleApiPrintRequest
-                <*> mode <| firestorePrintSerializationLog
         }
         
         

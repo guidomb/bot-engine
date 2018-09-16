@@ -117,7 +117,6 @@ fileprivate extension BotEngineCLI.StartCommand {
             let googleApi = self.configuration.createGoogleApi(options: options, server: httpServer)
             googleApi.printDebugCurlCommand = isEnabled(\.googleApiPrintCurl)
             googleApi.printRequest = isEnabled(\.googleApiPrintRequest)
-            FirestoreDocument.printSerializationDebugLog = isEnabled(\.firestorePrintSerializationLog)
             return Context(httpServer: httpServer, googleAPIResourceExecutor: googleApi, options: options)
         }
     }
